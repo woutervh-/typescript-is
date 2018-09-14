@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "module": "commonjs",
+        "lib": [
+            "es6",
+            "dom"
+        ],
+        "noImplicitAny": true,
+        "noUnusedLocals": true,
+        "strict": true,
+        "sourceMap": true,
+        "outDir": "lib",
+        "plugins": [
+            {
+                "transform": "../../src/transformer"
+            }
+        ]
+    },
+    "include": [
+        "src/**/*"
+    ]
+}

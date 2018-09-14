@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "test": "ttsc"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "ttypescript": "^1.5.5"
+  }
+}

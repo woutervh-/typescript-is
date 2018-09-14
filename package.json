@@ -1,0 +1,25 @@
+{
+  "name": "typescript-is",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/woutervh-/typescript-is.git"
+  },
+  "author": "Wouter van Heeswijk",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/woutervh-/typescript-is/issues"
+  },
+  "homepage": "https://github.com/woutervh-/typescript-is#readme",
+  "devDependencies": {
+    "@types/node": "^10.9.4",
+    "tsutils": "^3.0.0",
+    "typescript": "^3.0.3"
+  }
+}
