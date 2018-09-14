@@ -8,11 +8,7 @@
         "noImplicitAny": true,
         "noUnusedLocals": true,
         "strict": true,
-        "outDir": "lib",
         "sourceMap": true,
         "declaration": true
-    },
-    "include": [
-        "src/**/*"
-    ]
+    }
 }

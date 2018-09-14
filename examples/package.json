@@ -1,10 +1,11 @@
 {
   "scripts": {
-    "test": "ttsc"
+    "start": "ttsc"
   },
   "license": "MIT",
   "dependencies": {
     "ttypescript": "^1.5.5",
-    "typescript-is": "^0.1.1"
+    "typescript": "^3.0.3",
+    "typescript-is": "^0.1.2"
   }
 }
