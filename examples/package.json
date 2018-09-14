@@ -6,6 +6,6 @@
   "dependencies": {
     "ttypescript": "^1.5.5",
     "typescript": "^3.0.3",
-    "typescript-is": "^0.1.2"
+    "typescript-is": "^0.1.3"
   }
 }

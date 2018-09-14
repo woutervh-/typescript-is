@@ -1,7 +1,12 @@
 {
     "extends": "../tsconfig.json",
     "compilerOptions": {
-        "outDir": "lib"
+        "outDir": "lib",
+        "plugins": [
+            {
+                "transform": "typescript-is/lib/transformer"
+            }
+        ]
     },
     "include": [
         "src"

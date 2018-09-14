@@ -1,6 +1,6 @@
 {
   "name": "typescript-is",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -17,9 +17,11 @@
     "url": "https://github.com/woutervh-/typescript-is/issues"
   },
   "homepage": "https://github.com/woutervh-/typescript-is#readme",
-  "devDependencies": {
-    "@types/node": "^10.9.4",
+  "dependencies": {
     "tsutils": "^3.0.0",
     "typescript": "^3.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^10.9.4"
   }
 }
