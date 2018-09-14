@@ -1,11 +1,12 @@
 {
   "scripts": {
-    "start": "ttsc"
+    "start": "ts-node --compiler ttypescript"
   },
   "license": "MIT",
   "dependencies": {
+    "ts-node": "^7.0.1",
     "ttypescript": "^1.5.5",
     "typescript": "^3.0.3",
-    "typescript-is": "^0.1.4"
+    "typescript-is": "^0.1.5"
   }
 }
