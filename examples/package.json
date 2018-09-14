@@ -3,7 +3,8 @@
     "test": "ttsc"
   },
   "license": "MIT",
-  "devDependencies": {
-    "ttypescript": "^1.5.5"
+  "dependencies": {
+    "ttypescript": "^1.5.5",
+    "typescript-is": "^0.1.1"
   }
 }

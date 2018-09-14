@@ -13,7 +13,7 @@
         "outDir": "lib",
         "plugins": [
             {
-                "transform": "../../src/transformer"
+                "transform": "typescript-is/lib/transformer"
             }
         ]
     },
