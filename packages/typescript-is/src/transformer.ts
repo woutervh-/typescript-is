@@ -2,6 +2,7 @@ import * as ts from 'typescript';
 import * as path from 'path';
 import { VisitorContext } from './visitor-context';
 import { visitTypeNode } from './visitor';
+import { compile } from './compiler';
 
 export default function transformer(program: ts.Program): ts.TransformerFactory<ts.SourceFile> {
     const visitorContext: VisitorContext = {
@@ -13,10 +14,12 @@ export default function transformer(program: ts.Program): ts.TransformerFactory<
         typeCheckFunctionAccessorTopLevel: null,
         typeArgumentsStack: []
     };
-    let remaining = program.getSourceFiles().length;
     return (context: ts.TransformationContext) => (file: ts.SourceFile) => {
-        console.log(--remaining);
-        return transformNodeAndChildren(file, program, context, visitorContext);
+        if (path.resolve(file.fileName) === path.resolve(__dirname, '..', 'index.ts')) {
+            return ts.updateSourceFileNode(file, compile(visitorContext));
+        } else {
+            return transformNodeAndChildren(file, program, context, visitorContext);
+        }
     };
 }
 
@@ -32,7 +35,7 @@ function transformNode(node: ts.Node, visitorContext: VisitorContext): ts.Node {
         if (
             signature !== undefined
             && signature.declaration !== undefined
-            && path.resolve(signature.declaration.getSourceFile().fileName) === path.resolve(path.join(__dirname, '..', 'index.d.ts'))
+            && path.resolve(signature.declaration.getSourceFile().fileName) === path.resolve(path.join(__dirname, '..', 'index.ts'))
             && node.arguments.length === 1
             && node.typeArguments !== undefined
             && node.typeArguments.length === 1

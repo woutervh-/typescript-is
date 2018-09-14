@@ -44,9 +44,7 @@ function constructArrowFunction(identifier: ts.Identifier, returnExpression: ts.
                 undefined,
                 undefined,
                 undefined,
-                identifier,
-                undefined,
-                ts.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)
+                identifier
             )
         ],
         undefined,
