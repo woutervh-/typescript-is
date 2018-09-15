@@ -14,5 +14,7 @@ interface Foo<T, U> extends Bar<U>, Baz<number> {
     thirdItem: Bar<Bar<boolean>>;
 }
 
-is<Foo<Bar<number>, string>>({});
-// is<boolean>({});
+console.log(is<Foo<Bar<number>, string>>({}));
+console.log(is<Foo<Bar<number>, string>>({ item: 'string', buz: 1, type: 'cool', secondItem: { item: 2 }, thirdItem: { item: { item: true } } }));
+console.log(is<boolean>(true));
+console.log(is<boolean>(false));

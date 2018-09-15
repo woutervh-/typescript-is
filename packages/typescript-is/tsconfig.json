@@ -1,7 +1,12 @@
 {
     "extends": "../../tsconfig.json",
     "compilerOptions": {
-        "outDir": "lib"
+        "outDir": "lib",
+        "plugins": [
+            {
+                "transform": "./src/transform-inline/transformer.ts",
+            }
+        ]
     },
     "include": [
         "src"

@@ -1,11 +1,10 @@
 {
   "name": "typescript-is",
-  "version": "0.1.7",
+  "version": "0.1.12",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
-    "test": "ts-node --project test/tsconfig.json --compiler ttypescript test/case-1/index.ts"
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
@@ -18,11 +17,11 @@
   },
   "homepage": "https://github.com/woutervh-/typescript-is#readme",
   "dependencies": {
-    "tsutils": "^3.0.0",
-    "typescript": "^3.0.3"
+    "tsutils": "^3",
+    "typescript": "^3"
   },
   "devDependencies": {
-    "@types/node": "^10.9.4",
+    "@types/node": ">=4",
     "ts-node": "^7.0.1",
     "ttypescript": "^1.5.5"
   }

@@ -4,12 +4,8 @@
         "outDir": "lib",
         "plugins": [
             {
-                "transform": "typescript-is/lib/transformer"
+                "transform": "typescript-is/lib/transform-inline/transformer",
             }
         ]
-    },
-    "include": [
-        "src",
-        "node_modules/typescript-is/index.ts"
-    ]
+    }
 }

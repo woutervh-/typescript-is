@@ -1,12 +1,15 @@
 {
   "scripts": {
-    "start": "ts-node --compiler ttypescript"
+    "start": "ts-node --compiler ttypescript --project tsconfig.json src/index.ts"
   },
   "license": "MIT",
   "dependencies": {
+    "typescript-is": "^0.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^10.9.4",
     "ts-node": "^7.0.1",
     "ttypescript": "^1.5.5",
-    "typescript": "^3.0.3",
-    "typescript-is": "^0.1.7"
+    "typescript": "^3.0.3"
   }
 }

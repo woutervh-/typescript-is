@@ -4,7 +4,18 @@ import { VisitorContext } from './visitor-context';
 import { visitTypeNode } from './visitor';
 import { compile } from './compiler';
 
-export default function transformer(program: ts.Program): ts.TransformerFactory<ts.SourceFile> {
+export interface Options {
+    outFile?: string;
+}
+
+export default function transformer(program: ts.Program, options?: Options): ts.TransformerFactory<ts.SourceFile> {
+    if (options === undefined) {
+        throw new Error('Options are required.');
+    }
+    if (options.outFile === undefined) {
+        throw new Error('Option outFile is required.');
+    }
+    const outFile = options.outFile;
     const visitorContext: VisitorContext = {
         program,
         checker: program.getTypeChecker(),
@@ -15,27 +26,23 @@ export default function transformer(program: ts.Program): ts.TransformerFactory<
         typeArgumentsStack: []
     };
     let remaining = program.getRootFileNames().length;
-    let finished = false;
-    let finish: () => void = () => finished = true;
     return (context: ts.TransformationContext) => {
-        context.onEmitNode = (hint, node, emitCallback) => {
-            if (ts.isSourceFile(node) && path.resolve(node.fileName) === path.resolve(__dirname, '..', 'index.ts')) {
-                finish = () => {
-                    const replacedNode = ts.updateSourceFileNode(node, compile(visitorContext))
-                    emitCallback(hint, replacedNode);
-                };
-                if (finished) {
-                    finish();
-                }
-            } else {
-                emitCallback(hint, node);
-            }
-        };
         return (file: ts.SourceFile) => {
             const result = transformNodeAndChildren(file, program, context, visitorContext);
-            remaining -= 1;
-            if (remaining === 0) {
-                finish();
+            if (--remaining === 0) {
+                const sourceFile = ts.createSourceFile(
+                    outFile,
+                    '',
+                    ts.ScriptTarget.ES2016,
+                    undefined,
+                    ts.ScriptKind.JS
+                );
+                const newSourceFile = ts.updateSourceFileNode(sourceFile, compile(visitorContext))
+                const printer = ts.createPrinter({
+                    newLine: ts.NewLineKind.LineFeed
+                });
+                const result = printer.printFile(newSourceFile);
+                ts.sys.writeFile(newSourceFile.fileName, result);
             }
             return result;
         };
@@ -54,7 +61,7 @@ function transformNode(node: ts.Node, visitorContext: VisitorContext): ts.Node {
         if (
             signature !== undefined
             && signature.declaration !== undefined
-            && path.resolve(signature.declaration.getSourceFile().fileName) === path.resolve(path.join(__dirname, '..', 'index.ts'))
+            && path.resolve(signature.declaration.getSourceFile().fileName) === path.resolve(path.join(__dirname, '..', '..', 'index.d.ts'))
             && node.arguments.length === 1
             && node.typeArguments !== undefined
             && node.typeArguments.length === 1
