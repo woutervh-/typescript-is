@@ -14,12 +14,31 @@ export default function transformer(program: ts.Program): ts.TransformerFactory<
         typeCheckFunctionAccessorTopLevel: null,
         typeArgumentsStack: []
     };
-    return (context: ts.TransformationContext) => (file: ts.SourceFile) => {
-        if (path.resolve(file.fileName) === path.resolve(__dirname, '..', 'index.ts')) {
-            return ts.updateSourceFileNode(file, compile(visitorContext));
-        } else {
-            return transformNodeAndChildren(file, program, context, visitorContext);
-        }
+    let remaining = program.getRootFileNames().length;
+    let finished = false;
+    let finish: () => void = () => finished = true;
+    return (context: ts.TransformationContext) => {
+        context.onEmitNode = (hint, node, emitCallback) => {
+            if (ts.isSourceFile(node) && path.resolve(node.fileName) === path.resolve(__dirname, '..', 'index.ts')) {
+                finish = () => {
+                    const replacedNode = ts.updateSourceFileNode(node, compile(visitorContext))
+                    emitCallback(hint, replacedNode);
+                };
+                if (finished) {
+                    finish();
+                }
+            } else {
+                emitCallback(hint, node);
+            }
+        };
+        return (file: ts.SourceFile) => {
+            const result = transformNodeAndChildren(file, program, context, visitorContext);
+            remaining -= 1;
+            if (remaining === 0) {
+                finish();
+            }
+            return result;
+        };
     };
 }
 

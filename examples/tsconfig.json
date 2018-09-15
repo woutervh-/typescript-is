@@ -10,6 +10,6 @@
     },
     "include": [
         "src",
-        "node_modules/typescript-is"
+        "node_modules/typescript-is/index.ts"
     ]
 }
