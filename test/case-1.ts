@@ -1,6 +1,10 @@
 import * as assert from 'assert';
 import { is } from '../index';
 
+/**
+ * Tests interface, boolean, string, number, heritage clauses, interface members.
+ */
+
 interface Bar<V> /*extends Pick<number, keyof number>*/ {
     item: V;
 }
@@ -16,6 +20,12 @@ interface Foo<T, U> extends Bar<U>, Baz<number> {
 }
 
 assert.strictEqual(is<Foo<Bar<number>, string>>({}), false);
+assert.strictEqual(is<Foo<Bar<number>, string>>({ type: {}, secondItem: {}, thirdItem: {} }), false);
 assert.strictEqual(is<Foo<Bar<number>, string>>({ item: 'string', buz: 1, type: 'cool', secondItem: { item: 2 }, thirdItem: { item: { item: true } } }), true);
+assert.strictEqual(is<Foo<Bar<number>, string>>({ item: 'text', buz: 2, type: 'cool', secondItem: { item: 3 }, thirdItem: { item: { item: false } } }), true);
+assert.strictEqual(is<boolean>(0), false);
+assert.strictEqual(is<boolean>(1), false);
 assert.strictEqual(is<boolean>('true'), false);
-assert.strictEqual(is<boolean>(false), false);
+assert.strictEqual(is<boolean>('false'), false);
+assert.strictEqual(is<boolean>(true), true);
+assert.strictEqual(is<boolean>(false), true);
