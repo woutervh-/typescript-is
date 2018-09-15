@@ -124,10 +124,31 @@ function visitInterfaceDeclaration(node: ts.InterfaceDeclaration, accessor: ts.E
     );
 }
 
+function visitMappedTypeNode(node: ts.MappedTypeNode, accessor: ts.Expression, visitorContext: VisitorContext): ts.Expression {
+    // type Pick<T, K extends keyof T> = {
+    //     [P in K]: T[P];
+    // };
+
+    // node.typeParameter -> name=P, constraint=K -> [P in K]
+    // node.type (isIndexedAccessTypeNode) -> objectType=T, indexType=P -> T[P]
+
+    if (node.type !== undefined) {
+        if (ts.isIndexedAccessTypeNode(node.type)) {
+            // TODO:
+        }
+    }
+    console.log(node.type);
+    console.log(node.typeParameter);
+    debugger;
+    return ts.createTrue();
+}
+
 function visitDeclaration(node: ts.Declaration, accessor: ts.Expression, visitorContext: VisitorContext): ts.Expression {
     let expression: ts.Expression;
     if (ts.isInterfaceDeclaration(node)) {
         expression = visitInterfaceDeclaration(node, accessor, visitorContext);
+    } else if (ts.isMappedTypeNode(node)) {
+        expression = visitMappedTypeNode(node, accessor, visitorContext);
     } else if (ts.isTypeParameterDeclaration(node)) {
         throw new Error('Unbound type parameter: ' + node.getText() + ' at ' + reportNode(node));
     } else {

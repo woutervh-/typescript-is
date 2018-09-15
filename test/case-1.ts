@@ -5,7 +5,7 @@ import { is } from '../index';
  * Tests interface, boolean, string, number, heritage clauses, interface members.
  */
 
-interface Bar<V> /*extends Pick<number, keyof number>*/ {
+interface Bar<V> {
     item: V;
 }
 
