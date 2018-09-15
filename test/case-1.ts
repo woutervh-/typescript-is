@@ -18,4 +18,4 @@ interface Foo<T, U> extends Bar<U>, Baz<number> {
 assert.strictEqual(is<Foo<Bar<number>, string>>({}), false);
 assert.strictEqual(is<Foo<Bar<number>, string>>({ item: 'string', buz: 1, type: 'cool', secondItem: { item: 2 }, thirdItem: { item: { item: true } } }), true);
 assert.strictEqual(is<boolean>('true'), false);
-assert.strictEqual(is<boolean>(false), true);
+assert.strictEqual(is<boolean>(false), false);

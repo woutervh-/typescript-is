@@ -9,6 +9,15 @@
         "noUnusedLocals": true,
         "strict": true,
         "sourceMap": true,
-        "declaration": true
-    }
+        "declaration": true,
+        "outDir": "lib",
+        "plugins": [
+            {
+                "transform": "./src/transform-inline/transformer.ts",
+            }
+        ]
+    },
+    "include": [
+        "src"
+    ]
 }
