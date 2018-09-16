@@ -143,28 +143,115 @@ function visitMappedTypeNode(node: ts.MappedTypeNode, accessor: ts.Expression, v
     return ts.createTrue();
 }
 
+function visitPropertyName(node: ts.PropertyName, accessor: ts.Expression, visitorContext: VisitorContext): ts.Expression {
+    // Identifier | StringLiteral | NumericLiteral | ComputedPropertyName
+    if (ts.isIdentifier(node)) {
+        return ts.createStringLiteral(node.text);
+    } else if (ts.isStringLiteral(node)) {
+        return ts.createStringLiteral(node.text);
+    } else if (ts.isNumericLiteral(node)) {
+        return ts.createStringLiteral(node.text);
+    } else {
+        return node.expression;
+    }
+}
+
+function visitPropertySignature(node: ts.PropertySignature, accessor: ts.Expression, visitorContext: VisitorContext) {
+    const propertyAccessor = ts.createElementAccess(accessor, visitPropertyName(node.name, accessor, visitorContext));
+    // TODO: node.questionToken
+    if (node.type === undefined) {
+        throw new Error('Visiting property without type.');
+    }
+    return visitTypeNode(node.type, propertyAccessor, visitorContext);
+}
+
 function visitDeclaration(node: ts.Declaration, accessor: ts.Expression, visitorContext: VisitorContext): ts.Expression {
-    let expression: ts.Expression;
     if (ts.isInterfaceDeclaration(node)) {
-        expression = visitInterfaceDeclaration(node, accessor, visitorContext);
+        return visitInterfaceDeclaration(node, accessor, visitorContext);
     } else if (ts.isMappedTypeNode(node)) {
-        expression = visitMappedTypeNode(node, accessor, visitorContext);
+        return visitMappedTypeNode(node, accessor, visitorContext);
     } else if (ts.isTypeParameterDeclaration(node)) {
         throw new Error('Unbound type parameter: ' + node.getText() + ' at ' + reportNode(node));
+    } else if (ts.isPropertySignature(node)) {
+        return visitPropertySignature(node, accessor, visitorContext);
     } else {
         throw new Error('Unsupported declaration kind: ' + node.kind);
     }
-    return expression;
 }
 
 function visitTypeReferenceNode(node: ts.TypeReferenceNode, accessor: ts.Expression, visitorContext: VisitorContext): ts.Expression {
-    const type = visitorContext.checker.getTypeFromTypeNode(node);
-    visitorContext.typeArgumentsStack.push(node.typeArguments);
-    const expression = type.symbol.declarations
-        .map((declaration) => visitDeclaration(declaration, accessor, visitorContext))
-        .reduce((condition, expression) => ts.createBinary(condition, ts.SyntaxKind.AmpersandAmpersandToken, expression));
-    visitorContext.typeArgumentsStack.pop();
-    return expression;
+    const type = visitorContext.checker.getTypeAtLocation(node);
+    let mapper: (source: ts.Type) => ts.TypeNode | undefined;
+    // Bar<V> -> V (65) needs to map to number (8)
+    // Mapping is present in property.mapper but not in custom made mapper.
+    // Mapping can be found in type.target.resolvedBaseTypes[0].target.typeParameters.
+    // Possibly recursively? For deep heritage.
+    if (tsutils.isInterfaceType(type)) {
+        const baseTypes = visitorContext.checker.getBaseTypes(type);
+        for (const baseType of baseTypes) {
+            if (tsutils.isTypeReference(baseType) && baseType.target.typeParameters !== undefined && baseType.typeArguments !== undefined) {
+                const typeParameters = baseType.target.typeParameters;
+                const typeArguments = baseType.typeArguments;
+                // TODO: implements like below
+            }
+        }
+    }
+    if (tsutils.isTypeReference(type) && type.target.typeParameters !== undefined && node.typeArguments !== undefined) {
+        const typeParameters = type.target.typeParameters;
+        const typeArguments = node.typeArguments;
+        mapper = (source: ts.Type) => {
+            for (let i = 0; i < typeParameters.length; i++) {
+                if (source === typeParameters[i]) {
+                    return typeArguments[i];
+                }
+            }
+        };
+    } else {
+        mapper = () => undefined;
+    }
+    // where get 69
+    // type.target.typeParameters contains 69; is not public API unless we can assert type as TypeReference
+    // type.typeArguments contains 67
+
+    if ((type.flags & ts.TypeFlags.Object) !== 0) {
+        const conditions: ts.Expression[] = [
+            ts.createStrictEquality(
+                ts.createTypeOf(accessor),
+                ts.createStringLiteral('object')
+            ),
+            ts.createStrictInequality(
+                accessor,
+                ts.createNull()
+            )
+        ];
+        visitorContext.typeMapperStack.push(mapper);
+        for (const property of visitorContext.checker.getPropertiesOfType(type)) {
+            // const propertyAccessor = ts.createPropertyAccess(accessor, property.name);
+            // property.mapper contains source -> target (69 -> 67, T -> Bar<number>)
+            visitorContext.checker
+            conditions.push(visitDeclaration(property.valueDeclaration, accessor, visitorContext));
+        }
+        visitorContext.typeMapperStack.pop();
+        return conditions.reduce((condition, expression) =>
+            ts.createBinary(
+                condition,
+                ts.SyntaxKind.AmpersandAmpersandToken,
+                expression
+            )
+        );
+    } else if ((type.flags & ts.TypeFlags.TypeParameter) !== 0) {
+        const typeMapper = visitorContext.typeMapperStack[visitorContext.typeMapperStack.length - 1];
+        if (typeMapper === undefined) {
+            throw new Error('Unbound type parameter, missing type mapper.');
+        }
+        const mappedTypeNode = typeMapper(type);
+        if (mappedTypeNode === undefined) {
+            throw new Error('Unbound type parameter, missing type node.');
+        }
+        return visitTypeNode(mappedTypeNode, accessor, visitorContext);
+    } else {
+        throw new Error('Unsupported: type without object type flag.');
+    }
 }
 
 function visitLiteralTypeNode(node: ts.LiteralTypeNode, accessor: ts.Expression, visitorContext: VisitorContext) {

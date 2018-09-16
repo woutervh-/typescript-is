@@ -10,7 +10,8 @@ export default function transformer(program: ts.Program): ts.TransformerFactory<
     const visitorContext: VisitorContext = {
         program,
         checker: program.getTypeChecker(),
-        typeArgumentsStack: []
+        typeArgumentsStack: [],
+        typeMapperStack: []
     };
     return (context: ts.TransformationContext) => (file: ts.SourceFile) => transformNodeAndChildren(file, program, context, visitorContext);
 }

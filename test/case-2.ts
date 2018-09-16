@@ -7,4 +7,4 @@ import { is } from '../index';
 
 type Foo<T> = Pick<T, keyof T>;
 
-assert.strictEqual(is<Foo<{ member: boolean }>>({ member: true }), true);
+assert.strictEqual(is<Foo<{ field: boolean }>>({ field: true }), true);

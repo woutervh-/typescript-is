@@ -4,7 +4,7 @@ import { transformNode } from '../src/transform-inline/transform-node';
 import { VisitorContext } from '../src/transform-inline/visitor-context';
 
 const configFilename = path.resolve('tsconfig.json');
-const inFile = path.resolve('test', 'case-2.ts');
+const inFile = path.resolve('test', 'case-1.ts');
 const content = ts.sys.readFile(configFilename);
 if (content === undefined) {
     throw new Error('Could not read config file.');
@@ -21,7 +21,8 @@ const program = ts.createProgram([inFile], configParseResult.options);
 const visitorContext: VisitorContext = {
     checker: program.getTypeChecker(),
     program,
-    typeArgumentsStack: []
+    typeArgumentsStack: [],
+    typeMapperStack: []
 };
 
 function visitNodeAndChildren(node: ts.Node) {
