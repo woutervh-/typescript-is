@@ -15,8 +15,30 @@ export function transformNode(node: ts.Node, visitorContext: VisitorContext): ts
             && node.typeArguments.length === 1
         ) {
             const typeArgument = node.typeArguments[0];
-            const accessor = node.arguments[0];
-            return visitTypeNode(typeArgument, accessor, visitorContext);
+            const accessor = ts.createIdentifier('object');
+            return ts.createCall(
+                ts.createArrowFunction(
+                    undefined,
+                    undefined,
+                    [
+                        ts.createParameter(
+                            undefined,
+                            undefined,
+                            undefined,
+                            accessor,
+                            undefined,
+                            ts.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)
+                        )
+                    ],
+                    undefined,
+                    undefined,
+                    ts.createBlock([
+                        ts.createReturn(visitTypeNode(typeArgument, accessor, visitorContext))
+                    ])
+                ),
+                undefined,
+                node.arguments
+            );
         }
     }
     return node;

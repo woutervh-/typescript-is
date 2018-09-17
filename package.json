@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc"
+    "build": "rimraf lib/ && tsc",
+    "test": "ttsc --project tsconfig-test.json"
   },
   "repository": {
     "type": "git",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@types/node": ">=4",
+    "rimraf": "^2.6.2",
     "ts-node": "^7.0.1",
     "ttypescript": "^1.5.5"
   }

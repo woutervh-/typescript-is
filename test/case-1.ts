@@ -19,6 +19,16 @@ interface Foo<T, U> extends Bar<U>, Baz<number> {
     thirdItem: Bar<Bar<boolean>>;
 }
 
+const isNumber = (object): object is number => is<number>(object);
+
+assert.strictEqual(isNumber(0), true);
+assert.strictEqual(isNumber(1), true);
+assert.strictEqual(isNumber(42), true);
+assert.strictEqual(isNumber(-1), true);
+assert.strictEqual(isNumber('0'), false);
+assert.strictEqual(isNumber('1'), false);
+assert.strictEqual(isNumber('42'), false);
+assert.strictEqual(isNumber('-1'), false);
 assert.strictEqual(is<Foo<Bar<number>, string>>({}), false);
 assert.strictEqual(is<Foo<Bar<number>, string>>({ type: {}, secondItem: {}, thirdItem: {} }), false);
 assert.strictEqual(is<Foo<Bar<number>, string>>({ item: 'string', buz: 1, type: 'cool', secondItem: { item: 2 }, thirdItem: { item: { item: true } } }), true);

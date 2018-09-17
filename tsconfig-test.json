@@ -8,11 +8,15 @@
         "noImplicitAny": true,
         "noUnusedLocals": true,
         "strict": true,
-        "sourceMap": true,
-        "declaration": true,
-        "outDir": "test"
+        "sourceMap": false,
+        "declaration": false,
+        "plugins": [
+            {
+                "transform": "./src/transform-inline/transformer.ts",
+            }
+        ]
     },
     "include": [
-        "src"
+        "test"
     ]
 }
