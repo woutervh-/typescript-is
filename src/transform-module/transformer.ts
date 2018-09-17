@@ -37,7 +37,7 @@ export default function transformer(program: ts.Program, options?: Options): ts.
                     undefined,
                     ts.ScriptKind.JS
                 );
-                const newSourceFile = ts.updateSourceFileNode(sourceFile, compile(visitorContext))
+                const newSourceFile = ts.updateSourceFileNode(sourceFile, compile(visitorContext));
                 const printer = ts.createPrinter({
                     newLine: ts.NewLineKind.LineFeed
                 });

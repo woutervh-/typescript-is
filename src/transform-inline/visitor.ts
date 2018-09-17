@@ -4,7 +4,7 @@ import { VisitorContext } from './visitor-context';
 
 function createPropertyCheck(accessor: ts.Expression, property: ts.Expression, type: ts.Type, optional: boolean, visitorContext: VisitorContext) {
     const propertyAccessor = ts.createElementAccess(accessor, property);
-    const expression = visitType(type, propertyAccessor, visitorContext)
+    const expression = visitType(type, propertyAccessor, visitorContext);
     if (!optional) {
         return expression;
     } else {
