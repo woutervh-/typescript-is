@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "rimraf lib/ && tsc",
-    "test": "ttsc --project tsconfig-test.json"
+    "test": "ttsc --project tsconfig-test.json && mocha"
   },
   "repository": {
     "type": "git",
@@ -22,7 +22,9 @@
     "typescript": "^3"
   },
   "devDependencies": {
+    "@types/mocha": "^5.2.5",
     "@types/node": ">=4",
+    "mocha": "^5.2.0",
     "rimraf": "^2.6.2",
     "ts-node": "^7.0.1",
     "ttypescript": "^1.5.5"
