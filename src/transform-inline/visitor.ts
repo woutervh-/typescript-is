@@ -2,6 +2,26 @@ import * as ts from 'typescript';
 import * as tsutils from 'tsutils';
 import { VisitorContext } from './visitor-context';
 
+function createPropertyCheck(accessor: ts.Expression, property: ts.Expression, type: ts.Type, optional: boolean, visitorContext: VisitorContext) {
+    const propertyAccessor = ts.createElementAccess(accessor, property);
+    const expression = visitType(type, propertyAccessor, visitorContext)
+    if (!optional) {
+        return expression;
+    } else {
+        return ts.createBinary(
+            ts.createLogicalNot(
+                ts.createBinary(
+                    property,
+                    ts.SyntaxKind.InKeyword,
+                    accessor
+                )
+            ),
+            ts.SyntaxKind.BarBarToken,
+            expression
+        );
+    }
+}
+
 function visitPropertyName(node: ts.PropertyName, accessor: ts.Expression, visitorContext: VisitorContext): ts.Expression {
     // Identifier | StringLiteral | NumericLiteral | ComputedPropertyName
     if (ts.isIdentifier(node)) {
@@ -16,25 +36,11 @@ function visitPropertyName(node: ts.PropertyName, accessor: ts.Expression, visit
 }
 
 function visitPropertySignature(node: ts.PropertySignature, accessor: ts.Expression, visitorContext: VisitorContext) {
-    const propertyAccessor = ts.createElementAccess(accessor, visitPropertyName(node.name, accessor, visitorContext));
     if (node.type === undefined) {
         throw new Error('Visiting property without type.');
     }
     const type = visitorContext.checker.getTypeFromTypeNode(node.type);
-    const expression = visitType(type, propertyAccessor, visitorContext);
-    if (node.questionToken === undefined) {
-        return expression;
-    } else {
-        return ts.createBinary(
-            ts.createBinary(
-                propertyAccessor,
-                ts.SyntaxKind.InKeyword,
-                accessor
-            ),
-            ts.SyntaxKind.BarBarToken,
-            expression
-        );
-    }
+    return createPropertyCheck(accessor, visitPropertyName(node.name, accessor, visitorContext), type, node.questionToken !== undefined, visitorContext);
 }
 
 function visitDeclaration(node: ts.Declaration, accessor: ts.Expression, visitorContext: VisitorContext): ts.Expression {
@@ -94,13 +100,10 @@ function visitObjectType(type: ts.ObjectType, accessor: ts.Expression, visitorCo
         } else {
             // Would like to use official APIs.
             const propertyType = (property as { type?: ts.Type }).type;
-            const propertyName = (property as { name?: ts.Type }).name;
+            const propertyName = (property as { name?: string }).name;
+            const optional = ((property as ts.Symbol).flags & ts.SymbolFlags.Optional) !== 0;
             if (propertyType !== undefined && propertyName !== undefined) {
-                const propertySignature = ts.createPropertySignature(
-                    undefined,
-                    propertyName,
-                    property.flags & ts.SymbolFlags.Optional
-                );
+                conditions.push(createPropertyCheck(accessor, ts.createStringLiteral(propertyName), propertyType, optional, visitorContext));
             }
         }
     }
