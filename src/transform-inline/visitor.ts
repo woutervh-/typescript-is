@@ -98,7 +98,7 @@ function visitObjectType(type: ts.ObjectType, accessor: ts.Expression, visitorCo
         if ('valueDeclaration' in property) {
             conditions.push(visitDeclaration(property.valueDeclaration, accessor, visitorContext));
         } else {
-            // Would like to use official APIs.
+            // Using internal TypeScript API, hacky.
             const propertyType = (property as { type?: ts.Type }).type;
             const propertyName = (property as { name?: string }).name;
             const optional = ((property as ts.Symbol).flags & ts.SymbolFlags.Optional) !== 0;
@@ -127,6 +127,30 @@ function visitLiteralType(type: ts.LiteralType, accessor: ts.Expression, visitor
     }
 }
 
+function visitUnionOrIntersectionType(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
+    let token: ts.SyntaxKind.BarBarToken | ts.SyntaxKind.AmpersandAmpersandToken;
+    if (tsutils.isUnionType(type)) {
+        token = ts.SyntaxKind.BarBarToken;
+    } else if (tsutils.isIntersectionType(type)) {
+        token = ts.SyntaxKind.AmpersandAmpersandToken;
+    } else {
+        throw new Error('UnionOrIntersection type is expected to be a Union or Intersection type.');
+    }
+    return type.types
+        .map((type) => visitType(type, accessor, visitorContext))
+        .reduce((condition, expression) => ts.createBinary(condition, token, expression));
+}
+
+function visitBooleanLiteral(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
+    // Using internal TypeScript API, hacky.
+    return ts.createStrictEquality(
+        accessor,
+        (type as { intrinsicName?: string }).intrinsicName === 'true'
+            ? ts.createTrue()
+            : ts.createFalse()
+    );
+}
+
 export function visitType(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext): ts.Expression {
     if ((ts.TypeFlags.Number & type.flags) !== 0) {
         return ts.createStrictEquality(ts.createTypeOf(accessor), ts.createStringLiteral('number'));
@@ -134,6 +158,8 @@ export function visitType(type: ts.Type, accessor: ts.Expression, visitorContext
         return ts.createStrictEquality(ts.createTypeOf(accessor), ts.createStringLiteral('boolean'));
     } else if ((ts.TypeFlags.String & type.flags) !== 0) {
         return ts.createStrictEquality(ts.createTypeOf(accessor), ts.createStringLiteral('string'));
+    } else if ((ts.TypeFlags.BooleanLiteral & type.flags) !== 0) {
+        return visitBooleanLiteral(type, accessor, visitorContext);
     } else if ((ts.TypeFlags.TypeParameter & type.flags) !== 0) {
         const typeMapper = visitorContext.typeMapperStack[visitorContext.typeMapperStack.length - 1];
         if (typeMapper === undefined) {
@@ -148,6 +174,10 @@ export function visitType(type: ts.Type, accessor: ts.Expression, visitorContext
         return visitObjectType(type, accessor, visitorContext);
     } else if (tsutils.isLiteralType(type)) {
         return visitLiteralType(type, accessor, visitorContext);
+    } else if (tsutils.isUnionOrIntersectionType(type)) {
+        return visitUnionOrIntersectionType(type, accessor, visitorContext);
+    } else if ((ts.TypeFlags.Never & type.flags) !== 0) {
+        return ts.createFalse();
     } else {
         throw new Error('Unsupported type with flags: ' + type.flags);
     }

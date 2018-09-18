@@ -1,10 +1,14 @@
+/**
+ * Run this file with ts-node in order to debug.
+ */
+
 import * as path from 'path';
 import * as ts from 'typescript';
 import { transformNode } from '../src/transform-inline/transform-node';
 import { VisitorContext } from '../src/transform-inline/visitor-context';
 
 const configFilename = path.resolve('tsconfig.json');
-const inFile = path.resolve('test', 'case-2.ts');
+const inFile = path.resolve('test', 'case-3.ts');
 const content = ts.sys.readFile(configFilename);
 if (content === undefined) {
     throw new Error('Could not read config file.');

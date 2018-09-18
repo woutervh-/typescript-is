@@ -1,14 +1,10 @@
 import * as assert from 'assert';
 import { is } from '../index';
 
-type Bar<T> = {
-    [K in 'key']: T;
-};
-
-type Foo<T> = Pick<T, keyof T>;
-
 describe('is', () => {
     describe('is<Foo<{ field: boolean }>>', () => {
+        type Foo<T> = Pick<T, keyof T>;
+
         it('should return true for objects with field a boolean', () => {
             assert.strictEqual(is<Foo<{ field: boolean }>>({ field: true }), true);
             assert.strictEqual(is<Foo<{ field: boolean }>>({ field: false }), true);
@@ -28,6 +24,10 @@ describe('is', () => {
     });
 
     describe('is<Bar<number>>', () => {
+        type Bar<T> = {
+            [K in 'key']: T;
+        };
+
         it('should return true for objects with key a number', () => {
             assert.strictEqual(is<Bar<number>>({ key: 0 }), true);
             assert.strictEqual(is<Bar<number>>({ key: 1 }), true);

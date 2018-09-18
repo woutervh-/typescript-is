@@ -1,24 +1,22 @@
 import * as assert from 'assert';
 import { is } from '../index';
 
-interface Bar<V> {
-    item: V;
-}
-
-interface Baz<W> {
-    buz: W;
-}
-
-interface Foo<T, U> extends Bar<U>, Baz<number> {
-    type: 'cool';
-    secondItem: T;
-    thirdItem: Bar<Bar<boolean>>;
-}
-
-const isNumber = (object: any): object is number => is<number>(object);
-
 describe('is', () => {
     describe('is<Foo<Bar<number>, string>>', () => {
+        interface Bar<V> {
+            item: V;
+        }
+
+        interface Baz<W> {
+            buz: W;
+        }
+
+        interface Foo<T, U> extends Bar<U>, Baz<number> {
+            type: 'cool';
+            secondItem: T;
+            thirdItem: Bar<Bar<boolean>>;
+        }
+
         it('should return false for the empty object literal', () => {
             assert.strictEqual(is<Foo<Bar<number>, string>>({}), false);
         });
@@ -27,7 +25,7 @@ describe('is', () => {
             assert.strictEqual(is<Foo<Bar<number>, string>>({ type: {}, secondItem: {}, thirdItem: {} }), false);
         });
 
-        it('should return true for objects that match', () => {
+        it('should return true for objects that match the interface', () => {
             assert.strictEqual(is<Foo<Bar<number>, string>>({ item: 'string', buz: 1, type: 'cool', secondItem: { item: 2 }, thirdItem: { item: { item: true } } }), true);
             assert.strictEqual(is<Foo<Bar<number>, string>>({ item: 'text', buz: 2, type: 'cool', secondItem: { item: 3 }, thirdItem: { item: { item: false } } }), true);
         });
@@ -52,6 +50,8 @@ describe('is', () => {
     });
 
     describe('is<number>', () => {
+        const isNumber = (object: any): object is number => is<number>(object);
+
         it('should return true for numbers', () => {
             assert.strictEqual(isNumber(Number.NaN), true);
             assert.strictEqual(isNumber(Number.POSITIVE_INFINITY), true);
