@@ -8,6 +8,9 @@ describe('is', () => {
             assert.strictEqual(is<number | boolean>(1), true);
             assert.strictEqual(is<number | boolean>(-1), true);
             assert.strictEqual(is<number | boolean>(Number.NaN), true);
+        });
+
+        it('should return true for booleans', () => {
             assert.strictEqual(is<number | boolean>(true), true);
             assert.strictEqual(is<number | boolean>(false), true);
         });
