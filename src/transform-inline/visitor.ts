@@ -22,7 +22,7 @@ function createPropertyCheck(accessor: ts.Expression, property: ts.Expression, t
     }
 }
 
-function visitPropertyName(node: ts.PropertyName, accessor: ts.Expression, visitorContext: VisitorContext): ts.Expression {
+function visitPropertyName(node: ts.PropertyName, accessor: ts.Expression, visitorContext: VisitorContext) {
     // Identifier | StringLiteral | NumericLiteral | ComputedPropertyName
     if (ts.isIdentifier(node)) {
         return ts.createStringLiteral(node.text);
@@ -43,7 +43,7 @@ function visitPropertySignature(node: ts.PropertySignature, accessor: ts.Express
     return createPropertyCheck(accessor, visitPropertyName(node.name, accessor, visitorContext), type, node.questionToken !== undefined, visitorContext);
 }
 
-function visitDeclaration(node: ts.Declaration, accessor: ts.Expression, visitorContext: VisitorContext): ts.Expression {
+function visitDeclaration(node: ts.Declaration, accessor: ts.Expression, visitorContext: VisitorContext) {
     if (ts.isPropertySignature(node)) {
         return visitPropertySignature(node, accessor, visitorContext);
     } else {
@@ -51,7 +51,46 @@ function visitDeclaration(node: ts.Declaration, accessor: ts.Expression, visitor
     }
 }
 
-function visitObjectType(type: ts.ObjectType, accessor: ts.Expression, visitorContext: VisitorContext): ts.Expression {
+function visitArrayObjectType(type: ts.ObjectType, accessor: ts.Expression, visitorContext: VisitorContext) {
+    const numberIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.Number);
+    if (numberIndexType === undefined) {
+        throw new Error('Expected array ObjectType to have a number index type.');
+    }
+    const itemIdentifier = ts.createIdentifier('item');
+    return ts.createBinary(
+        ts.createCall(
+            ts.createPropertyAccess(ts.createIdentifier('Array'), ts.createIdentifier('isArray')),
+            undefined,
+            [accessor]
+        ),
+        ts.SyntaxKind.AmpersandAmpersandToken,
+        ts.createCall(
+            ts.createPropertyAccess(accessor, ts.createIdentifier('every')),
+            undefined,
+            [
+                ts.createArrowFunction(
+                    undefined,
+                    undefined,
+                    [
+                        ts.createParameter(
+                            undefined,
+                            undefined,
+                            undefined,
+                            itemIdentifier
+                        )
+                    ],
+                    undefined,
+                    undefined,
+                    ts.createBlock([
+                        ts.createReturn(visitType(numberIndexType, itemIdentifier, visitorContext))
+                    ])
+                )
+            ]
+        )
+    );
+}
+
+function visitRegularObjectType(type: ts.ObjectType, accessor: ts.Expression, visitorContext: VisitorContext) {
     const mappers: ((source: ts.Type) => ts.Type | undefined)[] = [];
     (function checkBaseTypes(type: ts.Type) {
         if (tsutils.isTypeReference(type) && tsutils.isInterfaceType(type.target)) {
@@ -111,9 +150,7 @@ function visitObjectType(type: ts.ObjectType, accessor: ts.Expression, visitorCo
         }
     }
     const stringIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.String);
-    const numberIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.Number);
-    const indexType = stringIndexType || numberIndexType;
-    if (indexType) {
+    if (stringIndexType) {
         const keyIdentifier = ts.createIdentifier('key');
         const itemAccessor = ts.createElementAccess(accessor, keyIdentifier);
         conditions.push(
@@ -142,7 +179,7 @@ function visitObjectType(type: ts.ObjectType, accessor: ts.Expression, visitorCo
                         undefined,
                         undefined,
                         ts.createBlock([
-                            ts.createReturn(visitType(indexType, itemAccessor, visitorContext))
+                            ts.createReturn(visitType(stringIndexType, itemAccessor, visitorContext))
                         ])
                     )
                 ]
@@ -157,6 +194,14 @@ function visitObjectType(type: ts.ObjectType, accessor: ts.Expression, visitorCo
             expression
         )
     );
+}
+
+function visitObjectType(type: ts.ObjectType, accessor: ts.Expression, visitorContext: VisitorContext) {
+    if (visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.Number)) {
+        return visitArrayObjectType(type, accessor, visitorContext);
+    } else {
+        return visitRegularObjectType(type, accessor, visitorContext);
+    }
 }
 
 function visitLiteralType(type: ts.LiteralType, accessor: ts.Expression, visitorContext: VisitorContext) {
@@ -193,32 +238,45 @@ function visitBooleanLiteral(type: ts.Type, accessor: ts.Expression, visitorCont
     );
 }
 
+function visitTypeParameter(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
+    const typeMapper = visitorContext.typeMapperStack[visitorContext.typeMapperStack.length - 1];
+    if (typeMapper === undefined) {
+        throw new Error('Unbound type parameter, missing type mapper.');
+    }
+    const mappedType = typeMapper(type);
+    if (mappedType === undefined) {
+        throw new Error('Unbound type parameter, missing type node.');
+    }
+    return visitType(mappedType, accessor, visitorContext);
+}
+
 export function visitType(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext): ts.Expression {
     if ((ts.TypeFlags.Number & type.flags) !== 0) {
+        // Number
         return ts.createStrictEquality(ts.createTypeOf(accessor), ts.createStringLiteral('number'));
     } else if ((ts.TypeFlags.Boolean & type.flags) !== 0) {
+        // Boolean
         return ts.createStrictEquality(ts.createTypeOf(accessor), ts.createStringLiteral('boolean'));
     } else if ((ts.TypeFlags.String & type.flags) !== 0) {
+        // String
         return ts.createStrictEquality(ts.createTypeOf(accessor), ts.createStringLiteral('string'));
     } else if ((ts.TypeFlags.BooleanLiteral & type.flags) !== 0) {
+        // Boolean literal (true/false)
         return visitBooleanLiteral(type, accessor, visitorContext);
     } else if ((ts.TypeFlags.TypeParameter & type.flags) !== 0) {
-        const typeMapper = visitorContext.typeMapperStack[visitorContext.typeMapperStack.length - 1];
-        if (typeMapper === undefined) {
-            throw new Error('Unbound type parameter, missing type mapper.');
-        }
-        const mappedType = typeMapper(type);
-        if (mappedType === undefined) {
-            throw new Error('Unbound type parameter, missing type node.');
-        }
-        return visitType(mappedType, accessor, visitorContext);
+        // Type parameter
+        return visitTypeParameter(type, accessor, visitorContext);
     } else if (tsutils.isObjectType(type)) {
+        // Object type (including arrays)
         return visitObjectType(type, accessor, visitorContext);
     } else if (tsutils.isLiteralType(type)) {
+        // Literal string/number types ('foo')
         return visitLiteralType(type, accessor, visitorContext);
     } else if (tsutils.isUnionOrIntersectionType(type)) {
+        // Union or intersection type (using | or &)
         return visitUnionOrIntersectionType(type, accessor, visitorContext);
     } else if ((ts.TypeFlags.Never & type.flags) !== 0) {
+        // Never -> always false
         return ts.createFalse();
     } else {
         throw new Error('Unsupported type with flags: ' + type.flags);
