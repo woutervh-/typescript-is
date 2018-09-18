@@ -2,6 +2,21 @@ import * as assert from 'assert';
 import { is } from '../index';
 
 describe('is', () => {
+    describe('is<any>', () => {
+        it('should always return true', () => {
+            assert.strictEqual(is<never>(0), true);
+            assert.strictEqual(is<never>(1), true);
+            assert.strictEqual(is<never>(true), true);
+            assert.strictEqual(is<never>(false), true);
+            assert.strictEqual(is<never>(''), true);
+            assert.strictEqual(is<never>('a'), true);
+            assert.strictEqual(is<never>({}), true);
+            assert.strictEqual(is<never>([]), true);
+            assert.strictEqual(is<never>(null), true);
+            assert.strictEqual(is<never>(undefined), true);
+        });
+    });
+
     describe('is<never>', () => {
         it('should always return false', () => {
             assert.strictEqual(is<never>(0), false);
