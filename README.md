@@ -115,7 +115,7 @@ const foreignObject: any = { someObject: 'obtained from the wild', without: 'typ
 if (is<MyInterface>(foreignObject)) {
     // Call expression returns true
     const someObject = foreignObject.someObject; // type: string
-    const without: foreignObject.without; // type: string
+    const without = foreignObject.without; // type: string
 }
 ```
 
