@@ -42,7 +42,7 @@ In these situations `typescript-is` can come to your rescue.
 
 This package exposes a TypeScript transformer factory at `typescript-is/lib/transformer-inline/transformer.ts`
 
-As there currently is no way to configure the TypeScript compiler to use a transformer, **the recommended way** is to compile with [ttypescript](https://github.com/cevek/ttypescript).
+As there currently is no way to configure the TypeScript compiler to use a transformer without using it programatically, **the recommended way** is to compile with [ttypescript](https://github.com/cevek/ttypescript).
 This is basically a wrapper around the TypeScript compiler that injects transformers configured in your `tsconfig.json`.
 
 (please vote here to support transformers out-of-the-box: https://github.com/Microsoft/TypeScript/issues/14419)
