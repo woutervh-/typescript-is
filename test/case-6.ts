@@ -96,4 +96,40 @@ describe('is', () => {
             assert.strictEqual(is<number[][]>([[0, 1], [0, []]]), false);
         });
     });
+
+    describe('is<NestedArrayOf<boolean>>', () => {
+        interface NestedArrayOf<T> {
+            nested: T[];
+        }
+
+        it('should return true for nested arrays of booleans', () => {
+            assert.strictEqual(is<NestedArrayOf<boolean>>({ nested: [] }), true);
+            assert.strictEqual(is<NestedArrayOf<boolean>>({ nested: [true] }), true);
+            assert.strictEqual(is<NestedArrayOf<boolean>>({ nested: [false] }), true);
+        });
+
+        it('should return false for nested arrays of non-booleans', () => {
+            assert.strictEqual(is<NestedArrayOf<boolean>>({ nested: [0] }), false);
+            assert.strictEqual(is<NestedArrayOf<boolean>>({ nested: [1] }), false);
+            assert.strictEqual(is<NestedArrayOf<boolean>>({ nested: [''] }), false);
+            assert.strictEqual(is<NestedArrayOf<boolean>>({ nested: [null] }), false);
+            assert.strictEqual(is<NestedArrayOf<boolean>>({ nested: [undefined] }), false);
+            assert.strictEqual(is<NestedArrayOf<boolean>>({ nested: [{}] }), false);
+            assert.strictEqual(is<NestedArrayOf<boolean>>({ nested: [[]] }), false);
+        });
+
+        it('should return false for various other objects', () => {
+            assert.strictEqual(is<NestedArrayOf<boolean>>(true), false);
+            assert.strictEqual(is<NestedArrayOf<boolean>>(false), false);
+            assert.strictEqual(is<NestedArrayOf<boolean>>(0), false);
+            assert.strictEqual(is<NestedArrayOf<boolean>>(1), false);
+            assert.strictEqual(is<NestedArrayOf<boolean>>({}), false);
+            assert.strictEqual(is<NestedArrayOf<boolean>>([]), false);
+            assert.strictEqual(is<NestedArrayOf<boolean>>({ nested: true }), false);
+            assert.strictEqual(is<NestedArrayOf<boolean>>({ nested: false }), false);
+            assert.strictEqual(is<NestedArrayOf<boolean>>({ nested: 0 }), false);
+            assert.strictEqual(is<NestedArrayOf<boolean>>({ nested: null }), false);
+            assert.strictEqual(is<NestedArrayOf<boolean>>({ nested: undefined }), false);
+        });
+    });
 });
