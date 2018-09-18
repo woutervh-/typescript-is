@@ -133,6 +133,13 @@ function visitRegularObjectType(type: ts.ObjectType, accessor: ts.Expression, vi
         ts.createStrictInequality(
             accessor,
             ts.createNull()
+        ),
+        ts.createLogicalNot(
+            ts.createCall(
+                ts.createPropertyAccess(ts.createIdentifier('Array'), ts.createIdentifier('isArray')),
+                undefined,
+                [accessor]
+            )
         )
     ];
     visitorContext.typeMapperStack.push(mapper);
@@ -251,7 +258,10 @@ function visitTypeParameter(type: ts.Type, accessor: ts.Expression, visitorConte
 }
 
 export function visitType(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext): ts.Expression {
-    if ((ts.TypeFlags.Number & type.flags) !== 0) {
+    if ((ts.TypeFlags.Any & type.flags) !== 0) {
+        // Any -> always true
+        return ts.createTrue();
+    } else if ((ts.TypeFlags.Number & type.flags) !== 0) {
         // Number
         return ts.createStrictEquality(ts.createTypeOf(accessor), ts.createStringLiteral('number'));
     } else if ((ts.TypeFlags.Boolean & type.flags) !== 0) {
