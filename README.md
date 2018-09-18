@@ -21,7 +21,7 @@ npm install --save-dev typescript-is
 If you've worked with [TypeScript](https://github.com/Microsoft/TypeScript) for a while, you know that sometimes you obtain data that is not type-safe.
 You'd then have to write your own function with **type predicates** that checks the foreign object, and makes sure it is the type that you need.
 
-This library automates writing the type predicate function for you.
+**This library automates writing the type predicate function for you.**
 
 At compile time, it inspects the type you want to have checked, and generates a function that can check the type of a wild object at run time.
 When the function is invoked, it checks in detail if the given wild object complies with your favorite type.
