@@ -61,7 +61,7 @@ Then make sure your `tsconfig.json` is configured to use the `typescript-is` tra
 {
     "compilerOptions": {
         "plugins": [
-            { "transform": "typescript-is/lib/transform-inline/transformer" },
+            { "transform": "typescript-is/lib/transform-inline/transformer" }
         ]
     }
 }
