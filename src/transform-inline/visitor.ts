@@ -261,6 +261,15 @@ export function visitType(type: ts.Type, accessor: ts.Expression, visitorContext
     if ((ts.TypeFlags.Any & type.flags) !== 0) {
         // Any -> always true
         return ts.createTrue();
+    } else if ((ts.TypeFlags.Never & type.flags) !== 0) {
+        // Never -> always false
+        return ts.createFalse();
+    } else if ((ts.TypeFlags.Null & type.flags) !== 0) {
+        // Null
+        return ts.createStrictEquality(accessor, ts.createNull());
+    } else if ((ts.TypeFlags.Undefined & type.flags) !== 0) {
+        // Undefined
+        return ts.createStrictEquality(accessor, ts.createIdentifier('undefined'));
     } else if ((ts.TypeFlags.Number & type.flags) !== 0) {
         // Number
         return ts.createStrictEquality(ts.createTypeOf(accessor), ts.createStringLiteral('number'));
@@ -285,9 +294,6 @@ export function visitType(type: ts.Type, accessor: ts.Expression, visitorContext
     } else if (tsutils.isUnionOrIntersectionType(type)) {
         // Union or intersection type (using | or &)
         return visitUnionOrIntersectionType(type, accessor, visitorContext);
-    } else if ((ts.TypeFlags.Never & type.flags) !== 0) {
-        // Never -> always false
-        return ts.createFalse();
     } else {
         throw new Error('Unsupported type with flags: ' + type.flags);
     }
