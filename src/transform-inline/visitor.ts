@@ -53,8 +53,8 @@ function visitDeclaration(node: ts.Declaration, accessor: ts.Expression, visitor
 
 function visitObjectType(type: ts.ObjectType, accessor: ts.Expression, visitorContext: VisitorContext): ts.Expression {
     const mappers: ((source: ts.Type) => ts.Type | undefined)[] = [];
-    if (tsutils.isTypeReference(type)) {
-        if (tsutils.isInterfaceType(type.target)) {
+    (function checkBaseTypes(type: ts.Type) {
+        if (tsutils.isTypeReference(type) && tsutils.isInterfaceType(type.target)) {
             const baseTypes = visitorContext.checker.getBaseTypes(type.target);
             for (const baseType of baseTypes) {
                 if (tsutils.isTypeReference(baseType) && baseType.target.typeParameters !== undefined && baseType.typeArguments !== undefined) {
@@ -67,9 +67,12 @@ function visitObjectType(type: ts.ObjectType, accessor: ts.Expression, visitorCo
                             }
                         }
                     });
+                    checkBaseTypes(baseType);
                 }
             }
         }
+    })(type);
+    if (tsutils.isTypeReference(type)) {
         if (type.target.typeParameters !== undefined && type.typeArguments !== undefined) {
             const typeParameters = type.target.typeParameters;
             const typeArguments = type.typeArguments;
@@ -106,6 +109,45 @@ function visitObjectType(type: ts.ObjectType, accessor: ts.Expression, visitorCo
                 conditions.push(createPropertyCheck(accessor, ts.createStringLiteral(propertyName), propertyType, optional, visitorContext));
             }
         }
+    }
+    const stringIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.String);
+    const numberIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.Number);
+    const indexType = stringIndexType || numberIndexType;
+    if (indexType) {
+        const keyIdentifier = ts.createIdentifier('key');
+        const itemAccessor = ts.createElementAccess(accessor, keyIdentifier);
+        conditions.push(
+            ts.createCall(
+                ts.createPropertyAccess(
+                    ts.createCall(
+                        ts.createPropertyAccess(ts.createIdentifier('Object'), ts.createIdentifier('keys')),
+                        undefined,
+                        [accessor]
+                    ),
+                    ts.createIdentifier('every')
+                ),
+                undefined,
+                [
+                    ts.createArrowFunction(
+                        undefined,
+                        undefined,
+                        [
+                            ts.createParameter(
+                                undefined,
+                                undefined,
+                                undefined,
+                                keyIdentifier
+                            )
+                        ],
+                        undefined,
+                        undefined,
+                        ts.createBlock([
+                            ts.createReturn(visitType(indexType, itemAccessor, visitorContext))
+                        ])
+                    )
+                ]
+            )
+        );
     }
     visitorContext.typeMapperStack.pop();
     return conditions.reduce((condition, expression) =>
