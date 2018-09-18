@@ -12,6 +12,11 @@
   ],
   "description": "",
   "main": "index.js",
+  "files": [
+    "lib/*",
+    "index.js",
+    "index.d.ts"
+  ],
   "scripts": {
     "build": "rimraf lib/ && tsc --project tsconfig.json",
     "lint": "tslint --project tsconfig.json",
