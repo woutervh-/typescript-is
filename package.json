@@ -1,6 +1,6 @@
 {
   "name": "typescript-is",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "engines": {
     "node": ">=6.14.4"
   },
