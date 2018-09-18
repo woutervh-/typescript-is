@@ -73,7 +73,7 @@ Now compile using `ttypescript`:
 npx ttsc
 ```
 
-### Using with `ts-node`, `webpack`, `Rollup
+### Using with `ts-node`, `webpack`, `Rollup`
 
 Please check the README of [ttypescript](https://github.com/cevek/ttypescript/blob/master/README.md) for information on how to use it in combination with `ts-node`, `webpack`, and `Rollup`.
 
