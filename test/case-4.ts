@@ -4,16 +4,16 @@ import { is } from '../index';
 describe('is', () => {
     describe('is<any>', () => {
         it('should always return true', () => {
-            assert.strictEqual(is<never>(0), true);
-            assert.strictEqual(is<never>(1), true);
-            assert.strictEqual(is<never>(true), true);
-            assert.strictEqual(is<never>(false), true);
-            assert.strictEqual(is<never>(''), true);
-            assert.strictEqual(is<never>('a'), true);
-            assert.strictEqual(is<never>({}), true);
-            assert.strictEqual(is<never>([]), true);
-            assert.strictEqual(is<never>(null), true);
-            assert.strictEqual(is<never>(undefined), true);
+            assert.strictEqual(is<any>(0), true);
+            assert.strictEqual(is<any>(1), true);
+            assert.strictEqual(is<any>(true), true);
+            assert.strictEqual(is<any>(false), true);
+            assert.strictEqual(is<any>(''), true);
+            assert.strictEqual(is<any>('a'), true);
+            assert.strictEqual(is<any>({}), true);
+            assert.strictEqual(is<any>([]), true);
+            assert.strictEqual(is<any>(null), true);
+            assert.strictEqual(is<any>(undefined), true);
         });
     });
 
