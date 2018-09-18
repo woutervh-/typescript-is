@@ -25,7 +25,7 @@ describe('is', () => {
         });
     });
 
-    describe('is<Foo<Bar<number>, string>>', () => {
+    describe('is<Foo<number>>', () => {
         interface Baz<T> {
             [Key: string]: T;
         }
