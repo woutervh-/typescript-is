@@ -10,7 +10,7 @@
         "strict": true,
         "sourceMap": true,
         "declaration": true,
-        "outDir": "test"
+        "outDir": "lib"
     },
     "include": [
         "src"
