@@ -2,10 +2,6 @@ import * as ts from 'typescript';
 import { VisitorContext } from './visitor-context';
 import { transformNode } from './transform-node';
 
-export interface Options {
-    outFile?: string;
-}
-
 export default function transformer(program: ts.Program): ts.TransformerFactory<ts.SourceFile> {
     const visitorContext: VisitorContext = {
         program,
