@@ -122,6 +122,38 @@ if (is<MyInterface>(foreignObject)) {
 For a lot **more examples**, please check out the files in the [test/](https://github.com/woutervh-/typescript-is/tree/master/test) folder.
 There you can find all the different types that are tested for.
 
+# ⛔ What it won't do
+
+* This library will not check classes. Instead, you are encouraged to use the native `instanceof` operator. For example:
+
+```typescript
+import { is } from 'typescript-is';
+
+class MyClass {
+    // ...
+}
+
+const instance: any = new MyClass();
+is<MyClass>(instance); // error -> classes are not supported.
+
+// Instead, use instanceof:
+if (instance instanceof MyClass) {
+    // ...
+}
+```
+
+* This library will not magically check unbound type parameters. Instead, make sure all type parameters are bound to a well-defined type when invoking the `is` function. For example:
+
+```typescript
+import { is } from 'typescript-is';
+
+function magicalTypeChecker<T>(object: any): object is T {
+    return is<T>(object); // error -> type `T` is not bound.
+}
+```
+
+If you stumble upon anything else that is not yet supported, please open an issue or submit a PR. 😉
+
 # 🔨 Building and testing
 
 ```bash
