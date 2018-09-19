@@ -79,6 +79,8 @@ Please check the README of [ttypescript](https://github.com/cevek/ttypescript/bl
 
 # ⭐ How to use
 
+Before using, please make sure you've completed [configuring](#%EF%B8%8F-configuration) the transformer.
+
 In your TypeScript code, you can now import and use the type-check function.
 For example, you can check if something is a `string` or `number` and use it as such, without the compiler complaining:
 
