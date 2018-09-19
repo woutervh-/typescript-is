@@ -25,7 +25,6 @@ const program = ts.createProgram([inFile], configParseResult.options);
 const visitorContext: VisitorContext = {
     checker: program.getTypeChecker(),
     program,
-    typeArgumentsStack: [],
     typeMapperStack: []
 };
 

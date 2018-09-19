@@ -14,9 +14,11 @@ export function transformNode(node: ts.Node, visitorContext: VisitorContext): ts
             && node.typeArguments !== undefined
             && node.typeArguments.length === 1
         ) {
+            const assert = visitorContext.checker.getTypeAtLocation(signature.declaration).symbol.name === 'assertType';
             const typeArgument = node.typeArguments[0];
             const type = visitorContext.checker.getTypeFromTypeNode(typeArgument);
             const accessor = ts.createIdentifier('object');
+
             return ts.createCall(
                 ts.createArrowFunction(
                     undefined,
@@ -34,7 +36,21 @@ export function transformNode(node: ts.Node, visitorContext: VisitorContext): ts
                     undefined,
                     undefined,
                     ts.createBlock([
-                        ts.createReturn(visitType(type, accessor, visitorContext))
+                        assert
+                            ? ts.createIf(
+                                ts.createLogicalNot(visitType(type, accessor, visitorContext)),
+                                ts.createThrow(
+                                    ts.createNew(
+                                        ts.createIdentifier('Error'),
+                                        undefined,
+                                        [
+                                            ts.createStringLiteral('Type assertion failed.')
+                                        ]
+                                    )
+                                ),
+                                ts.createReturn(accessor)
+                            )
+                            : ts.createReturn(visitType(type, accessor, visitorContext))
                     ])
                 ),
                 undefined,

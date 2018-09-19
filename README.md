@@ -81,7 +81,7 @@ Please check the README of [ttypescript](https://github.com/cevek/ttypescript/bl
 
 Before using, please make sure you've completed [configuring](#%EF%B8%8F-configuration) the transformer.
 
-In your TypeScript code, you can now import and use the type-check function.
+In your TypeScript code, you can now import and use the type-check function `is`, or the type assertion function `assertType`.
 For example, you can check if something is a `string` or `number` and use it as such, without the compiler complaining:
 
 ```typescript
@@ -119,6 +119,23 @@ if (is<MyInterface>(foreignObject)) {
     const someObject = foreignObject.someObject; // type: string
     const without = foreignObject.without; // type: string
 }
+```
+
+Or use the `assertType` function to directly use the object:
+
+```typescript
+import { assertType } from 'typescript-is';
+
+const object: any = 42;
+assertType<number>(object).toFixed(2); // "6.00"
+
+try {
+    const asString = assertType<string>(object); // throws error: object is not a string
+    asString.toUpperCasse(); // never gets here
+} catch (error) {
+    // ...
+}
+
 ```
 
 For a lot **more examples**, please check out the files in the [test/](https://github.com/woutervh-/typescript-is/tree/master/test) folder.
