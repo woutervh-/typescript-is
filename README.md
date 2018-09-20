@@ -81,7 +81,7 @@ Please check the README of [ttypescript](https://github.com/cevek/ttypescript/bl
 
 Before using, please make sure you've completed [configuring](#%EF%B8%8F-configuration) the transformer.
 
-In your TypeScript code, you can now import and use the type-check function `is`, or the type assertion function `assertType`.
+In your TypeScript code, you can now import and use the type-check function `is` (or `createIs`), or the type assertion function `assertType` (or `createAssertType`).
 For example, you can check if something is a `string` or `number` and use it as such, without the compiler complaining:
 
 ```typescript
@@ -138,7 +138,9 @@ try {
 
 ```
 
-For a lot **more examples**, please check out the files in the [test/](https://github.com/woutervh-/typescript-is/tree/master/test) folder.
+To see the declarations of the functions and more examples, please check out [index.d.ts](https://github.com/woutervh-/typescript-is/blob/master/index.d.ts).
+
+For **many more examples**, please check out the files in the [test/](https://github.com/woutervh-/typescript-is/tree/master/test) folder.
 There you can find all the different types that are tested for.
 
 # ⛔ What it won't do
