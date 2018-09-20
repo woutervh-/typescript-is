@@ -11,6 +11,6 @@ export function is<T>(object: any): object is T;
  * If the given argument does not match the given type-argument, an error will be thrown.
  * 
  * @param object object whose type will be asserted.
- * @returns the given `object`, or an error is thrown is validation failed.
+ * @returns the given `object`, or an error is thrown if validation failed.
  */
 export function assertType<T>(object: any): T;
