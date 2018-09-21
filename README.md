@@ -175,6 +175,25 @@ function magicalTypeChecker<T>(object: any): object is T {
 
 If you stumble upon anything else that is not yet supported, please open an issue or submit a PR. 😉
 
+# 🗺️ Road map
+
+Features that are planned:
+
+* More detailed error message when using `assertType` and `createAssertType`.
+Give the reason why the assertion failed to the user as part of the error.
+* Ability to assert parameters of a class method using decorators. For example:
+
+```typescript
+@Validate
+class A {
+    b(@AssertParameter parameter: number) {
+        // parameter can be safely used as a number
+    }
+}
+
+new A().b('string' as any); // -> will throw an error
+```
+
 # 🔨 Building and testing
 
 ```bash
