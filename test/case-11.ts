@@ -7,7 +7,7 @@ describe('@ValidateClass, @AssertParameter', () => {
     const expectedMessageRegExp = /Type assertion failed.$/;
 
     describe('@ValidateClass, @AssertParameter parameter: number', () => {
-        @ValidateClass
+        @ValidateClass()
         class TestClass {
             testMethod(@AssertParameter parameter: number) {
                 return parameter;
@@ -38,7 +38,7 @@ describe('@ValidateClass, @AssertParameter', () => {
     });
 
     describe('@ValidateClass, @AssertParameter parameter: string', () => {
-        @ValidateClass
+        @ValidateClass()
         class TestClass {
             testMethod(@AssertParameter parameter: string) {
                 return parameter;

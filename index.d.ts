@@ -74,7 +74,8 @@ export function AssertParameter(target: object, propertyKey: string | symbol, pa
 /**
  * Overrides methods in the target class with a proxy that will first validate the argument types.
  * 
- * @param target the class whose methods have parameters that should be type checked.
+ * @param errorConstructor a constructor of an `Error` class.
+ * This will be used to create an error when validation fails.
  * @example
  * ```
    @ValidateClass
@@ -83,4 +84,4 @@ export function AssertParameter(target: object, propertyKey: string | symbol, pa
    new A().method('0' as any); // will throw an error
    ```
  */
-export function ValidateClass<TFunction extends Function>(target: TFunction): void;
+export function ValidateClass(errorConstructor?: Error): <TFunction extends Function>(target: TFunction) => void;
