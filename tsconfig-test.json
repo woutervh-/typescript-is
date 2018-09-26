@@ -5,6 +5,7 @@
         "lib": [
             "es6"
         ],
+        "experimentalDecorators": true,
         "noImplicitAny": true,
         "noUnusedLocals": true,
         "strict": true,

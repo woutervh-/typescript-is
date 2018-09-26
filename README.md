@@ -135,7 +135,34 @@ try {
 } catch (error) {
     // ...
 }
+```
 
+You can also use the decorators to automate validation in class methods.
+To enable this functionality, you should make sure that experimental decorators are enabled for your TypeScript project.
+
+```json
+{
+    "compilerOptions": {
+        "experimentalDecorators": true
+    }
+}
+```
+
+You can then use the decorates:
+
+```typescript
+import { ValidateClass, AssertParameter } from 'typescript-is';
+
+@ValidateClass
+class A {
+    method(@AssertParameter value: number) {
+        // You can safely use value as a number
+        return value;
+    }
+}
+
+new A().method(42) === 42; // true
+new A().method('42' as any); // will throw error
 ```
 
 To see the declarations of the functions and more examples, please check out [index.d.ts](https://github.com/woutervh-/typescript-is/blob/master/index.d.ts).
