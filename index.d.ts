@@ -84,4 +84,4 @@ export function AssertParameter(target: object, propertyKey: string | symbol, pa
    new A().method('0' as any); // will throw an error
    ```
  */
-export function ValidateClass(errorConstructor?: Error): <TFunction extends Function>(target: TFunction) => void;
+export function ValidateClass(errorConstructor?: { new(): Error }): <TFunction extends Function>(target: TFunction) => void;

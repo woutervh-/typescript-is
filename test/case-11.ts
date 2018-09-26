@@ -3,10 +3,11 @@
 import * as assert from 'assert';
 import { AssertParameter, ValidateClass } from '../index';
 
-describe('@ValidateClass, @AssertParameter', () => {
+describe('@ValidateClass(), @AssertParameter', () => {
     const expectedMessageRegExp = /Type assertion failed.$/;
+    const expectedCustomMessageRegExp = /Custom error.$/;
 
-    describe('@ValidateClass, @AssertParameter parameter: number', () => {
+    describe('@ValidateClass(), @AssertParameter parameter: number', () => {
         @ValidateClass()
         class TestClass {
             testMethod(@AssertParameter parameter: number) {
@@ -37,7 +38,7 @@ describe('@ValidateClass, @AssertParameter', () => {
         });
     });
 
-    describe('@ValidateClass, @AssertParameter parameter: string', () => {
+    describe('@ValidateClass(), @AssertParameter parameter: string', () => {
         @ValidateClass()
         class TestClass {
             testMethod(@AssertParameter parameter: string) {
@@ -61,6 +62,37 @@ describe('@ValidateClass, @AssertParameter', () => {
             assert.throws(() => instance.testMethod(false as any), expectedMessageRegExp);
             assert.throws(() => instance.testMethod({} as any), expectedMessageRegExp);
             assert.throws(() => instance.testMethod([] as any), expectedMessageRegExp);
+        });
+    });
+
+    describe('@ValidateClass(CustomError), @AssertParameter parameter: boolean', () => {
+        class CustomError extends Error {
+            constructor() {
+                super('Custom error.');
+            }
+        }
+
+        @ValidateClass(CustomError)
+        class TestClass {
+            testMethod(@AssertParameter parameter: boolean) {
+                return parameter;
+            }
+        }
+
+        const instance = new TestClass();
+
+        it('should pass validation for booleans', () => {
+            assert.strictEqual(instance.testMethod(true), true);
+            assert.strictEqual(instance.testMethod(false), false);
+        });
+
+        it('should throw an error for non-booleans', () => {
+            assert.throws(() => instance.testMethod(0 as any), expectedCustomMessageRegExp);
+            assert.throws(() => instance.testMethod(1 as any), expectedCustomMessageRegExp);
+            assert.throws(() => instance.testMethod('' as any), expectedCustomMessageRegExp);
+            assert.throws(() => instance.testMethod('true' as any), expectedCustomMessageRegExp);
+            assert.throws(() => instance.testMethod({} as any), expectedCustomMessageRegExp);
+            assert.throws(() => instance.testMethod([] as any), expectedCustomMessageRegExp);
         });
     });
 });
