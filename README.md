@@ -79,9 +79,12 @@ Please check the README of [ttypescript](https://github.com/cevek/ttypescript/bl
 
 # ⭐ How to use
 
-Before using, please make sure you've completed [configuring](#%EF%B8%8F-configuration) the transformer.
+*Before using, please make sure you've completed [configuring](#%EF%B8%8F-configuration) the transformer.*
 
 In your TypeScript code, you can now import and use the type-check function `is` (or `createIs`), or the type assertion function `assertType` (or `createAssertType`).
+
+## Validation (`is` and `createIs`)
+
 For example, you can check if something is a `string` or `number` and use it as such, without the compiler complaining:
 
 ```typescript
@@ -121,6 +124,8 @@ if (is<MyInterface>(foreignObject)) {
 }
 ```
 
+## Assertions (`assertType` and `createAssertType`)
+
 Or use the `assertType` function to directly use the object:
 
 ```typescript
@@ -137,7 +142,9 @@ try {
 }
 ```
 
-You can also use the decorators to automate validation in class methods.
+## Decorators (`ValidateClass` and `AssertParameter`)
+
+You can also use the **decorators** to automate validation in class methods.
 To enable this functionality, you should make sure that experimental decorators are enabled for your TypeScript project.
 
 ```json
@@ -148,7 +155,13 @@ To enable this functionality, you should make sure that experimental decorators 
 }
 ```
 
-You can then use the decorates:
+You should also make sure the peer dependency **reflect-metadata** is installed.
+
+```bash
+npm install --save reflect-metadata
+```
+
+You can then use the decorators:
 
 ```typescript
 import { ValidateClass, AssertParameter } from 'typescript-is';
@@ -208,18 +221,6 @@ Features that are planned:
 
 * More detailed error message when using `assertType` and `createAssertType`.
 Give the reason why the assertion failed to the user as part of the error.
-* Ability to assert parameters of a class method using decorators. For example:
-
-```typescript
-@Validate
-class A {
-    b(@AssertParameter parameter: number) {
-        // parameter can be safely used as a number
-    }
-}
-
-new A().b('string' as any); // -> will throw an error
-```
 
 # 🔨 Building and testing
 
