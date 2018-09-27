@@ -54,9 +54,9 @@ export function assertType<T>(object: any): T;
 export function createAssertType<T>(): (object: any) => T;
 
 /**
- * Options for the `AssertParameter` decorator.
+ * Options for the `AssertType` decorator.
  */
-export interface AssertParameterOptions {
+export interface AssertTypeOptions {
   /**
    * Message that will be passed to the error constructor, in case type assertion fails.
    */
@@ -68,17 +68,17 @@ export interface AssertParameterOptions {
  * Then, when the class is decorated with `ValidateClass`, the method's arguments will be validated.
  * 
  * @param options options for the decorator.
- * Check `AssertParameterOptions` documentation for more.
+ * Check `AssertTypeOptions` documentation for more.
  * 
  * @example
  * ```
    @ValidateClass
-   class A { method(@AssertParameter value: number) { value can safely be used a number } }
+   class A { method(@AssertType value: number) { value can safely be used a number } }
    new A().method(0); // nothing happens
    new A().method('0' as any); // will throw an error
    ```
  */
-export function AssertParameter(options?: AssertParameterOptions): (target: object, propertyKey: string | symbol, parameterIndex: number) => void;
+export function AssertType(options?: AssertTypeOptions): (target: object, propertyKey: string | symbol, parameterIndex: number) => void;
 
 /**
  * Overrides methods in the target class with a proxy that will first validate the argument types.
@@ -88,7 +88,7 @@ export function AssertParameter(options?: AssertParameterOptions): (target: obje
  * @example
  * ```
    @ValidateClass
-   class A { method(@AssertParameter value: number) { value can safely be used a number } }
+   class A { method(@AssertType value: number) { value can safely be used a number } }
    new A().method(0); // nothing happens
    new A().method('0' as any); // will throw an error
    ```

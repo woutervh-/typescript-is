@@ -6,7 +6,7 @@ function warn() {
 
 const assertionsMetadataKey = Symbol('assertions');
 
-function AssertParameter(assertion, options = {}) {
+function AssertType(assertion, options = {}) {
     return function (target, propertyKey, parameterIndex) {
         const assertions = Reflect.getOwnMetadata(assertionsMetadataKey, target, propertyKey) || [];
         assertions[parameterIndex] = { assertion, options };
@@ -33,4 +33,4 @@ function ValidateClass(errorConstructor = Error) {
     };
 }
 
-module.exports = { is: warn, assertType: warn, createIs: warn, createAssertType: warn, AssertParameter, ValidateClass };
+module.exports = { is: warn, assertType: warn, createIs: warn, createAssertType: warn, AssertType, ValidateClass };

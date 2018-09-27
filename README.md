@@ -142,7 +142,7 @@ try {
 }
 ```
 
-## Decorators (`ValidateClass` and `AssertParameter`)
+## Decorators (`ValidateClass` and `AssertType`)
 
 You can also use the **decorators** to automate validation in class methods.
 To enable this functionality, you should make sure that experimental decorators are enabled for your TypeScript project.
@@ -164,11 +164,11 @@ npm install --save reflect-metadata
 You can then use the decorators:
 
 ```typescript
-import { ValidateClass, AssertParameter } from 'typescript-is';
+import { ValidateClass, AssertType } from 'typescript-is';
 
 @ValidateClass()
 class A {
-    method(@AssertParameter() value: number) {
+    method(@AssertType() value: number) {
         // You can safely use value as a number
         return value;
     }

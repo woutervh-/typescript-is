@@ -1,15 +1,15 @@
 /* tslint:disable:max-classes-per-file */
 
 import * as assert from 'assert';
-import { AssertParameter, ValidateClass } from '../index';
+import { AssertType, ValidateClass } from '../index';
 
-describe('@ValidateClass, @AssertParameter', () => {
-    describe('@ValidateClass(), @AssertParameter() parameter: number', () => {
+describe('@ValidateClass, @AssertType', () => {
+    describe('@ValidateClass(), @AssertType() parameter: number', () => {
         const expectedMessageRegExp = /Type assertion failed.$/;
 
         @ValidateClass()
         class TestClass {
-            testMethod(@AssertParameter() parameter: number) {
+            testMethod(@AssertType() parameter: number) {
                 return parameter;
             }
         }
@@ -37,12 +37,12 @@ describe('@ValidateClass, @AssertParameter', () => {
         });
     });
 
-    describe('@ValidateClass(), @AssertParameter() parameter: string', () => {
+    describe('@ValidateClass(), @AssertType() parameter: string', () => {
         const expectedMessageRegExp = /Type assertion failed.$/;
 
         @ValidateClass()
         class TestClass {
-            testMethod(@AssertParameter() parameter: string) {
+            testMethod(@AssertType() parameter: string) {
                 return parameter;
             }
         }
@@ -66,7 +66,7 @@ describe('@ValidateClass, @AssertParameter', () => {
         });
     });
 
-    describe('@ValidateClass(CustomError), @AssertParameter() parameter: boolean', () => {
+    describe('@ValidateClass(CustomError), @AssertType() parameter: boolean', () => {
         const expectedMessageRegExp = /Custom error.$/;
 
         class CustomError extends Error {
@@ -77,7 +77,7 @@ describe('@ValidateClass, @AssertParameter', () => {
 
         @ValidateClass(CustomError)
         class TestClass {
-            testMethod(@AssertParameter() parameter: boolean) {
+            testMethod(@AssertType() parameter: boolean) {
                 return parameter;
             }
         }
@@ -99,12 +99,12 @@ describe('@ValidateClass, @AssertParameter', () => {
         });
     });
 
-    describe('@ValidateClass(), @AssertParameter({ message: \'Foobar\' }) parameter: string', () => {
+    describe('@ValidateClass(), @AssertType({ message: \'Foobar\' }) parameter: string', () => {
         const expectedMessageRegExp = /Foobar$/;
 
         @ValidateClass()
         class TestClass {
-            testMethod(@AssertParameter({ message: 'Foobar' }) parameter: string) {
+            testMethod(@AssertType({ message: 'Foobar' }) parameter: string) {
                 return parameter;
             }
         }
