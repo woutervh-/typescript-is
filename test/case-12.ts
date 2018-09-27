@@ -22,4 +22,18 @@ describe('is', () => {
             assert.strictEqual(is<object>(undefined), true);
         });
     });
+
+    describe('is<PickValues<{ foo: number }>>', () => {
+        type PickValues<T> = T[keyof T];
+
+        interface Foo<T> {
+            key: keyof T;
+        }
+
+        it('should return true for numbers', () => {
+            assert.strictEqual(is<PickValues<{ foo: number }>>(0), true);
+            assert.strictEqual(is<Foo<{ foo: number, bar: number }>>({ key: 'foo' }), true);
+            assert.strictEqual(is<Foo<{ foo: number, bar: number }>>({ key: 'bar' }), true);
+        });
+    });
 });

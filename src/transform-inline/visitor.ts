@@ -245,7 +245,7 @@ function visitBooleanLiteral(type: ts.Type, accessor: ts.Expression, visitorCont
     );
 }
 
-function visitNonPrimitive(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
+function visitNonPrimitiveType(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
     const intrinsicName: string | undefined = (type as { intrinsicName?: string }).intrinsicName;
     let conditions: ts.Expression[];
     if (intrinsicName === 'object') {
@@ -289,6 +289,19 @@ function visitTypeParameter(type: ts.Type, accessor: ts.Expression, visitorConte
     return visitType(mappedType, accessor, visitorContext);
 }
 
+function visitIndexType(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
+    // Using internal TypeScript API, hacky.
+    const indexType = (type as { type?: ts.Type }).type;
+    if (indexType === undefined) {
+        throw new Error('Could not get sub-type of index type.');
+    }
+    const 
+    const properties = visitorContext.checker.getPropertiesOfType(type);
+    for (const property of properties) {
+        property.
+    }
+}
+
 export function visitType(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext): ts.Expression {
     if ((ts.TypeFlags.Any & type.flags) !== 0) {
         // Any -> always true
@@ -328,7 +341,10 @@ export function visitType(type: ts.Type, accessor: ts.Expression, visitorContext
         return visitUnionOrIntersectionType(type, accessor, visitorContext);
     } else if ((ts.TypeFlags.NonPrimitive & type.flags) !== 0) {
         // Non-primitive such as object
-        return visitNonPrimitive(type, accessor, visitorContext);
+        return visitNonPrimitiveType(type, accessor, visitorContext);
+    } else if ((ts.TypeFlags.Index & type.flags) !== 0) {
+        // Index type: keyof X
+        return visitIndexType(type, accessor, visitorContext);
     } else {
         throw new Error('Unsupported type with flags: ' + type.flags);
     }
