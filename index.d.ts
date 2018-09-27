@@ -54,12 +54,21 @@ export function assertType<T>(object: any): T;
 export function createAssertType<T>(): (object: any) => T;
 
 /**
+ * Options for the `AssertParameter` decorator.
+ */
+export interface AssertParameterOptions {
+  /**
+   * Message that will be passed to the error constructor, in case type assertion fails.
+   */
+  message?: string;
+}
+
+/**
  * Creates a type assertion and saves it in the reflection metadata of the method's class.
  * Then, when the class is decorated with `ValidateClass`, the method's arguments will be validated.
  * 
- * @param target the class prototype of the method.
- * @param propertyKey the method's name.
- * @param parameterIndex the index of the parameter in the method's signature.
+ * @param options options for the decorator.
+ * Check `AssertParameterOptions` documentation for more.
  * 
  * @example
  * ```
@@ -69,7 +78,7 @@ export function createAssertType<T>(): (object: any) => T;
    new A().method('0' as any); // will throw an error
    ```
  */
-export function AssertParameter(target: object, propertyKey: string | symbol, parameterIndex: number): void;
+export function AssertParameter(options?: AssertParameterOptions): (target: object, propertyKey: string | symbol, parameterIndex: number) => void;
 
 /**
  * Overrides methods in the target class with a proxy that will first validate the argument types.

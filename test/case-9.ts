@@ -2,9 +2,9 @@ import * as assert from 'assert';
 import { assertType } from '../index';
 
 describe('assertType', () => {
-    const expectedMessageRegExp = /Type assertion failed.$/;
-
     describe('assertType<number>', () => {
+        const expectedMessageRegExp = /Type assertion failed.$/;
+
         it('should return the numbers passed to it', () => {
             assert.strictEqual(assertType<number>(-1), -1);
             assert.strictEqual(assertType<number>(0), 0);

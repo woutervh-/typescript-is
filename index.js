@@ -6,10 +6,10 @@ function warn() {
 
 const assertionsMetadataKey = Symbol('assertions');
 
-function AssertParameter(assertion) {
+function AssertParameter(assertion, options = {}) {
     return function (target, propertyKey, parameterIndex) {
         const assertions = Reflect.getOwnMetadata(assertionsMetadataKey, target, propertyKey) || [];
-        assertions[parameterIndex] = assertion;
+        assertions[parameterIndex] = { assertion, options };
         Reflect.defineMetadata(assertionsMetadataKey, assertions, target, propertyKey);
     };
 }
@@ -22,8 +22,8 @@ function ValidateClass(errorConstructor = Error) {
                 const originalMethod = target.prototype[propertyKey];
                 target.prototype[propertyKey] = function (...args) {
                     for (let i = 0; i < assertions.length; i++) {
-                        if (!assertions[i](args[i])) {
-                            throw new errorConstructor('Type assertion failed.');
+                        if (!assertions[i].assertion(args[i])) {
+                            throw new errorConstructor(assertions[i].options.message || 'Type assertion failed.');
                         }
                     }
                     return originalMethod.apply(this, args);

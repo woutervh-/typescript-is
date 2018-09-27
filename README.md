@@ -166,9 +166,9 @@ You can then use the decorators:
 ```typescript
 import { ValidateClass, AssertParameter } from 'typescript-is';
 
-@ValidateClass
+@ValidateClass()
 class A {
-    method(@AssertParameter value: number) {
+    method(@AssertParameter() value: number) {
         // You can safely use value as a number
         return value;
     }

@@ -3,40 +3,64 @@ import * as ts from 'typescript';
 import { VisitorContext } from './visitor-context';
 import { visitType } from './visitor';
 
-function transformDecorator(node: ts.Decorator, parameterType: ts.Type, visitorContext: VisitorContext): ts.Decorator {
-    const decoratorType = visitorContext.checker.getTypeAtLocation(node.expression);
-    if (
-        decoratorType.symbol.name === 'AssertParameter'
-        && path.resolve(decoratorType.symbol.valueDeclaration.getSourceFile().fileName) === path.resolve(path.join(__dirname, '..', '..', 'index.d.ts'))
-    ) {
-        const accessor = ts.createIdentifier('object');
-        const expression = ts.createCall(
-            node.expression,
-            undefined,
-            [
-                ts.createArrowFunction(
-                    undefined,
-                    undefined,
-                    [
-                        ts.createParameter(
+function createArrowFunction(accessor: ts.Identifier, type: ts.Type, visitorContext: VisitorContext, isAssert: boolean) {
+    return ts.createArrowFunction(
+        undefined,
+        undefined,
+        [
+            ts.createParameter(
+                undefined,
+                undefined,
+                undefined,
+                accessor,
+                undefined,
+                ts.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)
+            )
+        ],
+        undefined,
+        undefined,
+        ts.createBlock([
+            isAssert
+                ? ts.createIf(
+                    ts.createLogicalNot(visitType(type, accessor, visitorContext)),
+                    ts.createThrow(
+                        ts.createNew(
+                            ts.createIdentifier('Error'),
                             undefined,
-                            undefined,
-                            undefined,
-                            accessor
+                            [
+                                ts.createStringLiteral('Type assertion failed.')
+                            ]
                         )
-                    ],
-                    undefined,
-                    undefined,
-                    ts.createBlock([
-                        ts.createReturn(visitType(parameterType, accessor, visitorContext))
-                    ])
+                    ),
+                    ts.createReturn(accessor)
                 )
-            ]
-        );
-        return ts.updateDecorator(
-            node,
-            expression
-        );
+                : ts.createReturn(visitType(type, accessor, visitorContext))
+        ])
+    );
+}
+
+function transformDecorator(node: ts.Decorator, parameterType: ts.Type, visitorContext: VisitorContext): ts.Decorator {
+    if (ts.isCallExpression(node.expression)) {
+        const signature = visitorContext.checker.getResolvedSignature(node.expression);
+        if (
+            signature !== undefined
+            && signature.declaration !== undefined
+            && path.resolve(signature.declaration.getSourceFile().fileName) === path.resolve(path.join(__dirname, '..', '..', 'index.d.ts'))
+            && node.expression.arguments.length <= 1
+        ) {
+            const accessor = ts.createIdentifier('object');
+            const arrowFunction: ts.Expression = createArrowFunction(accessor, parameterType, visitorContext, false);
+            const expression = ts.updateCall(
+                node.expression,
+                node.expression.expression,
+                undefined,
+                [arrowFunction].concat(node.expression.arguments)
+            );
+            return ts.updateDecorator(
+                node,
+                expression
+            );
+        }
     }
     return node;
 }
@@ -65,51 +89,19 @@ export function transformNode(node: ts.Node, visitorContext: VisitorContext): ts
             && node.typeArguments.length === 1
         ) {
             const name = visitorContext.checker.getTypeAtLocation(signature.declaration).symbol.name;
-            const create = name === 'createIs' || name === 'createAssertType';
-            const assert = name === 'assertType' || name === 'createAssertType';
+            const isCreate = name === 'createIs' || name === 'createAssertType';
+            const isAssert = name === 'assertType' || name === 'createAssertType';
             const typeArgument = node.typeArguments[0];
             const type = visitorContext.checker.getTypeFromTypeNode(typeArgument);
             const accessor = ts.createIdentifier('object');
 
-            if (!(create && node.arguments.length === 0) && !(!create && node.arguments.length === 1)) {
+            if (!(isCreate && node.arguments.length === 0) && !(!isCreate && node.arguments.length === 1)) {
                 throw new Error('Calls to `is` and `assertType` should have one argument, calls to `createIs` and `createAssertType` should have no arguments.');
             }
 
-            const arrowFunction = ts.createArrowFunction(
-                undefined,
-                undefined,
-                [
-                    ts.createParameter(
-                        undefined,
-                        undefined,
-                        undefined,
-                        accessor,
-                        undefined,
-                        ts.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)
-                    )
-                ],
-                undefined,
-                undefined,
-                ts.createBlock([
-                    assert
-                        ? ts.createIf(
-                            ts.createLogicalNot(visitType(type, accessor, visitorContext)),
-                            ts.createThrow(
-                                ts.createNew(
-                                    ts.createIdentifier('Error'),
-                                    undefined,
-                                    [
-                                        ts.createStringLiteral('Type assertion failed.')
-                                    ]
-                                )
-                            ),
-                            ts.createReturn(accessor)
-                        )
-                        : ts.createReturn(visitType(type, accessor, visitorContext))
-                ])
-            );
+            const arrowFunction = createArrowFunction(accessor, type, visitorContext, isAssert);
 
-            if (create) {
+            if (isCreate) {
                 return arrowFunction;
             } else {
                 return ts.createCall(
