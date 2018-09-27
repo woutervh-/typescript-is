@@ -245,6 +245,38 @@ function visitBooleanLiteral(type: ts.Type, accessor: ts.Expression, visitorCont
     );
 }
 
+function visitNonPrimitive(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
+    const intrinsicName: string | undefined = (type as { intrinsicName?: string }).intrinsicName;
+    let conditions: ts.Expression[];
+    if (intrinsicName === 'object') {
+        conditions = [
+            ts.createStrictInequality(
+                ts.createTypeOf(accessor),
+                ts.createStringLiteral('boolean')
+            ),
+            ts.createStrictInequality(
+                ts.createTypeOf(accessor),
+                ts.createStringLiteral('number')
+            ),
+            ts.createStrictInequality(
+                ts.createTypeOf(accessor),
+                ts.createStringLiteral('string')
+            )
+        ];
+    } else {
+        throw new Error(`Unsupported non-primitive with intrinsic name: ${intrinsicName}.`);
+    }
+
+    // Using internal TypeScript API, hacky.
+    return conditions.reduce((condition, expression) =>
+        ts.createBinary(
+            condition,
+            ts.SyntaxKind.AmpersandAmpersandToken,
+            expression
+        )
+    );
+}
+
 function visitTypeParameter(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
     const typeMapper = visitorContext.typeMapperStack[visitorContext.typeMapperStack.length - 1];
     if (typeMapper === undefined) {
@@ -294,6 +326,9 @@ export function visitType(type: ts.Type, accessor: ts.Expression, visitorContext
     } else if (tsutils.isUnionOrIntersectionType(type)) {
         // Union or intersection type (using | or &)
         return visitUnionOrIntersectionType(type, accessor, visitorContext);
+    } else if ((ts.TypeFlags.NonPrimitive & type.flags) !== 0) {
+        // Non-primitive such as object
+        return visitNonPrimitive(type, accessor, visitorContext);
     } else {
         throw new Error('Unsupported type with flags: ' + type.flags);
     }
