@@ -35,17 +35,21 @@ function visitPropertyName(node: ts.PropertyName, accessor: ts.Expression, visit
     }
 }
 
-function visitPropertySignature(node: ts.PropertySignature, accessor: ts.Expression, visitorContext: VisitorContext) {
+function visitPropertySignature(node: ts.PropertySignature, accessor: ts.Expression, checkProperty: boolean, visitorContext: VisitorContext) {
     if (node.type === undefined) {
         throw new Error('Visiting property without type.');
     }
     const type = visitorContext.checker.getTypeFromTypeNode(node.type);
-    return createPropertyCheck(accessor, visitPropertyName(node.name, accessor, visitorContext), type, node.questionToken !== undefined, visitorContext);
+    if (checkProperty) {
+        return createPropertyCheck(accessor, visitPropertyName(node.name, accessor, visitorContext), type, node.questionToken !== undefined, visitorContext);
+    } else {
+        return visitType(type, accessor, visitorContext);
+    }
 }
 
-function visitDeclaration(node: ts.Declaration, accessor: ts.Expression, visitorContext: VisitorContext) {
+function visitDeclaration(node: ts.Declaration, accessor: ts.Expression, checkProperty: boolean, visitorContext: VisitorContext) {
     if (ts.isPropertySignature(node)) {
-        return visitPropertySignature(node, accessor, visitorContext);
+        return visitPropertySignature(node, accessor, checkProperty, visitorContext);
     } else {
         throw new Error('Unsupported declaration kind: ' + node.kind);
     }
@@ -86,6 +90,28 @@ function visitArrayObjectType(type: ts.ObjectType, accessor: ts.Expression, visi
                     ])
                 )
             ]
+        )
+    );
+}
+
+function visitPropertySymbol(property: ts.Symbol, accessor: ts.Expression, visitorContext: VisitorContext) {
+    const conditions: ts.Expression[] = [];
+    if ('valueDeclaration' in property) {
+        conditions.push(visitDeclaration(property.valueDeclaration, accessor, true, visitorContext));
+    } else {
+        // Using internal TypeScript API, hacky.
+        const propertyType = (property as { type?: ts.Type }).type;
+        const propertyName = (property as { name?: string }).name;
+        const optional = ((property as ts.Symbol).flags & ts.SymbolFlags.Optional) !== 0;
+        if (propertyType !== undefined && propertyName !== undefined) {
+            conditions.push(createPropertyCheck(accessor, ts.createStringLiteral(propertyName), propertyType, optional, visitorContext));
+        }
+    }
+    return conditions.reduce((condition, expression) =>
+        ts.createBinary(
+            condition,
+            ts.SyntaxKind.AmpersandAmpersandToken,
+            expression
         )
     );
 }
@@ -144,17 +170,7 @@ function visitRegularObjectType(type: ts.ObjectType, accessor: ts.Expression, vi
     ];
     visitorContext.typeMapperStack.push(mapper);
     for (const property of visitorContext.checker.getPropertiesOfType(type)) {
-        if ('valueDeclaration' in property) {
-            conditions.push(visitDeclaration(property.valueDeclaration, accessor, visitorContext));
-        } else {
-            // Using internal TypeScript API, hacky.
-            const propertyType = (property as { type?: ts.Type }).type;
-            const propertyName = (property as { name?: string }).name;
-            const optional = ((property as ts.Symbol).flags & ts.SymbolFlags.Optional) !== 0;
-            if (propertyType !== undefined && propertyName !== undefined) {
-                conditions.push(createPropertyCheck(accessor, ts.createStringLiteral(propertyName), propertyType, optional, visitorContext));
-            }
-        }
+        conditions.push(visitPropertySymbol(property, accessor, visitorContext));
     }
     const stringIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.String);
     if (stringIndexType) {
@@ -317,6 +333,36 @@ function visitIndexType(type: ts.Type, accessor: ts.Expression, visitorContext: 
     }
 }
 
+function visitIndexedAccessType(type: ts.IndexedAccessType, accessor: ts.Expression, visitorContext: VisitorContext) {
+    const typeMapper = visitorContext.typeMapperStack[visitorContext.typeMapperStack.length - 1];
+    // Using internal TypeScript API, hacky.
+    // let objectType = type.objectType;
+    let indexedType = (type.indexType as { type?: ts.Type }).type;
+    if (indexedType === undefined) {
+        throw new Error('Could not get indexed type of indexed access type.');
+    }
+    // Make sure we resolve type parameters.
+    // objectType = typeMapper(indexedType) || indexedType;
+    indexedType = typeMapper(indexedType) || indexedType;
+    // const objectProperties = visitorContext.checker.getPropertiesOfType(objectType);
+    const indexedProperties = visitorContext.checker.getPropertiesOfType(indexedType);
+    if (indexedProperties.length >= 1) {
+        return indexedProperties
+            .map((property) => visitDeclaration(property.valueDeclaration, accessor, false, visitorContext))
+            .reduce((condition, expression) =>
+                ts.createBinary(
+                    condition,
+                    ts.SyntaxKind.BarBarToken,
+                    expression
+                )
+            );
+    } else {
+        return ts.createFalse();
+    }
+    // debugger;
+    // console.log(indexedProperties, objectProperties);
+}
+
 export function visitType(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext): ts.Expression {
     if ((ts.TypeFlags.Any & type.flags) !== 0) {
         // Any -> always true
@@ -360,6 +406,8 @@ export function visitType(type: ts.Type, accessor: ts.Expression, visitorContext
     } else if ((ts.TypeFlags.Index & type.flags) !== 0) {
         // Index type: keyof X
         return visitIndexType(type, accessor, visitorContext);
+    } else if (tsutils.isIndexedAccessType(type)) {
+        return visitIndexedAccessType(type, accessor, visitorContext);
     } else {
         throw new Error('Unsupported type with flags: ' + type.flags);
     }
