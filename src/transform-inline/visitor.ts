@@ -336,15 +336,12 @@ function visitIndexType(type: ts.Type, accessor: ts.Expression, visitorContext: 
 function visitIndexedAccessType(type: ts.IndexedAccessType, accessor: ts.Expression, visitorContext: VisitorContext) {
     const typeMapper = visitorContext.typeMapperStack[visitorContext.typeMapperStack.length - 1];
     // Using internal TypeScript API, hacky.
-    // let objectType = type.objectType;
     let indexedType = (type.indexType as { type?: ts.Type }).type;
     if (indexedType === undefined) {
         throw new Error('Could not get indexed type of indexed access type.');
     }
     // Make sure we resolve type parameters.
-    // objectType = typeMapper(indexedType) || indexedType;
     indexedType = typeMapper(indexedType) || indexedType;
-    // const objectProperties = visitorContext.checker.getPropertiesOfType(objectType);
     const indexedProperties = visitorContext.checker.getPropertiesOfType(indexedType);
     if (indexedProperties.length >= 1) {
         return indexedProperties
@@ -359,8 +356,6 @@ function visitIndexedAccessType(type: ts.IndexedAccessType, accessor: ts.Express
     } else {
         return ts.createFalse();
     }
-    // debugger;
-    // console.log(indexedProperties, objectProperties);
 }
 
 export function visitType(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext): ts.Expression {
