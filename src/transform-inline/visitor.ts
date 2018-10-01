@@ -290,15 +290,30 @@ function visitTypeParameter(type: ts.Type, accessor: ts.Expression, visitorConte
 }
 
 function visitIndexType(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
+    const typeMapper = visitorContext.typeMapperStack[visitorContext.typeMapperStack.length - 1];
     // Using internal TypeScript API, hacky.
-    const indexType = (type as { type?: ts.Type }).type;
-    if (indexType === undefined) {
-        throw new Error('Could not get sub-type of index type.');
+    let indexedType = (type as { type?: ts.Type }).type;
+    if (indexedType === undefined) {
+        throw new Error('Could not get indexed type of index type.');
     }
-    const 
-    const properties = visitorContext.checker.getPropertiesOfType(type);
-    for (const property of properties) {
-        property.
+    // Make sure we resolve type parameters.
+    indexedType = typeMapper(indexedType) || indexedType;
+    const properties = visitorContext.checker.getPropertiesOfType(indexedType);
+    if (properties.length >= 1) {
+        return properties
+            .map((property) => ts.createStrictEquality(
+                accessor,
+                ts.createStringLiteral(property.name)
+            ))
+            .reduce((condition, expression) =>
+                ts.createBinary(
+                    condition,
+                    ts.SyntaxKind.BarBarToken,
+                    expression
+                )
+            );
+    } else {
+        return ts.createFalse();
     }
 }
 
