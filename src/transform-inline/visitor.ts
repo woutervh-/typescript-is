@@ -342,20 +342,21 @@ function visitIndexedAccessType(type: ts.IndexedAccessType, accessor: ts.Express
     }
     // Make sure we resolve type parameters.
     indexedType = typeMapper(indexedType) || indexedType;
-    const indexedProperties = visitorContext.checker.getPropertiesOfType(indexedType);
-    if (indexedProperties.length >= 1) {
-        return indexedProperties
-            .map((property) => visitDeclaration(property.valueDeclaration, accessor, false, visitorContext))
-            .reduce((condition, expression) =>
-                ts.createBinary(
-                    condition,
-                    ts.SyntaxKind.BarBarToken,
-                    expression
-                )
-            );
-    } else {
-        return ts.createFalse();
-    }
+    return visitType(indexedType, accessor, visitorContext);
+    // const indexedProperties = visitorContext.checker.getPropertiesOfType(indexedType);
+    // if (indexedProperties.length >= 1) {
+    //     return indexedProperties
+    //         .map((property) => visitDeclaration(property.valueDeclaration, accessor, false, visitorContext))
+    //         .reduce((condition, expression) =>
+    //             ts.createBinary(
+    //                 condition,
+    //                 ts.SyntaxKind.BarBarToken,
+    //                 expression
+    //             )
+    //         );
+    // } else {
+    //     return ts.createFalse();
+    // }
 }
 
 export function visitType(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext): ts.Expression {
