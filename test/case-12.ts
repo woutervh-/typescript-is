@@ -131,6 +131,7 @@ describe('is', () => {
 
         it('should return true for objects with key equal to \'key\' and value equal to \'value\'', () => {
             assert.strictEqual(is<IndexedPick<{ key: 'value' }>>({ key: 'key', value: 'value' }), true);
+            assert.strictEqual(is<IndexedPick<{ key: 'value' }>>({ key: 'key', value: 'value', another: 'another' }), true);
         });
 
         it('should return false for objects with key not equal to \'key\' or value not equal to \'value\'', () => {
@@ -152,6 +153,19 @@ describe('is', () => {
             assert.strictEqual(is<IndexedPick<{ key: 'value' }>>(true), false);
             assert.strictEqual(is<IndexedPick<{ key: 'value' }>>(0), false);
             assert.strictEqual(is<IndexedPick<{ key: 'value' }>>('string'), false);
+        });
+    });
+
+    describe('', () => {
+        interface IndexedFixedPick<T extends { key: any }> {
+            key: keyof T;
+            value: T['key'];
+        }
+
+        it('', () => {
+            assert.strictEqual(is<IndexedFixedPick<{ key: 'value1' | 'value2' }>>({ key: 'key', value: 'value1' }), true);
+            assert.strictEqual(is<IndexedFixedPick<{ key: 'value1' | 'value2' }>>({ key: 'key', value: 'value2' }), true);
+            assert.strictEqual(is<IndexedFixedPick<{ key: 'value1' | 'value2' }>>({ key: 'key', value: 'value1', another: 'another' }), true);
         });
     });
 

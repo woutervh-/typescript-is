@@ -2,6 +2,28 @@ import * as assert from 'assert';
 import { is } from '../index';
 
 describe('is', () => {
+    describe('is<keyof { foo: \'foo\', bar: \'bar\' }>', () => {
+        it('', () => {
+            assert.strictEqual(is<keyof { foo: 'foo', bar: 'bar' }>('foo'), true);
+            assert.strictEqual(is<keyof { foo: 'foo', bar: 'bar' }>('bar'), true);
+        });
+
+        it('', () => {
+            assert.strictEqual(is<keyof { foo: 'foo', bar: 'bar' }>(''), false);
+            assert.strictEqual(is<keyof { foo: 'foo', bar: 'bar' }>('foobar'), false);
+        });
+
+        it('', () => {
+            assert.strictEqual(is<keyof { foo: 'foo', bar: 'bar' }>(0), false);
+            assert.strictEqual(is<keyof { foo: 'foo', bar: 'bar' }>(Number.NaN), false);
+            assert.strictEqual(is<keyof { foo: 'foo', bar: 'bar' }>(true), false);
+            assert.strictEqual(is<keyof { foo: 'foo', bar: 'bar' }>(null), false);
+            assert.strictEqual(is<keyof { foo: 'foo', bar: 'bar' }>(undefined), false);
+            assert.strictEqual(is<keyof { foo: 'foo', bar: 'bar' }>({}), false);
+            assert.strictEqual(is<keyof { foo: 'foo', bar: 'bar' }>([]), false);
+        });
+    });
+
     describe('is<>', () => {
         interface MyNestedObject {
             info: string;

@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "@types/mocha": "^5.2.5",
-    "@types/node": ">=4",
+    "@types/node": "^8",
     "mocha": "^5.2.0",
     "reflect-metadata": "^0.1.12",
     "rimraf": "^2.6.2",
