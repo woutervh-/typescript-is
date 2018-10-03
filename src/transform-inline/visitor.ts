@@ -237,13 +237,19 @@ function visitRegularObjectType(type: ts.ObjectType, accessor: ts.Expression, vi
         }
         visitorContext.typeMapperStack.pop();
     }
-    return conditions.reduce((condition, expression) =>
-        ts.createBinary(
-            condition,
-            token,
-            expression
-        )
-    );
+    if (conditions.length >= 1) {
+        return conditions.reduce((condition, expression) =>
+            ts.createBinary(
+                condition,
+                token,
+                expression
+            )
+        );
+    } else {
+        return token === ts.SyntaxKind.BarBarToken
+            ? ts.createFalse()
+            : ts.createTrue();
+    }
 }
 
 function visitObjectType(type: ts.ObjectType, accessor: ts.Expression, visitorContext: VisitorContext) {
