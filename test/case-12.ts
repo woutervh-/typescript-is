@@ -156,16 +156,37 @@ describe('is', () => {
         });
     });
 
-    describe('', () => {
-        interface IndexedFixedPick<T extends { key: any }> {
+    describe('is<IndexedLiteralPick<{ key: \'value1\' | \'value2\' }>>', () => {
+        interface IndexedLiteralPick<T extends { key: any }> {
             key: keyof T;
             value: T['key'];
         }
 
-        it('', () => {
-            assert.strictEqual(is<IndexedFixedPick<{ key: 'value1' | 'value2' }>>({ key: 'key', value: 'value1' }), true);
-            assert.strictEqual(is<IndexedFixedPick<{ key: 'value1' | 'value2' }>>({ key: 'key', value: 'value2' }), true);
-            assert.strictEqual(is<IndexedFixedPick<{ key: 'value1' | 'value2' }>>({ key: 'key', value: 'value1', another: 'another' }), true);
+        it('should return true for objects with key equal to \'key\' and value equal to \'value1\' or \'value2\'', () => {
+            assert.strictEqual(is<IndexedLiteralPick<{ key: 'value1' | 'value2' }>>({ key: 'key', value: 'value1' }), true);
+            assert.strictEqual(is<IndexedLiteralPick<{ key: 'value1' | 'value2' }>>({ key: 'key', value: 'value2' }), true);
+            assert.strictEqual(is<IndexedLiteralPick<{ key: 'value1' | 'value2' }>>({ key: 'key', value: 'value1', another: 'another' }), true);
+        });
+
+        it('should return false for objects with key not equal to \'key\' or value not equal to \'value1\' or \'value2\'', () => {
+            assert.strictEqual(is<IndexedLiteralPick<{ key: 'value1' | 'value2' }>>({ key: 'value1', value: 'key' }), false);
+            assert.strictEqual(is<IndexedLiteralPick<{ key: 'value1' | 'value2' }>>({ key: 'keh', value: 'value1' }), false);
+            assert.strictEqual(is<IndexedLiteralPick<{ key: 'value1' | 'value2' }>>({ key: 'key', value: 'value3' }), false);
+        });
+
+        it('should return false for objects without key or value', () => {
+            assert.strictEqual(is<IndexedLiteralPick<{ key: 'value1' | 'value2' }>>({}), false);
+            assert.strictEqual(is<IndexedLiteralPick<{ key: 'value1' | 'value2' }>>({ key: 'key' }), false);
+            assert.strictEqual(is<IndexedLiteralPick<{ key: 'value1' | 'value2' }>>({ value: 'value1' }), false);
+        });
+
+        it('should return false for other non-objects', () => {
+            assert.strictEqual(is<IndexedLiteralPick<{ key: 'value1' | 'value2' }>>(null), false);
+            assert.strictEqual(is<IndexedLiteralPick<{ key: 'value1' | 'value2' }>>(undefined), false);
+            assert.strictEqual(is<IndexedLiteralPick<{ key: 'value1' | 'value2' }>>([]), false);
+            assert.strictEqual(is<IndexedLiteralPick<{ key: 'value1' | 'value2' }>>(true), false);
+            assert.strictEqual(is<IndexedLiteralPick<{ key: 'value1' | 'value2' }>>(0), false);
+            assert.strictEqual(is<IndexedLiteralPick<{ key: 'value1' | 'value2' }>>('string'), false);
         });
     });
 

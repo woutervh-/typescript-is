@@ -2,25 +2,25 @@ import * as ts from 'typescript';
 import * as tsutils from 'tsutils';
 import { VisitorStringLiteralsContext } from './visitor-string-literals-context';
 
-// function collectNamesFromUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorContext: VisitorContext) {
-//     let isUnion: boolean;
-//     if (tsutils.isUnionType(type)) {
-//         isUnion = true;
-//     } else if (tsutils.isIntersectionType(type)) {
-//         isUnion = false;
-//     } else {
-//         throw new Error('UnionOrIntersection type is expected to be a Union or Intersection type.');
-//     }
-//     return type.types
-//         .map((type) => collectNamesFromType(type, visitorContext))
-//         .reduce((collection, names) => {
-//             if (isUnion) {
-//                 return collection.concat(names);
-//             } else {
-//                 return collection.filter((name) => names.indexOf(name) >= 0);
-//             }
-//         });
-// }
+function visitStringLiteralsOfUnionOrIntersectionType(type: ts.Type, visitorContext: VisitorStringLiteralsContext) {
+    let isUnion: boolean;
+    if (tsutils.isUnionType(type)) {
+        isUnion = true;
+    } else if (tsutils.isIntersectionType(type)) {
+        isUnion = false;
+    } else {
+        throw new Error('UnionOrIntersection type is expected to be a Union or Intersection type.');
+    }
+    return type.types
+        .map((type) => visitStringLiteralsOfType(type, visitorContext))
+        .reduce((collection, names) => {
+            if (isUnion) {
+                return collection.filter((name) => names.indexOf(name) >= 0);
+            } else {
+                return collection.concat(names);
+            }
+        });
+}
 
 function visitStringLiteralsOfRegularObjectType(type: ts.Type, visitorContext: VisitorStringLiteralsContext) {
     if (visitorContext.mode.type === 'property-names') {
@@ -54,6 +54,18 @@ function visitStringLiteralsOfTypeParameter(type: ts.Type, visitorContext: Visit
     return visitStringLiteralsOfType(mappedType, visitorContext);
 }
 
+function visitStringLiteralsOfLiteralType(type: ts.LiteralType, visitorContext: VisitorStringLiteralsContext) {
+    if (visitorContext.mode.type === 'literal') {
+        if (typeof type.value === 'string') {
+            return [type.value];
+        } else {
+            throw new Error('Type value is expected to be a string.');
+        }
+    } else {
+        throw new Error('visitStringLiteralsOfLiteralType should only be called during literal mode.');
+    }
+}
+
 function visitStringLiteralsOfIndexType(type: ts.Type, visitorContext: VisitorStringLiteralsContext) {
     if (visitorContext.mode.type === 'literal') {
         // Using internal TypeScript API, hacky.
@@ -77,6 +89,12 @@ export function visitStringLiteralsOfType(type: ts.Type, visitorContext: Visitor
     } else if (tsutils.isObjectType(type)) {
         // Object type (including arrays)
         return visitStringLiteralsOfObjectType(type, visitorContext);
+    } else if (tsutils.isUnionOrIntersectionType(type)) {
+        // Union or intersection type (| or &)
+        return visitStringLiteralsOfUnionOrIntersectionType(type, visitorContext);
+    } else if (tsutils.isLiteralType(type)) {
+        // Literal string/number types ('foo')
+        return visitStringLiteralsOfLiteralType(type, visitorContext);
     } else {
         throw new Error('Could not visit string literals; unsupported type with flags: ' + type.flags);
     }

@@ -4,12 +4,18 @@ import { VisitorContext } from './visitor-context';
 import { visitStringLiteralsOfType } from './visitor-string-literals';
 
 function createPropertyCheck(accessor: ts.Expression, property: ts.Expression, type: ts.Type, optional: boolean, visitorContext: VisitorContext) {
-    const propertyAccessor = ts.createElementAccess(accessor, property);
+    const oldMode = visitorContext.mode;
+    visitorContext.mode = { type: 'type-check' };
+    const propertyAccessor = oldMode.type === 'type-check'
+        ? ts.createElementAccess(accessor, property)
+        : accessor;
     const expression = visitType(type, propertyAccessor, visitorContext);
+    visitorContext.mode = oldMode;
+    let result: ts.Expression;
     if (!optional) {
-        return expression;
+        result = expression;
     } else {
-        return ts.createBinary(
+        result = ts.createBinary(
             ts.createLogicalNot(
                 ts.createBinary(
                     property,
@@ -21,6 +27,7 @@ function createPropertyCheck(accessor: ts.Expression, property: ts.Expression, t
             expression
         );
     }
+    return result;
 }
 
 function visitPropertyName(node: ts.PropertyName, accessor: ts.Expression, visitorContext: VisitorContext) {
@@ -157,9 +164,11 @@ function visitRegularObjectType(type: ts.ObjectType, accessor: ts.Expression, vi
     }
     const mapper = mappers.reduce<(source: ts.Type) => ts.Type | undefined>((previous, next) => (source: ts.Type) => previous(source) || next(source), () => undefined);
     const conditions: ts.Expression[] = [];
+    let token: ts.SyntaxKind.BarBarToken | ts.SyntaxKind.AmpersandAmpersandToken;
 
     if (visitorContext.mode.type === 'type-check') {
-        conditions: ts.Expression[] = [
+        token = ts.SyntaxKind.AmpersandAmpersandToken;
+        conditions.push(
             ts.createStrictEquality(
                 ts.createTypeOf(accessor),
                 ts.createStringLiteral('object')
@@ -175,7 +184,7 @@ function visitRegularObjectType(type: ts.ObjectType, accessor: ts.Expression, vi
                     [accessor]
                 )
             )
-        ];
+        );
         visitorContext.typeMapperStack.push(mapper);
         for (const property of visitorContext.checker.getPropertiesOfType(type)) {
             conditions.push(visitPropertySymbol(property, accessor, visitorContext));
@@ -218,21 +227,23 @@ function visitRegularObjectType(type: ts.ObjectType, accessor: ts.Expression, vi
             );
         }
         visitorContext.typeMapperStack.pop();
-        return conditions.reduce((condition, expression) =>
-            ts.createBinary(
-                condition,
-                ts.SyntaxKind.AmpersandAmpersandToken,
-                expression
-            )
-        );
     } else {
+        token = ts.SyntaxKind.BarBarToken;
         visitorContext.typeMapperStack.push(mapper);
         for (const property of visitorContext.checker.getPropertiesOfType(type)) {
-            conditions.push(visitPropertySymbol(property, accessor, visitorContext));
+            if (visitorContext.mode.properties.indexOf(property.name) >= 0) {
+                conditions.push(visitPropertySymbol(property, accessor, visitorContext));
+            }
         }
         visitorContext.typeMapperStack.pop();
-        throw new Error('visitRegularObjectType should only be called during type-check mode.');
     }
+    return conditions.reduce((condition, expression) =>
+        ts.createBinary(
+            condition,
+            token,
+            expression
+        )
+    );
 }
 
 function visitObjectType(type: ts.ObjectType, accessor: ts.Expression, visitorContext: VisitorContext) {
@@ -258,21 +269,23 @@ function visitLiteralType(type: ts.LiteralType, accessor: ts.Expression, visitor
 }
 
 function visitUnionOrIntersectionType(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
-    if (visitorContext.mode.type === 'type-check') {
-        let token: ts.SyntaxKind.BarBarToken | ts.SyntaxKind.AmpersandAmpersandToken;
-        if (tsutils.isUnionType(type)) {
-            token = ts.SyntaxKind.BarBarToken;
-        } else if (tsutils.isIntersectionType(type)) {
-            token = ts.SyntaxKind.AmpersandAmpersandToken;
-        } else {
-            throw new Error('UnionOrIntersection type is expected to be a Union or Intersection type.');
-        }
-        return type.types
-            .map((type) => visitType(type, accessor, visitorContext))
-            .reduce((condition, expression) => ts.createBinary(condition, token, expression));
+    let token: ts.SyntaxKind.BarBarToken | ts.SyntaxKind.AmpersandAmpersandToken;
+    if (tsutils.isUnionType(type)) {
+        token = ts.SyntaxKind.BarBarToken;
+    } else if (tsutils.isIntersectionType(type)) {
+        token = ts.SyntaxKind.AmpersandAmpersandToken;
     } else {
-        throw new Error('visitUnionOrIntersectionType should only be called during type-check mode.');
+        throw new Error('UnionOrIntersection type is expected to be a Union or Intersection type.');
     }
+    return type.types
+        .map((type) => visitType(type, accessor, visitorContext))
+        .reduce((condition, expression) =>
+            ts.createBinary(
+                condition,
+                token,
+                expression
+            )
+        );
 }
 
 function visitBooleanLiteral(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
@@ -344,21 +357,24 @@ function visitIndexType(type: ts.Type, accessor: ts.Expression, visitorContext: 
             throw new Error('Could not get indexed type of index type.');
         }
         const propertyNames = Array.from(new Set(visitStringLiteralsOfType(indexedType, { ...visitorContext, mode: { type: 'property-names' } })));
-        return propertyNames
-            .map((property) =>
-                ts.createStrictEquality(
-                    accessor,
-                    ts.createStringLiteral(property)
+        if (propertyNames.length >= 1) {
+            return propertyNames
+                .map((property) =>
+                    ts.createStrictEquality(
+                        accessor,
+                        ts.createStringLiteral(property)
+                    )
                 )
-            )
-            .reduce<ts.Expression>((condition, expression) =>
-                ts.createBinary(
-                    condition,
-                    ts.SyntaxKind.BarBarToken,
-                    expression
-                ),
-                ts.createFalse()
-            );
+                .reduce((condition, expression) =>
+                    ts.createBinary(
+                        condition,
+                        ts.SyntaxKind.BarBarToken,
+                        expression
+                    )
+                );
+        } else {
+            return ts.createFalse();
+        }
     } else {
         throw new Error('visitIndexType should only be called during type-check mode.');
     }
@@ -474,7 +490,7 @@ export function visitType(type: ts.Type, accessor: ts.Expression, visitorContext
         // Literal string/number types ('foo')
         return visitLiteralType(type, accessor, visitorContext);
     } else if (tsutils.isUnionOrIntersectionType(type)) {
-        // Union or intersection type (using | or &)
+        // Union or intersection type (| or &)
         return visitUnionOrIntersectionType(type, accessor, visitorContext);
     } else if ((ts.TypeFlags.NonPrimitive & type.flags) !== 0) {
         // Non-primitive such as object
