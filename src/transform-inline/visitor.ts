@@ -229,9 +229,16 @@ function visitRegularObjectType(type: ts.ObjectType, accessor: ts.Expression, vi
         visitorContext.typeMapperStack.pop();
     } else {
         token = ts.SyntaxKind.BarBarToken;
+        const propertyNames = visitorContext.mode.propertyTypes.map((type) => {
+            if (tsutils.isLiteralType(type) && typeof type.value === 'string') {
+                return type.value;
+            } else {
+                throw new Error('Currently only string literals are supported for indexed access to objects.');
+            }
+        });
         visitorContext.typeMapperStack.push(mapper);
         for (const property of visitorContext.checker.getPropertiesOfType(type)) {
-            if (visitorContext.mode.properties.indexOf(property.name) >= 0) {
+            if (propertyNames.indexOf(property.name) >= 0) {
                 conditions.push(visitPropertySymbol(property, accessor, visitorContext));
             }
         }
@@ -362,15 +369,10 @@ function visitIndexType(type: ts.Type, accessor: ts.Expression, visitorContext: 
         if (indexedType === undefined) {
             throw new Error('Could not get indexed type of index type.');
         }
-        const propertyNames = Array.from(new Set(visitStringLiteralsOfType(indexedType, { ...visitorContext, mode: { type: 'property-names' } })));
-        if (propertyNames.length >= 1) {
-            return propertyNames
-                .map((property) =>
-                    ts.createStrictEquality(
-                        accessor,
-                        ts.createStringLiteral(property)
-                    )
-                )
+        const propertyTypes = Array.from(new Set(visitStringLiteralsOfType(indexedType, { ...visitorContext, mode: { type: 'property-names' } })));
+        if (propertyTypes.length >= 1) {
+            return propertyTypes
+                .map((type) => visitType(type, accessor, visitorContext))
                 .reduce((condition, expression) =>
                     ts.createBinary(
                         condition,
@@ -394,9 +396,9 @@ function visitIndexedAccessType(type: ts.IndexedAccessType, accessor: ts.Express
         if ((type.indexType.flags & ts.TypeFlags.Index) !== 0 && indexedType === undefined) {
             throw new Error('Could not get indexed type of index type.');
         }
-        const propertyNames = Array.from(new Set(visitStringLiteralsOfType(type.indexType, { ...visitorContext, mode: { type: 'literal' } })));
+        const propertyTypes = Array.from(new Set(visitStringLiteralsOfType(type.indexType, { ...visitorContext, mode: { type: 'literal' } })));
         const oldMode = visitorContext.mode;
-        visitorContext.mode = { type: 'select-properties', properties: propertyNames };
+        visitorContext.mode = { type: 'indexed-properties', propertyTypes };
         const result = visitType(type.objectType, accessor, visitorContext);
         visitorContext.mode = oldMode;
         return result;
@@ -406,19 +408,11 @@ function visitIndexedAccessType(type: ts.IndexedAccessType, accessor: ts.Express
 }
 
 function visitAny(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
-    if (visitorContext.mode.type === 'type-check') {
-        return ts.createTrue();
-    } else {
-        throw new Error('visitAny should only be called during type-check mode.');
-    }
+    return ts.createTrue();
 }
 
 function visitNever(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
-    if (visitorContext.mode.type === 'type-check') {
-        return ts.createFalse();
-    } else {
-        throw new Error('visitNever should only be called during type-check mode.');
-    }
+    return ts.createFalse();
 }
 
 function visitNull(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
@@ -463,10 +457,10 @@ function visitString(type: ts.Type, accessor: ts.Expression, visitorContext: Vis
 
 export function visitType(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext): ts.Expression {
     if ((ts.TypeFlags.Any & type.flags) !== 0) {
-        // Any -> always true
+        // Any
         return visitAny(type, accessor, visitorContext);
     } else if ((ts.TypeFlags.Never & type.flags) !== 0) {
-        // Never -> always false
+        // Never
         return visitNever(type, accessor, visitorContext);
     } else if ((ts.TypeFlags.Null & type.flags) !== 0) {
         // Null

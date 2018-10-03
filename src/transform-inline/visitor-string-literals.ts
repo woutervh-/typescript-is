@@ -24,7 +24,16 @@ function visitStringLiteralsOfUnionOrIntersectionType(type: ts.Type, visitorCont
 
 function visitStringLiteralsOfRegularObjectType(type: ts.Type, visitorContext: VisitorStringLiteralsContext) {
     if (visitorContext.mode.type === 'property-names') {
-        return visitorContext.checker.getPropertiesOfType(type).map((property) => property.name);
+        return visitorContext.checker.getPropertiesOfType(type)
+            .map((property) => {
+                // TODO: create type that is a string literal type with value property.name
+                ts.createLiteralTypeNode(ts.createStringLiteral(property.name))
+                return visitorContext.checker.getTypeAtLocation(property.valueDeclaration);
+            });
+        // return visitorContext.checker.getPropertiesOfType(type)
+        //     .map((property) => {
+        //         return ts.createStringLiteral(property.name);
+        //     });
     } else {
         throw new Error('visitStringLiteralsOfRegularObjectType should only be called during property-names mode.');
     }
@@ -57,13 +66,17 @@ function visitStringLiteralsOfTypeParameter(type: ts.Type, visitorContext: Visit
 function visitStringLiteralsOfLiteralType(type: ts.LiteralType, visitorContext: VisitorStringLiteralsContext) {
     if (visitorContext.mode.type === 'literal') {
         if (typeof type.value === 'string') {
-            return [type.value];
+            return [type];
         } else {
             throw new Error('Type value is expected to be a string.');
         }
     } else {
         throw new Error('visitStringLiteralsOfLiteralType should only be called during literal mode.');
     }
+}
+
+function visitStringLiteralsOfAny(type: ts.Type, visitorContext: VisitorStringLiteralsContext) {
+    return [];
 }
 
 function visitStringLiteralsOfIndexType(type: ts.Type, visitorContext: VisitorStringLiteralsContext) {
@@ -79,8 +92,11 @@ function visitStringLiteralsOfIndexType(type: ts.Type, visitorContext: VisitorSt
     }
 }
 
-export function visitStringLiteralsOfType(type: ts.Type, visitorContext: VisitorStringLiteralsContext): string[] {
-    if ((ts.TypeFlags.TypeParameter & type.flags) !== 0) {
+export function visitStringLiteralsOfType(type: ts.Type, visitorContext: VisitorStringLiteralsContext): ts.Type[] {
+    if ((ts.TypeFlags.Any & type.flags) !== 0) {
+        // Any
+        return visitStringLiteralsOfAny(type, visitorContext);
+    } else if ((ts.TypeFlags.TypeParameter & type.flags) !== 0) {
         // Type parameter
         return visitStringLiteralsOfTypeParameter(type, visitorContext);
     } else if ((ts.TypeFlags.Index & type.flags) !== 0) {

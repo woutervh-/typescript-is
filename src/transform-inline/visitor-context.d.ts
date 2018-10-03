@@ -13,8 +13,8 @@ export interface VisitTypeCheckMode {
  * Generate an expression that checks if the given accessor matches any of the types of the properties of the given type.
  */
 export interface VisitSelectPropertiesMode {
-    type: 'select-properties';
-    properties: string[];
+    type: 'indexed-properties';
+    propertyTypes: ts.Type[];
 }
 
 export type VisitMode = VisitTypeCheckMode | VisitSelectPropertiesMode;

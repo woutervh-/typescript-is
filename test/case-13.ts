@@ -109,10 +109,11 @@ describe('is', () => {
 
         interface Extractor<T> {
             key: keyof T;
-            valueT: T[keyof T];
+            value: T[keyof T];
         }
 
         it('should always return false', () => {
+            assert.strictEqual(is<Extractor<{} | Item>>({ key: 'foo', value: 'bar' }), false);
             assert.strictEqual(is<Extractor<{} | Item>>(0), false);
             assert.strictEqual(is<Extractor<{} | Item>>(1), false);
             assert.strictEqual(is<Extractor<{} | Item>>(true), false);
@@ -123,6 +124,21 @@ describe('is', () => {
             assert.strictEqual(is<Extractor<{} | Item>>([]), false);
             assert.strictEqual(is<Extractor<{} | Item>>(null), false);
             assert.strictEqual(is<Extractor<{} | Item>>(undefined), false);
+        });
+    });
+
+    describe('is<Extractor<any | Item>>', () => {
+        interface Item {
+            foo: 'bar';
+        }
+
+        interface Extractor<T> {
+            key: keyof T;
+            value: T[keyof T];
+        }
+
+        it('should return true for an object with key equal to \'foo\' and value equal to \'bar\'', () => {
+            assert.strictEqual(is<Extractor<any | Item>>({ key: 'foo', value: 'bar' }), true);
         });
     });
 
