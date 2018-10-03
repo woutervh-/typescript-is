@@ -101,4 +101,34 @@ describe('is', () => {
             assert.strictEqual(is<Choice<MyOtherObject | MyObject, MyObject>>(true), false);
         });
     });
+
+    describe('is<keyof {}>', () => {
+        it('should always return false', () => {
+            assert.strictEqual(is<keyof {}>(0), false);
+            assert.strictEqual(is<keyof {}>(1), false);
+            assert.strictEqual(is<keyof {}>(true), false);
+            assert.strictEqual(is<keyof {}>(false), false);
+            assert.strictEqual(is<keyof {}>(''), false);
+            assert.strictEqual(is<keyof {}>('a'), false);
+            assert.strictEqual(is<keyof {}>({}), false);
+            assert.strictEqual(is<keyof {}>([]), false);
+            assert.strictEqual(is<keyof {}>(null), false);
+            assert.strictEqual(is<keyof {}>(undefined), false);
+        });
+    });
+
+    describe('is<{}[keyof {}]>', () => {
+        it('should always return false', () => {
+            assert.strictEqual(is<{}[keyof {}]>(0), false);
+            assert.strictEqual(is<{}[keyof {}]>(1), false);
+            assert.strictEqual(is<{}[keyof {}]>(true), false);
+            assert.strictEqual(is<{}[keyof {}]>(false), false);
+            assert.strictEqual(is<{}[keyof {}]>(''), false);
+            assert.strictEqual(is<{}[keyof {}]>('a'), false);
+            assert.strictEqual(is<{}[keyof {}]>({}), false);
+            assert.strictEqual(is<{}[keyof {}]>([]), false);
+            assert.strictEqual(is<{}[keyof {}]>(null), false);
+            assert.strictEqual(is<{}[keyof {}]>(undefined), false);
+        });
+    });
 });

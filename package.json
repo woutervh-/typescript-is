@@ -39,6 +39,7 @@
   },
   "devDependencies": {
     "@types/mocha": "^5.2.5",
+    "@types/nested-error-stacks": "^2.1.0",
     "@types/node": "*",
     "mocha": "^5.2.0",
     "reflect-metadata": "^0.1.12",
@@ -48,5 +49,8 @@
     "tsutils": "^3",
     "ttypescript": "^1.5.5",
     "typescript": "^3"
+  },
+  "dependencies": {
+    "nested-error-stacks": "^2.1.0"
   }
 }
