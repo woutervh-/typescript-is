@@ -137,8 +137,28 @@ describe('is', () => {
             value: T[keyof T];
         }
 
-        it('should return true for an object with key equal to \'foo\' and value equal to \'bar\'', () => {
+        it('should return true for an object with key equal to any string and value equal to any', () => {
+            assert.strictEqual(is<Extractor<any | Item>>({ key: '', value: 'bar' }), true);
             assert.strictEqual(is<Extractor<any | Item>>({ key: 'foo', value: 'bar' }), true);
+            assert.strictEqual(is<Extractor<any | Item>>({ key: 'foo', value: '' }), true);
+            assert.strictEqual(is<Extractor<any | Item>>({ key: 'foo', value: null }), true);
+            assert.strictEqual(is<Extractor<any | Item>>({ key: 'foo', value: false }), true);
+            assert.strictEqual(is<Extractor<any | Item>>({ key: 'foo', value: Number.NaN }), true);
+        });
+
+        it('should return false for objects missing either key or value', () => {
+            assert.strictEqual(is<Extractor<any | Item>>({}), false);
+            assert.strictEqual(is<Extractor<any | Item>>({ key: 'foo' }), false);
+            assert.strictEqual(is<Extractor<any | Item>>({ value: 'bar' }), false);
+            assert.strictEqual(is<Extractor<any | Item>>({ wrong: 'wrong' }), false);
+        });
+
+        it('should return false for other non-objects', () => {
+            assert.strictEqual(is<Extractor<any | Item>>(null), false);
+            assert.strictEqual(is<Extractor<any | Item>>(undefined), false);
+            assert.strictEqual(is<Extractor<any | Item>>([]), false);
+            assert.strictEqual(is<Extractor<any | Item>>(true), false);
+            assert.strictEqual(is<Extractor<any | Item>>(0), false);
         });
     });
 
@@ -169,6 +189,66 @@ describe('is', () => {
             assert.strictEqual(is<{}[keyof {}]>([]), false);
             assert.strictEqual(is<{}[keyof {}]>(null), false);
             assert.strictEqual(is<{}[keyof {}]>(undefined), false);
+        });
+    });
+
+    describe('is<any[any]>', () => {
+        it('should always return true', () => {
+            assert.strictEqual(is<any[any]>(0), true);
+            assert.strictEqual(is<any[any]>(1), true);
+            assert.strictEqual(is<any[any]>(true), true);
+            assert.strictEqual(is<any[any]>(false), true);
+            assert.strictEqual(is<any[any]>(''), true);
+            assert.strictEqual(is<any[any]>('a'), true);
+            assert.strictEqual(is<any[any]>({}), true);
+            assert.strictEqual(is<any[any]>([]), true);
+            assert.strictEqual(is<any[any]>(null), true);
+            assert.strictEqual(is<any[any]>(undefined), true);
+        });
+    });
+
+    describe('is<any[keyof any]>', () => {
+        it('should always return true', () => {
+            assert.strictEqual(is<any[keyof any]>(0), true);
+            assert.strictEqual(is<any[keyof any]>(1), true);
+            assert.strictEqual(is<any[keyof any]>(true), true);
+            assert.strictEqual(is<any[keyof any]>(false), true);
+            assert.strictEqual(is<any[keyof any]>(''), true);
+            assert.strictEqual(is<any[keyof any]>('a'), true);
+            assert.strictEqual(is<any[keyof any]>({}), true);
+            assert.strictEqual(is<any[keyof any]>([]), true);
+            assert.strictEqual(is<any[keyof any]>(null), true);
+            assert.strictEqual(is<any[keyof any]>(undefined), true);
+        });
+    });
+
+    describe('is<never[never]>', () => {
+        it('should always return false', () => {
+            assert.strictEqual(is<never[never]>(0), false);
+            assert.strictEqual(is<never[never]>(1), false);
+            assert.strictEqual(is<never[never]>(true), false);
+            assert.strictEqual(is<never[never]>(false), false);
+            assert.strictEqual(is<never[never]>(''), false);
+            assert.strictEqual(is<never[never]>('a'), false);
+            assert.strictEqual(is<never[never]>({}), false);
+            assert.strictEqual(is<never[never]>([]), false);
+            assert.strictEqual(is<never[never]>(null), false);
+            assert.strictEqual(is<never[never]>(undefined), false);
+        });
+    });
+
+    describe('is<any[keyof any]>', () => {
+        it('should always return false', () => {
+            assert.strictEqual(is<never[keyof never]>(0), false);
+            assert.strictEqual(is<never[keyof never]>(1), false);
+            assert.strictEqual(is<never[keyof never]>(true), false);
+            assert.strictEqual(is<never[keyof never]>(false), false);
+            assert.strictEqual(is<never[keyof never]>(''), false);
+            assert.strictEqual(is<never[keyof never]>('a'), false);
+            assert.strictEqual(is<never[keyof never]>({}), false);
+            assert.strictEqual(is<never[keyof never]>([]), false);
+            assert.strictEqual(is<never[keyof never]>(null), false);
+            assert.strictEqual(is<never[keyof never]>(undefined), false);
         });
     });
 });

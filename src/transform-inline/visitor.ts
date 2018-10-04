@@ -1,16 +1,12 @@
 import * as ts from 'typescript';
 import * as tsutils from 'tsutils';
 import { VisitorContext } from './visitor-context';
-import { visitStringLiteralsOfType } from './visitor-string-literals';
 
 function createPropertyCheck(accessor: ts.Expression, property: ts.Expression, type: ts.Type, optional: boolean, visitorContext: VisitorContext) {
-    const oldMode = visitorContext.mode;
-    visitorContext.mode = { type: 'type-check' };
-    const propertyAccessor = oldMode.type === 'type-check'
+    const propertyAccessor = visitorContext.mode.type === 'type-check'
         ? ts.createElementAccess(accessor, property)
         : accessor;
-    const expression = visitType(type, propertyAccessor, visitorContext);
-    visitorContext.mode = oldMode;
+    const expression = visitType(type, propertyAccessor, { ...visitorContext, mode: { type: 'type-check' } });
     let result: ts.Expression;
     if (!optional) {
         result = expression;
@@ -163,11 +159,10 @@ function visitRegularObjectType(type: ts.ObjectType, accessor: ts.Expression, vi
         }
     }
     const mapper = mappers.reduce<(source: ts.Type) => ts.Type | undefined>((previous, next) => (source: ts.Type) => previous(source) || next(source), () => undefined);
-    const conditions: ts.Expression[] = [];
-    let token: ts.SyntaxKind.BarBarToken | ts.SyntaxKind.AmpersandAmpersandToken;
+    const properties = visitorContext.checker.getPropertiesOfType(type);
 
     if (visitorContext.mode.type === 'type-check') {
-        token = ts.SyntaxKind.AmpersandAmpersandToken;
+        const conditions: ts.Expression[] = [];
         conditions.push(
             ts.createStrictEquality(
                 ts.createTypeOf(accessor),
@@ -186,7 +181,7 @@ function visitRegularObjectType(type: ts.ObjectType, accessor: ts.Expression, vi
             )
         );
         visitorContext.typeMapperStack.push(mapper);
-        for (const property of visitorContext.checker.getPropertiesOfType(type)) {
+        for (const property of properties) {
             conditions.push(visitPropertySymbol(property, accessor, visitorContext));
         }
         const stringIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.String);
@@ -227,35 +222,49 @@ function visitRegularObjectType(type: ts.ObjectType, accessor: ts.Expression, vi
             );
         }
         visitorContext.typeMapperStack.pop();
-    } else {
-        token = ts.SyntaxKind.BarBarToken;
-        const propertyNames = visitorContext.mode.propertyTypes.map((type) => {
-            if (tsutils.isLiteralType(type) && typeof type.value === 'string') {
-                return type.value;
-            } else {
-                throw new Error('Currently only string literals are supported for indexed access to objects.');
-            }
-        });
-        visitorContext.typeMapperStack.push(mapper);
-        for (const property of visitorContext.checker.getPropertiesOfType(type)) {
-            if (propertyNames.indexOf(property.name) >= 0) {
-                conditions.push(visitPropertySymbol(property, accessor, visitorContext));
-            }
-        }
-        visitorContext.typeMapperStack.pop();
-    }
-    if (conditions.length >= 1) {
         return conditions.reduce((condition, expression) =>
             ts.createBinary(
                 condition,
-                token,
+                ts.SyntaxKind.AmpersandAmpersandToken,
                 expression
             )
         );
+    } else if (visitorContext.mode.type === 'keyof') {
+        return properties
+            .map((property) =>
+                ts.createStrictEquality(accessor, ts.createStringLiteral(property.name))
+            )
+            .reduce<ts.Expression>((condition, expression) =>
+                ts.createBinary(
+                    condition,
+                    ts.SyntaxKind.BarBarToken,
+                    expression
+                ),
+                ts.createFalse()
+            );
     } else {
-        return token === ts.SyntaxKind.BarBarToken
-            ? ts.createFalse()
-            : ts.createTrue();
+        const indexType = visitorContext.mode.indexType;
+        return properties
+            .map((property) => {
+                const propertyNameAccessor = ts.createStringLiteral(property.name);
+                const propertyNameExpression = visitType(indexType, propertyNameAccessor, { ...visitorContext, mode: { type: 'type-check' } });
+                // const propertyType = visitorContext.checker.getDeclaredTypeOfSymbol(property);
+                // const propertyTypeExpression = visitType(propertyType, accessor, { ...visitorContext, mode: { type: 'type-check' } });
+                const propertyTypeExpression = visitPropertySymbol(property, accessor, visitorContext);
+                return ts.createBinary(
+                    ts.createLogicalNot(propertyNameExpression),
+                    ts.SyntaxKind.BarBarToken,
+                    propertyTypeExpression
+                );
+            })
+            .reduce<ts.Expression>((condition, expression) =>
+                ts.createBinary(
+                    condition,
+                    ts.SyntaxKind.BarBarToken,
+                    expression
+                ),
+                ts.createFalse()
+            );
     }
 }
 
@@ -284,9 +293,17 @@ function visitLiteralType(type: ts.LiteralType, accessor: ts.Expression, visitor
 function visitUnionOrIntersectionType(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
     let token: ts.SyntaxKind.BarBarToken | ts.SyntaxKind.AmpersandAmpersandToken;
     if (tsutils.isUnionType(type)) {
-        token = ts.SyntaxKind.BarBarToken;
+        if (visitorContext.mode.type === 'keyof') {
+            token = ts.SyntaxKind.AmpersandAmpersandToken;
+        } else {
+            token = ts.SyntaxKind.BarBarToken;
+        }
     } else if (tsutils.isIntersectionType(type)) {
-        token = ts.SyntaxKind.AmpersandAmpersandToken;
+        if (visitorContext.mode.type === 'keyof') {
+            token = ts.SyntaxKind.BarBarToken;
+        } else {
+            token = ts.SyntaxKind.AmpersandAmpersandToken;
+        }
     } else {
         throw new Error('UnionOrIntersection type is expected to be a Union or Intersection type.');
     }
@@ -369,20 +386,7 @@ function visitIndexType(type: ts.Type, accessor: ts.Expression, visitorContext: 
         if (indexedType === undefined) {
             throw new Error('Could not get indexed type of index type.');
         }
-        const propertyTypes = Array.from(new Set(visitStringLiteralsOfType(indexedType, { ...visitorContext, mode: { type: 'property-names' } })));
-        if (propertyTypes.length >= 1) {
-            return propertyTypes
-                .map((type) => visitType(type, accessor, visitorContext))
-                .reduce((condition, expression) =>
-                    ts.createBinary(
-                        condition,
-                        ts.SyntaxKind.BarBarToken,
-                        expression
-                    )
-                );
-        } else {
-            return ts.createFalse();
-        }
+        return visitType(indexedType, accessor, { ...visitorContext, mode: { type: 'keyof' } });
     } else {
         throw new Error('visitIndexType should only be called during type-check mode.');
     }
@@ -391,17 +395,7 @@ function visitIndexType(type: ts.Type, accessor: ts.Expression, visitorContext: 
 function visitIndexedAccessType(type: ts.IndexedAccessType, accessor: ts.Expression, visitorContext: VisitorContext) {
     // T[U] -> index type = U, object type = T
     if (visitorContext.mode.type === 'type-check') {
-        // Using internal TypeScript API, hacky.
-        const indexedType = (type.indexType as { type?: ts.Type }).type;
-        if ((type.indexType.flags & ts.TypeFlags.Index) !== 0 && indexedType === undefined) {
-            throw new Error('Could not get indexed type of index type.');
-        }
-        const propertyTypes = Array.from(new Set(visitStringLiteralsOfType(type.indexType, { ...visitorContext, mode: { type: 'literal' } })));
-        const oldMode = visitorContext.mode;
-        visitorContext.mode = { type: 'indexed-properties', propertyTypes };
-        const result = visitType(type.objectType, accessor, visitorContext);
-        visitorContext.mode = oldMode;
-        return result;
+        return visitType(type.objectType, accessor, { ...visitorContext, mode: { type: 'indexed-access', indexType: type.indexType } });
     } else {
         throw new Error('visitIndexedAccessType should only be called during type-check mode.');
     }
