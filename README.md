@@ -52,7 +52,7 @@ This is basically a wrapper around the TypeScript compiler that injects transfor
 First install `ttypescript`:
 
 ```bash
-npm install --save-dev ttypescript
+npm install --save ttypescript
 ```
 
 Then make sure your `tsconfig.json` is configured to use the `typescript-is` transformer:
