@@ -221,6 +221,7 @@ Features that are planned:
 
 * More detailed error message when using `assertType` and `createAssertType`.
 Give the reason why the assertion failed to the user as part of the error.
+* Optimize the generated conditions. Things like `false || "key" === "key"` can be simplified. Might be more interesting to publish a different library that can transform a TypeScript AST, and then use it here, or use an existing one. Might be out of scope, as there are plenty of minifiers/uglifiers/manglers out there already.
 
 # 🔨 Building and testing
 
