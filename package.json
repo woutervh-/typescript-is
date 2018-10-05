@@ -35,7 +35,7 @@
   "peerDependencies": {
     "nested-error-stacks": "^2.1.0",
     "tsutils": ">=2",
-    "typescript": ">=2",
+    "typescript": ">=2.9.1",
     "reflect-metadata": ">=0.1.12"
   },
   "devDependencies": {
