@@ -10,7 +10,7 @@
     "transformer",
     "type"
   ],
-  "description": "",
+  "description": "Banff parking updater and API.",
   "main": "index.js",
   "files": [
     "lib/*",
@@ -33,8 +33,7 @@
   },
   "homepage": "https://github.com/woutervh-/typescript-is#readme",
   "peerDependencies": {
-    "reflect-metadata": "^0.1.12",
-    "tsutils": ">=2",
+    "reflect-metadata": ">=0.1.12",
     "typescript": ">=2"
   },
   "devDependencies": {
@@ -51,6 +50,7 @@
     "typescript": "^3"
   },
   "dependencies": {
-    "nested-error-stacks": "^2.1.0"
+    "nested-error-stacks": "^2.1.0",
+    "tsutils": "^2"
   }
 }
