@@ -13,7 +13,13 @@ TypeScript transformer that generates run-time type-checks.
 # 💿 Installation
 
 ```bash
-npm install --save-dev typescript-is
+npm install --save typescript-is
+
+# Ensure you have the required dependencies at compile time:
+npm install --save-dev typescript nested-error-stacks tsutils
+
+# If you want to use the decorators, ensure you have reflect-metadata in your depdendencies:
+npm install --save reflect-metadata
 ```
 
 # 💼 Use cases
@@ -52,7 +58,7 @@ This is basically a wrapper around the TypeScript compiler that injects transfor
 First install `ttypescript`:
 
 ```bash
-npm install --save ttypescript
+npm install --save-dev ttypescript
 ```
 
 Then make sure your `tsconfig.json` is configured to use the `typescript-is` transformer:

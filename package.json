@@ -33,8 +33,10 @@
   },
   "homepage": "https://github.com/woutervh-/typescript-is#readme",
   "peerDependencies": {
-    "reflect-metadata": ">=0.1.12",
-    "typescript": ">=2"
+    "nested-error-stacks": "^2.1.0",
+    "tsutils": ">=2",
+    "typescript": ">=2",
+    "reflect-metadata": ">=0.1.12"
   },
   "devDependencies": {
     "@types/mocha": "^5.2.5",
@@ -48,9 +50,5 @@
     "tsutils": "^3",
     "ttypescript": "^1.5.5",
     "typescript": "^3"
-  },
-  "dependencies": {
-    "nested-error-stacks": "^2.1.0",
-    "tsutils": "^2"
   }
 }
