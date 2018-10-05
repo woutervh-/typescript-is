@@ -3,27 +3,35 @@ import * as tsutils from 'tsutils';
 import { VisitorContext } from './visitor-context';
 
 function createPropertyCheck(accessor: ts.Expression, property: ts.Expression, type: ts.Type, optional: boolean, visitorContext: VisitorContext) {
-    const propertyAccessor = visitorContext.mode.type === 'type-check'
-        ? ts.createElementAccess(accessor, property)
-        : accessor;
-    const expression = visitType(type, propertyAccessor, { ...visitorContext, mode: { type: 'type-check' } });
-    let result: ts.Expression;
-    if (!optional) {
-        result = expression;
-    } else {
-        result = ts.createBinary(
-            ts.createLogicalNot(
+    if (visitorContext.mode.type === 'type-check') {
+        const propertyAccessor = ts.createElementAccess(accessor, property);
+        const expression = visitType(type, propertyAccessor, { ...visitorContext, mode: { type: 'type-check' } });
+        if (optional) {
+            return ts.createBinary(
+                ts.createLogicalNot(
+                    ts.createBinary(
+                        property,
+                        ts.SyntaxKind.InKeyword,
+                        accessor
+                    )
+                ),
+                ts.SyntaxKind.BarBarToken,
+                expression
+            );
+        } else {
+            return ts.createBinary(
                 ts.createBinary(
                     property,
                     ts.SyntaxKind.InKeyword,
                     accessor
-                )
-            ),
-            ts.SyntaxKind.BarBarToken,
-            expression
-        );
+                ),
+                ts.SyntaxKind.AmpersandAmpersandToken,
+                expression
+            );
+        }
+    } else {
+        return visitType(type, accessor, { ...visitorContext, mode: { type: 'type-check' } });
     }
-    return result;
 }
 
 function visitPropertyName(node: ts.PropertyName, accessor: ts.Expression, visitorContext: VisitorContext) {
@@ -293,13 +301,13 @@ function visitLiteralType(type: ts.LiteralType, accessor: ts.Expression, visitor
 function visitUnionOrIntersectionType(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
     let token: ts.SyntaxKind.BarBarToken | ts.SyntaxKind.AmpersandAmpersandToken;
     if (tsutils.isUnionType(type)) {
-        if (visitorContext.mode.type === 'keyof') {
+        if (visitorContext.mode.type === 'keyof' || visitorContext.mode.type === 'indexed-access') {
             token = ts.SyntaxKind.AmpersandAmpersandToken;
         } else {
             token = ts.SyntaxKind.BarBarToken;
         }
     } else if (tsutils.isIntersectionType(type)) {
-        if (visitorContext.mode.type === 'keyof') {
+        if (visitorContext.mode.type === 'keyof' || visitorContext.mode.type === 'indexed-access') {
             token = ts.SyntaxKind.BarBarToken;
         } else {
             token = ts.SyntaxKind.AmpersandAmpersandToken;
