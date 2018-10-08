@@ -43,6 +43,7 @@
     "@types/nested-error-stacks": "^2.1.0",
     "@types/node": "*",
     "mocha": "^5.2.0",
+    "nested-error-stacks": "^2.1.0",
     "reflect-metadata": "^0.1.12",
     "rimraf": "^2.6.2",
     "ts-node": "^7.0.1",
