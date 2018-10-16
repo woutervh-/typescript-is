@@ -507,3 +507,11 @@ export function visitType(type: ts.Type, accessor: ts.Expression, visitorContext
         throw new Error('Could not generate type-check; unsupported type with flags: ' + type.flags);
     }
 }
+
+export function visitUndefinedOrType(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
+    return ts.createBinary(
+        ts.createStrictEquality(accessor, ts.createIdentifier('undefined')),
+        ts.SyntaxKind.BarBarToken,
+        visitType(type, accessor, visitorContext)
+    );
+}

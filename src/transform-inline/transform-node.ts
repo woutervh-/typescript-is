@@ -1,9 +1,13 @@
 import * as path from 'path';
 import * as ts from 'typescript';
 import { VisitorContext } from './visitor-context';
-import { visitType } from './visitor';
+import { visitType, visitUndefinedOrType } from './visitor';
 
-function createArrowFunction(accessor: ts.Identifier, type: ts.Type, visitorContext: VisitorContext, isAssert: boolean) {
+function createArrowFunction(accessor: ts.Identifier, type: ts.Type, optional: boolean, visitorContext: VisitorContext, isAssert: boolean) {
+    const expression = optional
+        ? visitUndefinedOrType(type, accessor, visitorContext)
+        : visitType(type, accessor, visitorContext);
+
     return ts.createArrowFunction(
         undefined,
         undefined,
@@ -22,7 +26,7 @@ function createArrowFunction(accessor: ts.Identifier, type: ts.Type, visitorCont
         ts.createBlock([
             isAssert
                 ? ts.createIf(
-                    ts.createLogicalNot(visitType(type, accessor, visitorContext)),
+                    ts.createLogicalNot(expression),
                     ts.createThrow(
                         ts.createNew(
                             ts.createIdentifier('Error'),
@@ -34,12 +38,12 @@ function createArrowFunction(accessor: ts.Identifier, type: ts.Type, visitorCont
                     ),
                     ts.createReturn(accessor)
                 )
-                : ts.createReturn(visitType(type, accessor, visitorContext))
+                : ts.createReturn(expression)
         ])
     );
 }
 
-function transformDecorator(node: ts.Decorator, parameterType: ts.Type, visitorContext: VisitorContext): ts.Decorator {
+function transformDecorator(node: ts.Decorator, parameterType: ts.Type, optional: boolean, visitorContext: VisitorContext): ts.Decorator {
     if (ts.isCallExpression(node.expression)) {
         const signature = visitorContext.checker.getResolvedSignature(node.expression);
         if (
@@ -49,7 +53,7 @@ function transformDecorator(node: ts.Decorator, parameterType: ts.Type, visitorC
             && node.expression.arguments.length <= 1
         ) {
             const accessor = ts.createIdentifier('object');
-            const arrowFunction: ts.Expression = createArrowFunction(accessor, parameterType, visitorContext, false);
+            const arrowFunction: ts.Expression = createArrowFunction(accessor, parameterType, optional, visitorContext, false);
             const expression = ts.updateCall(
                 node.expression,
                 node.expression.expression,
@@ -68,7 +72,8 @@ function transformDecorator(node: ts.Decorator, parameterType: ts.Type, visitorC
 export function transformNode(node: ts.Node, visitorContext: VisitorContext): ts.Node {
     if (ts.isParameter(node) && node.type !== undefined && node.decorators !== undefined) {
         const type = visitorContext.checker.getTypeFromTypeNode(node.type);
-        const mappedDecorators = node.decorators.map((decorator) => transformDecorator(decorator, type, visitorContext));
+        const required = !node.initializer && !node.questionToken;
+        const mappedDecorators = node.decorators.map((decorator) => transformDecorator(decorator, type, !required, visitorContext));
         return ts.updateParameter(
             node,
             mappedDecorators,
@@ -99,7 +104,7 @@ export function transformNode(node: ts.Node, visitorContext: VisitorContext): ts
                 throw new Error('Calls to `is` and `assertType` should have one argument, calls to `createIs` and `createAssertType` should have no arguments.');
             }
 
-            const arrowFunction = createArrowFunction(accessor, type, visitorContext, isAssert);
+            const arrowFunction = createArrowFunction(accessor, type, false, visitorContext, isAssert);
 
             if (isCreate) {
                 return arrowFunction;
