@@ -1,5 +1,3 @@
-require('reflect-metadata');
-
 function warn() {
     throw new Error('This module should not be used in runtime. Instead, use a transformer during compilation.');
 }
@@ -7,6 +5,7 @@ function warn() {
 const assertionsMetadataKey = Symbol('assertions');
 
 function AssertType(assertion, options = {}) {
+    require('reflect-metadata');
     return function (target, propertyKey, parameterIndex) {
         const assertions = Reflect.getOwnMetadata(assertionsMetadataKey, target, propertyKey) || [];
         assertions[parameterIndex] = { assertion, options };
@@ -15,6 +14,7 @@ function AssertType(assertion, options = {}) {
 }
 
 function ValidateClass(errorConstructor = Error) {
+    require('reflect-metadata');
     return function (target) {
         for (const propertyKey of Object.getOwnPropertyNames(target.prototype)) {
             const assertions = Reflect.getOwnMetadata(assertionsMetadataKey, target.prototype, propertyKey);
