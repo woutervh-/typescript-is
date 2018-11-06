@@ -10,7 +10,7 @@
     "transformer",
     "type"
   ],
-  "description": "Banff parking updater and API.",
+  "description": "TypeScript transformer that generates run-time type-checks.",
   "main": "index.js",
   "files": [
     "lib/*",
