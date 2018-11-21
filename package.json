@@ -1,6 +1,6 @@
 {
   "name": "typescript-is",
-  "version": "0.7.11",
+  "version": "0.7.12",
   "engines": {
     "node": ">=6.14.4"
   },
@@ -32,23 +32,25 @@
     "url": "https://github.com/woutervh-/typescript-is/issues"
   },
   "homepage": "https://github.com/woutervh-/typescript-is#readme",
-  "peerDependencies": {
-    "nested-error-stacks": "^2.1.0",
-    "tsutils": ">=2",
-    "typescript": ">=2.9.1",
+  "dependencies": {
+    "nested-error-stacks": "^2",
+    "tsutils": "^3"
+  },
+  "optionalDependencies": {
     "reflect-metadata": ">=0.1.12"
+  },
+  "peerDependencies": {
+    "typescript": ">=2.9.1"
   },
   "devDependencies": {
     "@types/mocha": "^5.2.5",
     "@types/nested-error-stacks": "^2.1.0",
     "@types/node": "*",
     "mocha": "^5.2.0",
-    "nested-error-stacks": "^2.1.0",
     "reflect-metadata": "^0.1.12",
     "rimraf": "^2.6.2",
     "ts-node": "^7.0.1",
     "tslint": "^5.11.0",
-    "tsutils": "^3",
     "ttypescript": "^1.5.5",
     "typescript": "^3"
   }

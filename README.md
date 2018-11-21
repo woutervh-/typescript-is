@@ -16,7 +16,7 @@ TypeScript transformer that generates run-time type-checks.
 npm install --save typescript-is
 
 # Ensure you have the required dependencies at compile time:
-npm install --save-dev typescript nested-error-stacks tsutils
+npm install --save-dev typescript
 
 # If you want to use the decorators, ensure you have reflect-metadata in your depdendencies:
 npm install --save reflect-metadata
