@@ -380,7 +380,7 @@ function visitTypeParameter(type: ts.Type, accessor: ts.Expression, visitorConte
     if (typeMapper === undefined) {
         throw new Error('Unbound type parameter, missing type mapper.');
     }
-    const mappedType = typeMapper(type);
+    const mappedType = typeMapper(type) || type.getDefault();
     if (mappedType === undefined) {
         throw new Error('Unbound type parameter, missing type node.');
     }
