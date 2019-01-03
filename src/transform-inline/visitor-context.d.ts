@@ -33,4 +33,6 @@ export interface VisitorContext {
     checker: ts.TypeChecker;
     typeMapperStack: ((source: ts.Type) => ts.Type | undefined)[];
     mode: VisitMode;
+    pathStack: string[];
+    reportError: boolean;
 }

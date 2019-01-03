@@ -5,8 +5,8 @@ import { visitType, visitUndefinedOrType } from './visitor';
 
 function createArrowFunction(accessor: ts.Identifier, type: ts.Type, optional: boolean, visitorContext: VisitorContext, isAssert: boolean) {
     const expression = optional
-        ? visitUndefinedOrType(type, accessor, visitorContext)
-        : visitType(type, accessor, visitorContext);
+        ? visitUndefinedOrType(type, accessor, { ...visitorContext, reportError: isAssert })
+        : visitType(type, accessor, { ...visitorContext, reportError: isAssert });
 
     return ts.createArrowFunction(
         undefined,

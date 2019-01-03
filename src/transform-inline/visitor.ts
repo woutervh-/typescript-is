@@ -2,6 +2,18 @@ import * as ts from 'typescript';
 import * as tsutils from 'tsutils';
 import { VisitorContext } from './visitor-context';
 
+function createErrorReport(condition: ts.Expression, errorMessage: string, visitorContext: VisitorContext) {
+    if (visitorContext.reportError) {
+        return ts.createBinary(
+            condition,
+            ts.SyntaxKind.BarBarToken,
+            ts.createStringLiteral(`Error while validating ${visitorContext.pathStack.join('')}: ${errorMessage}`)
+        );
+    } else {
+        return condition;
+    }
+}
+
 function createPropertyCheck(accessor: ts.Expression, property: ts.Expression, type: ts.Type, optional: boolean, visitorContext: VisitorContext) {
     if (visitorContext.mode.type === 'type-check') {
         const propertyAccessor = ts.createElementAccess(accessor, property);
@@ -508,10 +520,71 @@ export function visitType(type: ts.Type, accessor: ts.Expression, visitorContext
     }
 }
 
+function createDisjunction(conditions: ts.Expression[], visitorContext: VisitorContext) {
+    if (visitorContext.reportError) {
+        const errorsIdentifier = ts.createIdentifier('errors');
+        const errorIdentifier = ts.createIdentifier('error');
+        return ts.createCall(
+            ts.createArrowFunction(
+                undefined,
+                undefined,
+                [],
+                undefined,
+                undefined,
+                ts.createBlock([
+                    ts.createVariableStatement(
+                        [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
+                        [ts.createVariableDeclaration(
+                            errorsIdentifier,
+                            undefined,
+                            ts.createCall(
+                                ts.createPropertyAccess(
+                                    ts.createArrayLiteral(conditions),
+                                    'filter'
+                                ),
+                                undefined,
+                                [
+                                    ts.createArrowFunction(
+                                        undefined,
+                                        undefined,
+                                        [
+                                            ts.createParameter(undefined, undefined, undefined, errorIdentifier, undefined, undefined, undefined)
+                                        ],
+                                        undefined,
+                                        undefined,
+                                        ts.createStrictInequality(
+                                            errorIdentifier,
+                                            ts.createNull()
+                                        )
+                                    )
+                                ]
+                            )
+                        )]
+                    )
+                ])
+            ),
+            undefined,
+            undefined
+        );
+    } else {
+        return conditions.reduce((condition, expression) =>
+            ts.createBinary(
+                condition,
+                ts.SyntaxKind.BarBarToken,
+                expression
+            )
+        );
+    }
+}
+
 export function visitUndefinedOrType(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
-    return ts.createBinary(
-        ts.createStrictEquality(accessor, ts.createIdentifier('undefined')),
-        ts.SyntaxKind.BarBarToken,
-        visitType(type, accessor, visitorContext)
+    return createErrorReport(
+        ts.createBinary(
+            visitUndefined(type, accessor, visitorContext),
+            ts.SyntaxKind.BarBarToken,
+            visitType(type, accessor, visitorContext)
+        ),
+        'Expected value to be undefined or ',
+        visitorContext
     );
 }
