@@ -53,7 +53,7 @@ function visitPropertySignature(node: ts.PropertySignature, accessor: ts.Express
     }
     const type = visitorContext.checker.getTypeFromTypeNode(node.type);
     if (checkProperty) {
-        return createPropertyCheck(accessor, visitPropertyName(node.name, accessor, visitorContext), type, node.questionToken !== undefined, visitorContext);
+        return createPropertyCheck(accessor, visitPropertyName(node.name, accessor, visitorContext), type, node.questionToken !== undefined || (node.flags & ts.SymbolFlags.Optional) !== 0, visitorContext);
     } else {
         return visitType(type, accessor, visitorContext);
     }
