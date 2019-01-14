@@ -4,6 +4,8 @@ import { VisitorContext } from './visitor-context';
 import { transformNode } from './transform-node';
 
 export default function transformer(program: ts.Program): ts.TransformerFactory<ts.SourceFile> {
+    console.log(`typescript-is: transforming program with ${program.getSourceFiles().length} source files; using TypeScript ${ts.version}.`);
+
     const visitorContext: VisitorContext = {
         program,
         checker: program.getTypeChecker(),
