@@ -18,7 +18,7 @@
     "index.d.ts"
   ],
   "scripts": {
-    "build": "rimraf lib/ && tsc --project tsconfig.json && copy-cli src/**/*.d.ts lib/",
+    "build": "rimraf lib/ && tsc --project tsconfig.json && copy-cli \"src/**/*.d.ts\" \"lib/\"",
     "lint": "tslint --project tsconfig.json",
     "test": "npm run lint && npm run build && ttsc --project tsconfig-test.json && mocha"
   },
