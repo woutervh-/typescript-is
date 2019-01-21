@@ -487,7 +487,11 @@ export function visitType(type: ts.Type, accessor: ts.Expression, visitorContext
         return visitTypeParameter(type, accessor, visitorContext);
     } else if (tsutils.isObjectType(type)) {
         // Object type (including arrays)
+        if ((ts.ObjectFlags.Class & type.objectFlags) !== 0) {
+            throw new Error('Classes cannot be validated. Please check the README.');
+        } else {
         return visitObjectType(type, accessor, visitorContext);
+        }
     } else if (tsutils.isLiteralType(type)) {
         // Literal string/number types ('foo')
         return visitLiteralType(type, accessor, visitorContext);

@@ -18,9 +18,9 @@
     "index.d.ts"
   ],
   "scripts": {
-    "build": "rimraf lib/ && tsc --project tsconfig.json",
+    "build": "rimraf lib/ && tsc --project tsconfig.json && copy-cli src/**/*.d.ts lib/",
     "lint": "tslint --project tsconfig.json",
-    "test": "ttsc --project tsconfig-test.json && mocha"
+    "test": "npm run lint && npm run build && ttsc --project tsconfig-test.json && mocha"
   },
   "repository": {
     "type": "git",
@@ -46,6 +46,7 @@
     "@types/mocha": "^5.2.5",
     "@types/nested-error-stacks": "^2.1.0",
     "@types/node": "*",
+    "copy": "^0.3.2",
     "mocha": "^5.2.0",
     "reflect-metadata": "^0.1.12",
     "rimraf": "^2.6.2",
