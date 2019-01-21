@@ -6,4 +6,4 @@ class ClassX {
     }
 }
 
-is<ClassX>(new ClassX());
+is<ClassX>(new ClassX()); // error: classes are not supported

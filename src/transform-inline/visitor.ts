@@ -490,7 +490,7 @@ export function visitType(type: ts.Type, accessor: ts.Expression, visitorContext
         if ((ts.ObjectFlags.Class & type.objectFlags) !== 0) {
             throw new Error('Classes cannot be validated. Please check the README.');
         } else {
-        return visitObjectType(type, accessor, visitorContext);
+            return visitObjectType(type, accessor, visitorContext);
         }
     } else if (tsutils.isLiteralType(type)) {
         // Literal string/number types ('foo')
