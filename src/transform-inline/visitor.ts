@@ -376,7 +376,8 @@ function visitNonPrimitiveType(type: ts.Type, accessor: ts.Expression, visitorCo
 }
 
 function visitTypeParameter(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
-    const typeMapper = visitorContext.typeMapperStack[visitorContext.typeMapperStack.length - 1];
+    // const typeMapper = visitorContext.typeMapperStack[visitorContext.typeMapperStack.length - 1];
+    const typeMapper = visitorContext.typeMapperStack.reduceRight<(source: ts.Type) => ts.Type | undefined>((previous, next) => (source: ts.Type) => previous(source) || next(source), () => undefined);
     if (typeMapper === undefined) {
         throw new Error('Unbound type parameter, missing type mapper.');
     }
