@@ -1,6 +1,8 @@
 import * as assert from 'assert';
 import { is } from '../index';
 
+/* https://github.com/woutervh-/typescript-is/issues/4 */
+
 describe('is', () => {
     interface Wrapped<T> {
         wrap: T;

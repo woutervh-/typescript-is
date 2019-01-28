@@ -67,6 +67,32 @@ function visitDeclaration(node: ts.Declaration, accessor: ts.Expression, checkPr
     }
 }
 
+function visitTupleObjectType(type: ts.TupleType, accessor: ts.Expression, visitorContext: VisitorContext) {
+    if (visitorContext.mode.type === 'type-check') {
+        if (type.typeArguments === undefined) {
+            throw new Error('Expected tuple type to have type arguments.');
+        }
+        const conditions: ts.Expression[] = [
+            ts.createStrictEquality(
+                ts.createPropertyAccess(accessor, ts.createIdentifier('length')),
+                ts.createNumericLiteral(type.typeArguments.length.toString())
+            )
+        ];
+        for (let i = 0; i < type.typeArguments.length; i++) {
+            conditions.push(visitType(type.typeArguments[i], ts.createElementAccess(accessor, i), visitorContext));
+        }
+        return conditions.reduce((condition, expression) =>
+            ts.createBinary(
+                condition,
+                ts.SyntaxKind.AmpersandAmpersandToken,
+                expression
+            )
+        );
+    } else {
+        throw new Error('visitTupleObjectType should only be called during type-check mode.');
+    }
+}
+
 function visitArrayObjectType(type: ts.ObjectType, accessor: ts.Expression, visitorContext: VisitorContext) {
     if (visitorContext.mode.type === 'type-check') {
         const numberIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.Number);
@@ -133,40 +159,6 @@ function visitPropertySymbol(property: ts.Symbol, accessor: ts.Expression, visit
 }
 
 function visitRegularObjectType(type: ts.ObjectType, accessor: ts.Expression, visitorContext: VisitorContext) {
-    const mappers: ((source: ts.Type) => ts.Type | undefined)[] = [];
-    (function checkBaseTypes(type: ts.Type) {
-        if (tsutils.isTypeReference(type) && tsutils.isInterfaceType(type.target)) {
-            const baseTypes = visitorContext.checker.getBaseTypes(type.target);
-            for (const baseType of baseTypes) {
-                if (tsutils.isTypeReference(baseType) && baseType.target.typeParameters !== undefined && baseType.typeArguments !== undefined) {
-                    const typeParameters = baseType.target.typeParameters;
-                    const typeArguments = baseType.typeArguments;
-                    mappers.push((source: ts.Type) => {
-                        for (let i = 0; i < typeParameters.length; i++) {
-                            if (source === typeParameters[i]) {
-                                return typeArguments[i];
-                            }
-                        }
-                    });
-                    checkBaseTypes(baseType);
-                }
-            }
-        }
-    })(type);
-    if (tsutils.isTypeReference(type)) {
-        if (type.target.typeParameters !== undefined && type.typeArguments !== undefined) {
-            const typeParameters = type.target.typeParameters;
-            const typeArguments = type.typeArguments;
-            mappers.push((source: ts.Type) => {
-                for (let i = 0; i < typeParameters.length; i++) {
-                    if (source === typeParameters[i]) {
-                        return typeArguments[i];
-                    }
-                }
-            });
-        }
-    }
-    const mapper = mappers.reduce<(source: ts.Type) => ts.Type | undefined>((previous, next) => (source: ts.Type) => previous(source) || next(source), () => undefined);
     const properties = visitorContext.checker.getPropertiesOfType(type);
 
     if (visitorContext.mode.type === 'type-check') {
@@ -188,7 +180,6 @@ function visitRegularObjectType(type: ts.ObjectType, accessor: ts.Expression, vi
                 )
             )
         );
-        visitorContext.typeMapperStack.push(mapper);
         for (const property of properties) {
             conditions.push(visitPropertySymbol(property, accessor, visitorContext));
         }
@@ -229,7 +220,6 @@ function visitRegularObjectType(type: ts.ObjectType, accessor: ts.Expression, vi
                 )
             );
         }
-        visitorContext.typeMapperStack.pop();
         return conditions.reduce((condition, expression) =>
             ts.createBinary(
                 condition,
@@ -277,11 +267,55 @@ function visitRegularObjectType(type: ts.ObjectType, accessor: ts.Expression, vi
 }
 
 function visitObjectType(type: ts.ObjectType, accessor: ts.Expression, visitorContext: VisitorContext) {
-    if (visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.Number)) {
-        return visitArrayObjectType(type, accessor, visitorContext);
+    const mappers: ((source: ts.Type) => ts.Type | undefined)[] = [];
+    (function checkBaseTypes(type: ts.Type) {
+        if (tsutils.isTypeReference(type) && tsutils.isInterfaceType(type.target)) {
+            const baseTypes = visitorContext.checker.getBaseTypes(type.target);
+            for (const baseType of baseTypes) {
+                if (tsutils.isTypeReference(baseType) && baseType.target.typeParameters !== undefined && baseType.typeArguments !== undefined) {
+                    const typeParameters = baseType.target.typeParameters;
+                    const typeArguments = baseType.typeArguments;
+                    mappers.push((source: ts.Type) => {
+                        for (let i = 0; i < typeParameters.length; i++) {
+                            if (source === typeParameters[i]) {
+                                return typeArguments[i];
+                            }
+                        }
+                    });
+                    checkBaseTypes(baseType);
+                }
+            }
+        }
+    })(type);
+    let targetType: ts.ObjectType;
+    if (tsutils.isTypeReference(type)) {
+        if (type.target.typeParameters !== undefined && type.typeArguments !== undefined) {
+            const typeParameters = type.target.typeParameters;
+            const typeArguments = type.typeArguments;
+            mappers.push((source: ts.Type) => {
+                for (let i = 0; i < typeParameters.length; i++) {
+                    if (source === typeParameters[i]) {
+                        return typeArguments[i];
+                    }
+                }
+            });
+        }
+        targetType = type.target;
     } else {
-        return visitRegularObjectType(type, accessor, visitorContext);
+        targetType = type;
     }
+    const mapper = mappers.reduce<(source: ts.Type) => ts.Type | undefined>((previous, next) => (source: ts.Type) => previous(source) || next(source), () => undefined);
+    let expression: ts.Expression;
+    visitorContext.typeMapperStack.push(mapper);
+    if (tsutils.isTupleType(targetType)) {
+        expression = visitTupleObjectType(targetType, accessor, visitorContext);
+    } else if (visitorContext.checker.getIndexTypeOfType(targetType, ts.IndexKind.Number)) {
+        expression = visitArrayObjectType(targetType, accessor, visitorContext);
+    } else {
+        expression = visitRegularObjectType(targetType, accessor, visitorContext);
+    }
+    visitorContext.typeMapperStack.pop();
+    return expression;
 }
 
 function visitLiteralType(type: ts.LiteralType, accessor: ts.Expression, visitorContext: VisitorContext) {
@@ -487,7 +521,7 @@ export function visitType(type: ts.Type, accessor: ts.Expression, visitorContext
         // Type parameter
         return visitTypeParameter(type, accessor, visitorContext);
     } else if (tsutils.isObjectType(type)) {
-        // Object type (including arrays)
+        // Object type (including interfaces, arrays, tuples)
         if ((ts.ObjectFlags.Class & type.objectFlags) !== 0) {
             throw new Error('Classes cannot be validated. Please check the README.');
         } else {

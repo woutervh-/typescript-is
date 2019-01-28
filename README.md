@@ -24,12 +24,12 @@ npm install --save reflect-metadata
 
 # 💼 Use cases
 
-If you've worked with [TypeScript](https://github.com/Microsoft/TypeScript) for a while, you know that sometimes you obtain data that is not type-safe.
+If you've worked with [TypeScript](https://github.com/Microsoft/TypeScript) for a while, you know that sometimes you obtain `any` or `unknown` data that is not type-safe.
 You'd then have to write your own function with **type predicates** that checks the foreign object, and makes sure it is the type that you need.
 
 **This library automates writing the type predicate function for you.**
 
-At compile time, it inspects the type you want to have checked, and generates a function that can check the type of a wild object at run time.
+At compile time, it inspects the type you want to have checked, and generates a function that can check the type of a wild object at run-time.
 When the function is invoked, it checks in detail if the given wild object complies with your favorite type.
 
 In particular, you may obtain wild, untyped object, in the following situations:
@@ -43,6 +43,9 @@ Perhaps in the meantime the string has been manipulated and is no longer giving 
 * Any other case where you lose compile time type information...
 
 In these situations `typescript-is` can come to your rescue.
+
+*NOTE* this package aims to generate type predicates for any *serializable* JavaScript object.
+Please check [What it won't do](#-what-it-wont-do) for details.
 
 # 🎛️ Configuration
 
@@ -191,6 +194,8 @@ There you can find all the different types that are tested for.
 
 # ⛔ What it won't do
 
+* This library aims to be able to check any serializable data.
+* This library will not check functions. Function signatures are impossible to check at run-time.
 * This library will not check classes. Instead, you are encouraged to use the native `instanceof` operator. For example:
 
 ```typescript
