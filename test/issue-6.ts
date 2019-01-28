@@ -32,7 +32,7 @@ describe('is', () => {
         });
     });
 
-    describe('is<number, string>', () => {
+    describe('is<[number, string]>', () => {
         it('should return true for tuples with a number and a string', () => {
             assert.strictEqual(is<[number, string]>([0, '0']), true);
             assert.strictEqual(is<[number, string]>([0, 'true']), true);
