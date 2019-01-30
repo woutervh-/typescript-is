@@ -445,7 +445,23 @@ function visitIndexedAccessType(type: ts.IndexedAccessType, accessor: ts.Express
 }
 
 function visitAny(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
-    return ts.createTrue();
+    if (visitorContext.mode.type === 'type-check') {
+        return ts.createTrue();
+    } else if (visitorContext.mode.type === 'keyof') {
+        return ts.createStrictEquality(ts.createTypeOf(accessor), ts.createStringLiteral('string'));
+    } else {
+        return ts.createTrue();
+    }
+}
+
+function visitUnknown(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
+    if (visitorContext.mode.type === 'type-check') {
+        return ts.createTrue();
+    } else if (visitorContext.mode.type === 'keyof') {
+        return ts.createFalse();
+    } else {
+        throw new Error('visitUnknown should only be called during type-check or keyof mode.');
+    }
 }
 
 function visitNever(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
@@ -496,6 +512,9 @@ export function visitType(type: ts.Type, accessor: ts.Expression, visitorContext
     if ((ts.TypeFlags.Any & type.flags) !== 0) {
         // Any
         return visitAny(type, accessor, visitorContext);
+    } else if ((ts.TypeFlags.Unknown & type.flags) !== 0) {
+        // Unknown
+        return visitUnknown(type, accessor, visitorContext);
     } else if ((ts.TypeFlags.Never & type.flags) !== 0) {
         // Never
         return visitNever(type, accessor, visitorContext);

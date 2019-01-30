@@ -19,7 +19,7 @@
   ],
   "scripts": {
     "build": "rimraf lib/ && tsc --project tsconfig.json && copy-cli \"src/**/*.d.ts\" \"lib/\"",
-    "lint": "tslint --project tsconfig.json",
+    "lint": "tslint src/**/*.ts test/**/*.ts",
     "test": "npm run lint && npm run build && ttsc --project tsconfig-test.json && mocha"
   },
   "repository": {
