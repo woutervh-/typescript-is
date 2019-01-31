@@ -1,34 +1,38 @@
 import * as ts from 'typescript';
 import * as tsutils from 'tsutils';
 import { VisitorContext } from './visitor-context';
-import { ValidationReport, createDisjunctionValidationReport, createConditionalValidationReport, createAlwaysTrueValidationReport, createAlwaysFalseValidationReport, createConjunctionValidationReport, createArrayEveryValidationReport } from './validation-report';
+import { ValidationReport, createDisjunctionValidationReport, createConditionalValidationReport, createAlwaysTrueValidationReport, createAlwaysFalseValidationReport, createConjunctionValidationReport, createArrayEveryValidationReport, createObjectEveryValidationReport } from './validation-report';
 
 function createPropertyCheck(accessor: ts.Expression, property: ts.Expression, type: ts.Type, optional: boolean, visitorContext: VisitorContext) {
     if (visitorContext.mode.type === 'type-check') {
         const propertyAccessor = ts.createElementAccess(accessor, property);
-        const expression = visitType(type, propertyAccessor, { ...visitorContext, mode: { type: 'type-check' } });
+        const report = visitType(type, propertyAccessor, visitorContext);
         if (optional) {
-            return ts.createBinary(
-                ts.createLogicalNot(
+            return createDisjunctionValidationReport([
+                createConditionalValidationReport(
+                    ts.createLogicalNot(
+                        ts.createBinary(
+                            property,
+                            ts.SyntaxKind.InKeyword,
+                            accessor
+                        )
+                    ),
+                    'expected missing property'
+                ),
+                report
+            ]);
+        } else {
+            return createConjunctionValidationReport([
+                createConditionalValidationReport(
                     ts.createBinary(
                         property,
                         ts.SyntaxKind.InKeyword,
                         accessor
-                    )
+                    ),
+                    'expected property in object'
                 ),
-                ts.SyntaxKind.BarBarToken,
-                expression
-            );
-        } else {
-            return ts.createBinary(
-                ts.createBinary(
-                    property,
-                    ts.SyntaxKind.InKeyword,
-                    accessor
-                ),
-                ts.SyntaxKind.AmpersandAmpersandToken,
-                expression
-            );
+                report
+            ]);
         }
     } else {
         return visitType(type, accessor, { ...visitorContext, mode: { type: 'type-check' } });
@@ -184,46 +188,10 @@ function visitRegularObjectType(type: ts.ObjectType, accessor: ts.Expression, vi
             const itemAccessor = ts.createElementAccess(accessor, keyIdentifier);
 
             validationReports.push(
-                createConditionalValidationReport(
-                    ts.createCall(
-                        ts.createPropertyAccess(
-                            ts.createCall(
-                                ts.createPropertyAccess(ts.createIdentifier('Object'), ts.createIdentifier('keys')),
-                                undefined,
-                                [accessor]
-                            ),
-                            ts.createIdentifier('every')
-                        ),
-                        undefined,
-                        [
-                            ts.createArrowFunction(
-                                undefined,
-                                undefined,
-                                [
-                                    ts.createParameter(
-                                        undefined,
-                                        undefined,
-                                        undefined,
-                                        keyIdentifier
-                                    )
-                                ],
-                                undefined,
-                                undefined,
-                                ts.createBlock([
-                                    ts.createReturn(
-                                        ts.createBinary(
-                                            // Check if key is of type string.
-                                            ts.createStrictEquality(ts.createTypeOf(keyIdentifier), ts.createStringLiteral('string')),
-                                            ts.SyntaxKind.AmpersandAmpersandToken,
-                                            // Check if value is of the given index type.
-                                            visitType(stringIndexType, itemAccessor, visitorContext)
-                                        )
-                                    )
-                                ])
-                            )
-                        ]
-                    ),
-                    'expected string keys'
+                createObjectEveryValidationReport(
+                    accessor,
+                    keyIdentifier,
+                    visitType(stringIndexType, itemAccessor, visitorContext)
                 )
             );
         }

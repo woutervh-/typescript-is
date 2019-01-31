@@ -22,6 +22,13 @@ export interface ArrayEveryValidationReport {
     report: ValidationReport;
 }
 
+export interface ObjectEveryValidationReport {
+    type: 'object-every';
+    objectAccessor: ts.Expression;
+    keyAccessor: ts.Expression;
+    report: ValidationReport;
+}
+
 export interface ConjunctionValidationReport {
     type: 'conjunction';
     reports: ValidationReport[];
@@ -37,6 +44,7 @@ export type ValidationReport =
     | AlwaysFalseValidationReport
     | ConditionalValidationReport
     | ArrayEveryValidationReport
+    | ObjectEveryValidationReport
     | ConjunctionValidationReport
     | DisjunctionValidationReport;
 
@@ -54,6 +62,10 @@ export function createConditionalValidationReport(condition: ts.Expression, reas
 
 export function createArrayEveryValidationReport(arrayAccessor: ts.Expression, itemAccessor: ts.Expression, report: ValidationReport): ArrayEveryValidationReport {
     return { type: 'array-every', arrayAccessor, itemAccessor, report };
+}
+
+export function createObjectEveryValidationReport(objectAccessor: ts.Expression, keyAccessor: ts.Expression, report: ValidationReport): ObjectEveryValidationReport {
+    return { type: 'object-every', objectAccessor, keyAccessor, report };
 }
 
 export function createConjunctionValidationReport(reports: ValidationReport[]): ConjunctionValidationReport {

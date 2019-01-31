@@ -188,3 +188,44 @@
 //         ]
 //     )
 // }
+
+// handleEveryObject {
+//     ts.createCall(
+//         ts.createPropertyAccess(
+//             ts.createCall(
+//                 ts.createPropertyAccess(ts.createIdentifier('Object'), ts.createIdentifier('keys')),
+//                 undefined,
+//                 [accessor]
+//             ),
+//             ts.createIdentifier('every')
+//         ),
+//         undefined,
+//         [
+//             ts.createArrowFunction(
+//                 undefined,
+//                 undefined,
+//                 [
+//                     ts.createParameter(
+//                         undefined,
+//                         undefined,
+//                         undefined,
+//                         keyIdentifier
+//                     )
+//                 ],
+//                 undefined,
+//                 undefined,
+//                 ts.createBlock([
+//                     ts.createReturn(
+//                         ts.createBinary(
+//                             // Check if key is of type string.
+//                             ts.createStrictEquality(ts.createTypeOf(keyIdentifier), ts.createStringLiteral('string')),
+//                             ts.SyntaxKind.AmpersandAmpersandToken,
+//                             // Check if value is of the given index type.
+//                             visitType(stringIndexType, itemAccessor, visitorContext)
+//                         )
+//                     )
+//                 ])
+//             )
+//         ]
+//     )
+// }
