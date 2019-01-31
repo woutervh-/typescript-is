@@ -47,21 +47,17 @@ function visitPropertyName(node: ts.PropertyName, accessor: ts.Expression, visit
     }
 }
 
-function visitPropertySignature(node: ts.PropertySignature, accessor: ts.Expression, checkProperty: boolean, visitorContext: VisitorContext) {
+function visitPropertySignature(node: ts.PropertySignature, accessor: ts.Expression, visitorContext: VisitorContext) {
     if (node.type === undefined) {
         throw new Error('Visiting property without type.');
     }
     const type = visitorContext.checker.getTypeFromTypeNode(node.type);
-    if (checkProperty) {
-        return createPropertyCheck(accessor, visitPropertyName(node.name, accessor, visitorContext), type, node.questionToken !== undefined, visitorContext);
-    } else {
-        return visitType(type, accessor, visitorContext);
-    }
+    return createPropertyCheck(accessor, visitPropertyName(node.name, accessor, visitorContext), type, node.questionToken !== undefined, visitorContext);
 }
 
-function visitDeclaration(node: ts.Declaration, accessor: ts.Expression, checkProperty: boolean, visitorContext: VisitorContext) {
+function visitDeclaration(node: ts.Declaration, accessor: ts.Expression, visitorContext: VisitorContext) {
     if (ts.isPropertySignature(node)) {
-        return visitPropertySignature(node, accessor, checkProperty, visitorContext);
+        return visitPropertySignature(node, accessor, visitorContext);
     } else {
         throw new Error('Unsupported declaration kind: ' + node.kind);
     }
@@ -137,25 +133,19 @@ function visitArrayObjectType(type: ts.ObjectType, accessor: ts.Expression, visi
 }
 
 function visitPropertySymbol(property: ts.Symbol, accessor: ts.Expression, visitorContext: VisitorContext) {
-    const conditions: ts.Expression[] = [];
     if ('valueDeclaration' in property) {
-        conditions.push(visitDeclaration(property.valueDeclaration, accessor, true, visitorContext));
+        return visitDeclaration(property.valueDeclaration, accessor, visitorContext);
     } else {
         // Using internal TypeScript API, hacky.
         const propertyType = (property as { type?: ts.Type }).type;
         const propertyName = (property as { name?: string }).name;
         const optional = ((property as ts.Symbol).flags & ts.SymbolFlags.Optional) !== 0;
         if (propertyType !== undefined && propertyName !== undefined) {
-            conditions.push(createPropertyCheck(accessor, ts.createStringLiteral(propertyName), propertyType, optional, visitorContext));
+            return createPropertyCheck(accessor, ts.createStringLiteral(propertyName), propertyType, optional, visitorContext);
+        } else {
+            throw new Error('Expected a valueDeclaration or a property name and type.');
         }
     }
-    return conditions.reduce((condition, expression) =>
-        ts.createBinary(
-            condition,
-            ts.SyntaxKind.AmpersandAmpersandToken,
-            expression
-        )
-    );
 }
 
 function visitRegularObjectType(type: ts.ObjectType, accessor: ts.Expression, visitorContext: VisitorContext) {
