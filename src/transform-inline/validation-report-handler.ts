@@ -162,3 +162,29 @@
 //         );
 //     }
 // }
+
+// handleArrayEvery {
+//     ts.createCall(
+//         ts.createPropertyAccess(accessor, ts.createIdentifier('every')),
+//         undefined,
+//         [
+//             ts.createArrowFunction(
+//                 undefined,
+//                 undefined,
+//                 [
+//                     ts.createParameter(
+//                         undefined,
+//                         undefined,
+//                         undefined,
+//                         itemIdentifier
+//                     )
+//                 ],
+//                 undefined,
+//                 undefined,
+//                 ts.createBlock([
+//                     ts.createReturn(visitType(numberIndexType, itemIdentifier, visitorContext))
+//                 ])
+//             )
+//         ]
+//     )
+// }

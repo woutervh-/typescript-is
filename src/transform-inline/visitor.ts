@@ -1,7 +1,7 @@
 import * as ts from 'typescript';
 import * as tsutils from 'tsutils';
 import { VisitorContext } from './visitor-context';
-import { ValidationReport, createDisjunctionValidationReport, createConditionalValidationReport, createAlwaysTrueValidationReport, createAlwaysFalseValidationReport, createConjunctionValidationReport } from './validation-report';
+import { ValidationReport, createDisjunctionValidationReport, createConditionalValidationReport, createAlwaysTrueValidationReport, createAlwaysFalseValidationReport, createConjunctionValidationReport, createArrayEveryValidationReport } from './validation-report';
 
 function createPropertyCheck(accessor: ts.Expression, property: ts.Expression, type: ts.Type, optional: boolean, visitorContext: VisitorContext) {
     if (visitorContext.mode.type === 'type-check') {
@@ -69,22 +69,28 @@ function visitTupleObjectType(type: ts.TupleType, accessor: ts.Expression, visit
         if (type.typeArguments === undefined) {
             throw new Error('Expected tuple type to have type arguments.');
         }
-        const conditions: ts.Expression[] = [
-            ts.createStrictEquality(
-                ts.createPropertyAccess(accessor, ts.createIdentifier('length')),
-                ts.createNumericLiteral(type.typeArguments.length.toString())
-            )
-        ];
+        const itemReports: ValidationReport[] = [];
         for (let i = 0; i < type.typeArguments.length; i++) {
-            conditions.push(visitType(type.typeArguments[i], ts.createElementAccess(accessor, i), visitorContext));
+            itemReports.push(visitType(type.typeArguments[i], ts.createElementAccess(accessor, i), visitorContext));
         }
-        return conditions.reduce((condition, expression) =>
-            ts.createBinary(
-                condition,
-                ts.SyntaxKind.AmpersandAmpersandToken,
-                expression
-            )
-        );
+        return createConjunctionValidationReport([
+            createConditionalValidationReport(
+                ts.createBinary(
+                    ts.createCall(
+                        ts.createPropertyAccess(ts.createIdentifier('Array'), ts.createIdentifier('isArray')),
+                        undefined,
+                        [accessor]
+                    ),
+                    ts.SyntaxKind.AmpersandAmpersandToken,
+                    ts.createStrictEquality(
+                        ts.createPropertyAccess(accessor, ts.createIdentifier('length')),
+                        ts.createNumericLiteral(type.typeArguments.length.toString())
+                    )
+                ),
+                `expected an array of length ${type.typeArguments.length}`
+            ),
+            ...itemReports
+        ]);
     } else {
         throw new Error('visitTupleObjectType should only be called during type-check mode.');
     }
@@ -97,37 +103,21 @@ function visitArrayObjectType(type: ts.ObjectType, accessor: ts.Expression, visi
             throw new Error('Expected array ObjectType to have a number index type.');
         }
         const itemIdentifier = ts.createIdentifier('item');
-        return ts.createBinary(
-            ts.createCall(
-                ts.createPropertyAccess(ts.createIdentifier('Array'), ts.createIdentifier('isArray')),
-                undefined,
-                [accessor]
+        return createConjunctionValidationReport([
+            createConditionalValidationReport(
+                ts.createCall(
+                    ts.createPropertyAccess(ts.createIdentifier('Array'), ts.createIdentifier('isArray')),
+                    undefined,
+                    [accessor]
+                ),
+                'expected an array'
             ),
-            ts.SyntaxKind.AmpersandAmpersandToken,
-            ts.createCall(
-                ts.createPropertyAccess(accessor, ts.createIdentifier('every')),
-                undefined,
-                [
-                    ts.createArrowFunction(
-                        undefined,
-                        undefined,
-                        [
-                            ts.createParameter(
-                                undefined,
-                                undefined,
-                                undefined,
-                                itemIdentifier
-                            )
-                        ],
-                        undefined,
-                        undefined,
-                        ts.createBlock([
-                            ts.createReturn(visitType(numberIndexType, itemIdentifier, visitorContext))
-                        ])
-                    )
-                ]
+            createArrayEveryValidationReport(
+                accessor,
+                itemIdentifier,
+                visitType(numberIndexType, itemIdentifier, visitorContext)
             )
-        );
+        ]);
     } else {
         throw new Error('visitArrayObjectType should only be called during type-check mode.');
     }
@@ -325,17 +315,17 @@ function visitObjectType(type: ts.ObjectType, accessor: ts.Expression, visitorCo
         targetType = type;
     }
     const mapper = mappers.reduce<(source: ts.Type) => ts.Type | undefined>((previous, next) => (source: ts.Type) => previous(source) || next(source), () => undefined);
-    let expression: ts.Expression;
+    let validationReport: ValidationReport;
     visitorContext.typeMapperStack.push(mapper);
     if (tsutils.isTupleType(targetType)) {
-        expression = visitTupleObjectType(targetType, accessor, visitorContext);
+        validationReport = visitTupleObjectType(targetType, accessor, visitorContext);
     } else if (visitorContext.checker.getIndexTypeOfType(targetType, ts.IndexKind.Number)) {
-        expression = visitArrayObjectType(targetType, accessor, visitorContext);
+        validationReport = visitArrayObjectType(targetType, accessor, visitorContext);
     } else {
-        expression = visitRegularObjectType(targetType, accessor, visitorContext);
+        validationReport = visitRegularObjectType(targetType, accessor, visitorContext);
     }
     visitorContext.typeMapperStack.pop();
-    return expression;
+    return validationReport;
 }
 
 function visitLiteralType(type: ts.LiteralType, accessor: ts.Expression, visitorContext: VisitorContext) {
@@ -515,7 +505,7 @@ function visitUnknown(type: ts.Type, accessor: ts.Expression, visitorContext: Vi
 }
 
 function visitNever(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
-    return ts.createFalse();
+    return createAlwaysFalseValidationReport('type is never');
 }
 
 function visitNull(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {

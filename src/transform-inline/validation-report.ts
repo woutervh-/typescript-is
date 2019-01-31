@@ -15,20 +15,28 @@ export interface ConditionalValidationReport {
     reason: string;
 }
 
+export interface ArrayEveryValidationReport {
+    type: 'array-every';
+    arrayAccessor: ts.Expression;
+    itemAccessor: ts.Expression;
+    report: ValidationReport;
+}
+
 export interface ConjunctionValidationReport {
     type: 'conjunction';
-    conditions: ValidationReport[];
+    reports: ValidationReport[];
 }
 
 export interface DisjunctionValidationReport {
     type: 'disjunction';
-    conditions: ValidationReport[];
+    reports: ValidationReport[];
 }
 
 export type ValidationReport =
     AlwaysTrueValidationReport
     | AlwaysFalseValidationReport
     | ConditionalValidationReport
+    | ArrayEveryValidationReport
     | ConjunctionValidationReport
     | DisjunctionValidationReport;
 
@@ -44,10 +52,14 @@ export function createConditionalValidationReport(condition: ts.Expression, reas
     return { type: 'conditional', condition, reason };
 }
 
-export function createConjunctionValidationReport(conditions: ValidationReport[]): ConjunctionValidationReport {
-    return { type: 'conjunction', conditions };
+export function createArrayEveryValidationReport(arrayAccessor: ts.Expression, itemAccessor: ts.Expression, report: ValidationReport): ArrayEveryValidationReport {
+    return { type: 'array-every', arrayAccessor, itemAccessor, report };
 }
 
-export function createDisjunctionValidationReport(conditions: ValidationReport[]): DisjunctionValidationReport {
-    return { type: 'disjunction', conditions };
+export function createConjunctionValidationReport(reports: ValidationReport[]): ConjunctionValidationReport {
+    return { type: 'conjunction', reports };
+}
+
+export function createDisjunctionValidationReport(reports: ValidationReport[]): DisjunctionValidationReport {
+    return { type: 'disjunction', reports };
 }
