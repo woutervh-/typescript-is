@@ -8,7 +8,7 @@ import { transformNode } from '../src/transform-inline/transform-node';
 import { VisitorContext } from '../src/transform-inline/visitor-context';
 
 const configFilename = path.resolve('tsconfig.json');
-const inFile = path.resolve('test', 'issue-6.ts');
+const inFile = path.resolve('test', 'case-13.ts');
 const content = ts.sys.readFile(configFilename);
 if (content === undefined) {
     throw new Error('Could not read config file.');
@@ -26,7 +26,9 @@ const visitorContext: VisitorContext = {
     checker: program.getTypeChecker(),
     program,
     typeMapperStack: [],
-    mode: { type: 'type-check' }
+    mode: { type: 'type-check' },
+    pathStack: ['$'],
+    reportError: false
 };
 
 function visitNodeAndChildren(node: ts.Node) {

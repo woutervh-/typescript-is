@@ -215,7 +215,7 @@ function visitRegularObjectType(type: ts.ObjectType, accessor: ts.Expression, vi
             `expected one of (${properties.map((property) => property.name).join(', ')})`
         );
     } else {
-        // In indexed-access mode we check if the accessor is of the specified index type.
+        // In indexed-access mode we check if the accessor is of the property type T[U].
         const indexType = visitorContext.mode.indexType;
         return createConditionalValidationReport(
             properties
