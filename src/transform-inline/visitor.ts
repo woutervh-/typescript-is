@@ -220,6 +220,10 @@ function visitRegularObjectType(type: ts.ObjectType, accessor: ts.Expression, vi
         return createConditionalValidationReport(
             properties
                 .map((property) => {
+                    // TODO: would be cool to have checker.isAssignableTo(indexType, createStringLiteralType(property.name))
+                    // https://github.com/Microsoft/TypeScript/issues/9879
+                    // As a better way to solve this than it is currently implemented: have another visitorContext.mode that replaces accessor by a string literal.
+                    // Would reduce code size by a lot.
                     const propertyNameAccessor = ts.createStringLiteral(property.name);
                     const propertyNameExpression = visitType(indexType, propertyNameAccessor, { ...visitorContext, mode: { type: 'type-check' } });
                     // const propertyType = visitorContext.checker.getDeclaredTypeOfSymbol(property);
