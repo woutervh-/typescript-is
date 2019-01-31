@@ -208,13 +208,13 @@ describe('is', () => {
     });
 
     describe('is<any[keyof any]>', () => {
-        it('should always return true', () => {
+        it('should alwaus return true', () => {
+            assert.strictEqual(is<any[keyof any]>(''), true);
+            assert.strictEqual(is<any[keyof any]>('a'), true);
             assert.strictEqual(is<any[keyof any]>(0), true);
             assert.strictEqual(is<any[keyof any]>(1), true);
             assert.strictEqual(is<any[keyof any]>(true), true);
             assert.strictEqual(is<any[keyof any]>(false), true);
-            assert.strictEqual(is<any[keyof any]>(''), true);
-            assert.strictEqual(is<any[keyof any]>('a'), true);
             assert.strictEqual(is<any[keyof any]>({}), true);
             assert.strictEqual(is<any[keyof any]>([]), true);
             assert.strictEqual(is<any[keyof any]>(null), true);

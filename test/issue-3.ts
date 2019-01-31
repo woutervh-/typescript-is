@@ -1,14 +1,15 @@
 /**
- * Run this file with ts-node in order to debug.
+ * Fixes https://github.com/woutervh-/typescript-is/issues/3
  */
 
+import * as assert from 'assert';
 import * as path from 'path';
 import * as ts from 'typescript';
-import { transformNode } from '../src/transform-inline/transform-node';
-import { VisitorContext } from '../src/transform-inline/visitor-context';
+import { transformNode } from '../lib/transform-inline/transform-node';
+import { VisitorContext } from '../lib/transform-inline/visitor-context';
 
 const configFilename = path.resolve('tsconfig.json');
-const inFile = path.resolve('test', 'issue-6.ts');
+const inFile = path.resolve(__dirname, '..', 'test-fixtures', 'issue-3.ts');
 const content = ts.sys.readFile(configFilename);
 if (content === undefined) {
     throw new Error('Could not read config file.');
@@ -21,6 +22,7 @@ delete configParseResult.options.outDir;
 delete configParseResult.options.outFile;
 delete configParseResult.options.declaration;
 const program = ts.createProgram([inFile], configParseResult.options);
+ts.createProgram([inFile], configParseResult.options);
 
 const visitorContext: VisitorContext = {
     checker: program.getTypeChecker(),
@@ -33,4 +35,14 @@ function visitNodeAndChildren(node: ts.Node) {
     ts.forEachChild(transformNode(node, visitorContext), visitNodeAndChildren);
 }
 
-visitNodeAndChildren(program.getSourceFile(inFile)!);
+describe('visitor', () => {
+    describe('visitor test-fixtures/issue-3.ts', () => {
+        const expectedMessageRegExp = /Classes cannot be validated. Please check the README.$/;
+
+        it('should throw an error for classes', () => {
+            assert.throws(() => {
+                visitNodeAndChildren(program.getSourceFile(inFile)!);
+            }, expectedMessageRegExp);
+        });
+    });
+});
