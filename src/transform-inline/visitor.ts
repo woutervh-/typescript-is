@@ -58,6 +58,8 @@ function visitPropertySignature(node: ts.PropertySignature, accessor: ts.Express
 function visitDeclaration(node: ts.Declaration, accessor: ts.Expression, visitorContext: VisitorContext) {
     if (ts.isPropertySignature(node)) {
         return visitPropertySignature(node, accessor, visitorContext);
+    } else if ((node.kind & ts.SyntaxKind.MethodSignature) !== 0) {
+        throw new Error('Encountered a method declaration, but methods are not supported. Please check the README.');
     } else {
         throw new Error('Unsupported declaration kind: ' + node.kind);
     }
