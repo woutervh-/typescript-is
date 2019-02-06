@@ -33,11 +33,11 @@ describe('is', () => {
             }
 
             it('should always return false for non bigint in Bar property', () => {
-                assert.strictEqual(is<Bar<bigint>>({item: 1}), false);
+                assert.strictEqual(is<Bar<bigint>>({ item: 1 }), false);
             });
 
             it('should always return true for bigint in Bar property', () => {
-                assert.strictEqual(is<Bar<bigint>>({item: BigInt(1)}), true);
+                assert.strictEqual(is<Bar<bigint>>({ item: BigInt(1) }), true);
             });
         });
     }
