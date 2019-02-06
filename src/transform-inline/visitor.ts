@@ -484,6 +484,14 @@ function visitNumber(type: ts.Type, accessor: ts.Expression, visitorContext: Vis
     }
 }
 
+function visitBigInt(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
+    if (visitorContext.mode.type === 'type-check') {
+        return ts.createStrictEquality(ts.createTypeOf(accessor), ts.createStringLiteral('bigint'));
+    } else {
+        throw new Error('visitBigInt should only be called during type-check mode.');
+    }
+}
+
 function visitBoolean(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
     if (visitorContext.mode.type === 'type-check') {
         return ts.createStrictEquality(ts.createTypeOf(accessor), ts.createStringLiteral('boolean'));
@@ -519,6 +527,9 @@ export function visitType(type: ts.Type, accessor: ts.Expression, visitorContext
     } else if ((ts.TypeFlags.Number & type.flags) !== 0) {
         // Number
         return visitNumber(type, accessor, visitorContext);
+    } else if ((ts.TypeFlags.BigInt & type.flags) !== 0) {
+        // BigInt
+        return visitBigInt(type, accessor, visitorContext);
     } else if ((ts.TypeFlags.Boolean & type.flags) !== 0) {
         // Boolean
         return visitBoolean(type, accessor, visitorContext);
