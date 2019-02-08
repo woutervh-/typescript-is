@@ -2,6 +2,7 @@ import * as ts from 'typescript';
 import * as tsutils from 'tsutils';
 import { VisitorContext } from './visitor-context';
 import { ValidationReport, createDisjunctionValidationReport, createConditionalValidationReport, createAlwaysTrueValidationReport, createAlwaysFalseValidationReport, createConjunctionValidationReport, createArrayEveryValidationReport, createObjectEveryValidationReport } from './validation-report';
+import { reduceNonConditionals } from './validation-report-solver';
 
 function createPropertyCheck(accessor: ts.Expression, property: ts.Expression, type: ts.Type, optional: boolean, visitorContext: VisitorContext) {
     if (visitorContext.mode.type === 'type-check') {
@@ -97,8 +98,10 @@ function visitTupleObjectType(type: ts.TupleType, accessor: ts.Expression, visit
             ),
             ...itemReports
         ]);
+    } else if (visitorContext.mode.type === 'string-literal') {
+        return createAlwaysFalseValidationReport('Tuple type cannot be used as an index type.');
     } else {
-        throw new Error('visitTupleObjectType should only be called during type-check mode.');
+        throw new Error('visitTupleObjectType should only be called during type-check or string-literal mode.');
     }
 }
 
@@ -124,8 +127,10 @@ function visitArrayObjectType(type: ts.ObjectType, accessor: ts.Expression, visi
                 visitType(numberIndexType, itemIdentifier, visitorContext)
             )
         ]);
+    } else if (visitorContext.mode.type === 'string-literal') {
+        return createAlwaysFalseValidationReport('Array type cannot be used as an index type.');
     } else {
-        throw new Error('visitArrayObjectType should only be called during type-check mode.');
+        throw new Error('visitArrayObjectType should only be called during type-check or string-literal mode.');
     }
 }
 
@@ -216,37 +221,26 @@ function visitRegularObjectType(type: ts.ObjectType, accessor: ts.Expression, vi
                 ),
             `expected one of (${properties.map((property) => property.name).join(', ')})`
         );
-    } else {
+    } else if (visitorContext.mode.type === 'indexed-access') {
         // In indexed-access mode we check if the accessor is of the property type T[U].
         const indexType = visitorContext.mode.indexType;
-        return createConditionalValidationReport(
+        return createDisjunctionValidationReport(
             properties
                 .map((property) => {
                     // TODO: would be cool to have checker.isAssignableTo(indexType, createStringLiteralType(property.name))
                     // https://github.com/Microsoft/TypeScript/issues/9879
-                    // As a better way to solve this than it is currently implemented: have another visitorContext.mode that replaces accessor by a string literal.
-                    // Would reduce code size by a lot.
-                    const propertyNameAccessor = ts.createStringLiteral(property.name);
-                    const propertyNameExpression = visitType(indexType, propertyNameAccessor, { ...visitorContext, mode: { type: 'type-check' } });
-                    // const propertyType = visitorContext.checker.getDeclaredTypeOfSymbol(property);
-                    // const propertyTypeExpression = visitType(propertyType, accessor, { ...visitorContext, mode: { type: 'type-check' } });
-                    const propertyTypeExpression = visitPropertySymbol(property, accessor, visitorContext);
-                    return ts.createBinary(
-                        ts.createLogicalNot(propertyNameExpression),
-                        ts.SyntaxKind.BarBarToken,
-                        propertyTypeExpression
-                    );
+                    const stringLiteralReport = visitType(indexType, accessor, { ...visitorContext, mode: { type: 'string-literal', value: property.name } });
+                    if (reduceNonConditionals(stringLiteralReport)) {
+                        return visitPropertySymbol(property, accessor, visitorContext);
+                    } else {
+                        return createAlwaysTrueValidationReport();
+                    }
                 })
-                .reduce<ts.Expression>((condition, expression) =>
-                    ts.createBinary(
-                        condition,
-                        ts.SyntaxKind.BarBarToken,
-                        expression
-                    ),
-                    ts.createFalse()
-                ),
-            'TODO' // TODO: reason
         );
+    } else if (visitorContext.mode.type === 'string-literal') {
+        return createAlwaysFalseValidationReport('Object type cannot be used as an index type.');
+    } else {
+        throw new Error('Not yet implemented.');
     }
 }
 
@@ -317,8 +311,14 @@ function visitLiteralType(type: ts.LiteralType, accessor: ts.Expression, visitor
         } else {
             throw new Error('Type value is expected to be a string or number.');
         }
+    } else if (visitorContext.mode.type === 'string-literal') {
+        if (type.value === visitorContext.mode.value) {
+            return createAlwaysTrueValidationReport();
+        } else {
+            return createAlwaysFalseValidationReport(`'${visitorContext.mode.value}' is not assignable to '${type.value}'.`);
+        }
     } else {
-        throw new Error('visitLiteralType should only be called during type-check mode.');
+        throw new Error('visitLiteralType should only be called during type-check or string-literal mode.');
     }
 }
 
@@ -370,8 +370,10 @@ function visitBooleanLiteral(type: ts.Type, accessor: ts.Expression, visitorCont
                 'expected false'
             );
         }
+    } else if (visitorContext.mode.type === 'string-literal') {
+        return createAlwaysFalseValidationReport('Boolean literals cannot be used as an index type.');
     } else {
-        throw new Error('visitBooleanLiteral should only be called during type-check mode.');
+        throw new Error('visitBooleanLiteral should only be called during type-check or string-literal mode.');
     }
 }
 
@@ -415,8 +417,10 @@ function visitNonPrimitiveType(type: ts.Type, accessor: ts.Expression, visitorCo
         } else {
             throw new Error(`Unsupported non-primitive with intrinsic name: ${intrinsicName}.`);
         }
+    } else if (visitorContext.mode.type === 'string-literal') {
+        return createAlwaysFalseValidationReport('Non-primitive cannot be used as an index type.');
     } else {
-        throw new Error('visitNonPrimitiveType should only be called during type-check mode.');
+        throw new Error('visitNonPrimitiveType should only be called during type-check or string-literal mode.');
     }
 }
 
@@ -434,13 +438,17 @@ function visitTypeParameter(type: ts.Type, accessor: ts.Expression, visitorConte
 }
 
 function visitIndexType(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
-    if (visitorContext.mode.type === 'type-check') {
+    if (visitorContext.mode.type === 'type-check' || visitorContext.mode.type === 'string-literal') {
         // Using internal TypeScript API, hacky.
         const indexedType = (type as { type?: ts.Type }).type;
         if (indexedType === undefined) {
             throw new Error('Could not get indexed type of index type.');
         }
-        return visitType(indexedType, accessor, { ...visitorContext, mode: { type: 'keyof' } });
+        if (visitorContext.mode.type === 'type-check') {
+            return visitType(indexedType, accessor, { ...visitorContext, mode: { type: 'keyof' } });
+        } else {
+            return visitType(indexedType, accessor, { ...visitorContext, mode: { type: 'string-literal-keyof', value: visitorContext.mode.value } });
+        }
     } else {
         throw new Error('visitIndexType should only be called during type-check mode.');
     }
@@ -450,8 +458,10 @@ function visitIndexedAccessType(type: ts.IndexedAccessType, accessor: ts.Express
     // T[U] -> index type = U, object type = T
     if (visitorContext.mode.type === 'type-check') {
         return visitType(type.objectType, accessor, { ...visitorContext, mode: { type: 'indexed-access', indexType: type.indexType } });
+    } else if (visitorContext.mode.type === 'string-literal') {
+        return visitType(type.objectType, accessor, { ...visitorContext, mode: { type: 'string-literal-indexed-access', indexType: type.indexType, value: visitorContext.mode.value } });
     } else {
-        throw new Error('visitIndexedAccessType should only be called during type-check mode.');
+        throw new Error('visitIndexedAccessType should only be called during type-check or string-literal mode.');
     }
 }
 
@@ -463,6 +473,8 @@ function visitAny(type: ts.Type, accessor: ts.Expression, visitorContext: Visito
             ts.createStrictEquality(ts.createTypeOf(accessor), ts.createStringLiteral('string')),
             'expected a string'
         );
+    } else if (visitorContext.mode.type === 'string-literal') {
+        return createAlwaysFalseValidationReport('`any` cannot be used as an index type.');
     } else {
         return createAlwaysTrueValidationReport();
     }
@@ -473,8 +485,10 @@ function visitUnknown(type: ts.Type, accessor: ts.Expression, visitorContext: Vi
         return createAlwaysTrueValidationReport();
     } else if (visitorContext.mode.type === 'keyof') {
         return createAlwaysFalseValidationReport('type is never');
+    } else if (visitorContext.mode.type === 'string-literal') {
+        return createAlwaysFalseValidationReport('`unknown` cannot be used as an index type.');
     } else {
-        throw new Error('visitUnknown should only be called during type-check or keyof mode.');
+        throw new Error('visitUnknown should only be called during type-check, keyof, or string-literal mode.');
     }
 }
 
@@ -488,8 +502,10 @@ function visitNull(type: ts.Type, accessor: ts.Expression, visitorContext: Visit
             ts.createStrictEquality(accessor, ts.createNull()),
             'expected null'
         );
+    } else if (visitorContext.mode.type === 'string-literal') {
+        return createAlwaysFalseValidationReport('`null` cannot be used as an index type.');
     } else {
-        throw new Error('visitNull should only be called during type-check mode.');
+        throw new Error('visitNull should only be called during type-check or string-literal mode.');
     }
 }
 
@@ -499,8 +515,10 @@ function visitUndefined(type: ts.Type, accessor: ts.Expression, visitorContext: 
             ts.createStrictEquality(accessor, ts.createIdentifier('undefined')),
             'expected undefined'
         );
+    } else if (visitorContext.mode.type === 'string-literal') {
+        return createAlwaysFalseValidationReport('`undefined` cannot be used as an index type.');
     } else {
-        throw new Error('visitUndefined should only be called during type-check mode.');
+        throw new Error('visitUndefined should only be called during type-check or string-literal mode.');
     }
 }
 
@@ -510,8 +528,10 @@ function visitNumber(type: ts.Type, accessor: ts.Expression, visitorContext: Vis
             ts.createStrictEquality(ts.createTypeOf(accessor), ts.createStringLiteral('number')),
             'expected a number'
         );
+    } else if (visitorContext.mode.type === 'string-literal') {
+        return createAlwaysFalseValidationReport('`number` is not assignable to string.');
     } else {
-        throw new Error('visitNumber should only be called during type-check mode.');
+        throw new Error('visitNumber should only be called during type-check or string-literal mode.');
     }
 }
 
@@ -521,8 +541,10 @@ function visitBigInt(type: ts.Type, accessor: ts.Expression, visitorContext: Vis
             ts.createStrictEquality(ts.createTypeOf(accessor), ts.createStringLiteral('bigint')),
             'expected a bigint'
         );
+    } else if (visitorContext.mode.type === 'string-literal') {
+        return createAlwaysFalseValidationReport('`bigint` cannot be used as an index type.');
     } else {
-        throw new Error('visitBigInt should only be called during type-check mode.');
+        throw new Error('visitBigInt should only be called during type-check or string-literal mode.');
     }
 }
 
@@ -532,8 +554,10 @@ function visitBoolean(type: ts.Type, accessor: ts.Expression, visitorContext: Vi
             ts.createStrictEquality(ts.createTypeOf(accessor), ts.createStringLiteral('boolean')),
             'expected a boolean'
         );
+    } else if (visitorContext.mode.type === 'string-literal') {
+        return createAlwaysFalseValidationReport('`boolean` cannot be used as an index type.');
     } else {
-        throw new Error('visitBoolean should only be called during type-check mode.');
+        throw new Error('visitBoolean should only be called during type-check or string-literal mode.');
     }
 }
 
@@ -543,8 +567,10 @@ function visitString(type: ts.Type, accessor: ts.Expression, visitorContext: Vis
             ts.createStrictEquality(ts.createTypeOf(accessor), ts.createStringLiteral('string')),
             'expected a string'
         );
+    } else if (visitorContext.mode.type === 'string-literal') {
+        return createAlwaysTrueValidationReport();
     } else {
-        throw new Error('visitString should only be called during type-check mode.');
+        throw new Error('visitString should only be called during type-check or string-literal mode.');
     }
 }
 

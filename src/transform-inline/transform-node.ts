@@ -2,11 +2,14 @@ import * as path from 'path';
 import * as ts from 'typescript';
 import { VisitorContext } from './visitor-context';
 import { visitType, visitUndefinedOrType } from './visitor';
+import { createExpression } from './validation-report-solver';
 
 function createArrowFunction(accessor: ts.Identifier, type: ts.Type, optional: boolean, visitorContext: VisitorContext, isAssert: boolean) {
-    const expression = optional
-        ? visitUndefinedOrType(type, accessor, { ...visitorContext, reportError: isAssert })
-        : visitType(type, accessor, { ...visitorContext, reportError: isAssert });
+    const validationReport = optional
+        ? visitUndefinedOrType(type, accessor, { ...visitorContext, reportError: false })
+        : visitType(type, accessor, { ...visitorContext, reportError: false });
+
+    const expression = createExpression(validationReport, visitorContext);
 
     return ts.createArrowFunction(
         undefined,

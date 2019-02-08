@@ -8,15 +8,6 @@ export interface VisitTypeCheckMode {
     type: 'type-check';
 }
 
-// /**
-//  * Type check on specific properties.
-//  * Generate an expression that checks if the given accessor matches any of the types of the properties of the given type.
-//  */
-// export interface VisitSelectPropertiesMode {
-//     type: 'indexed-properties';
-//     properties: (string | ts.Type)[];
-// }
-
 export interface VisitKeyOfMode {
     type: 'keyof';
 }
@@ -26,7 +17,23 @@ export interface VisitIndexedAccessMode {
     indexType: ts.Type;
 }
 
-export type VisitMode = VisitTypeCheckMode | VisitKeyOfMode | VisitIndexedAccessMode;
+export interface VisitStringLiteralMode {
+    type: 'string-literal';
+    value: string;
+}
+
+export interface VisitStringLiteralKeyOfMode {
+    type: 'string-literal-keyof';
+    value: string;
+}
+
+export interface VisitStringLiteralIndexedAccessMode {
+    type: 'string-literal-indexed-access';
+    indexType: ts.Type;
+    value: string;
+}
+
+export type VisitMode = VisitTypeCheckMode | VisitKeyOfMode | VisitIndexedAccessMode | VisitStringLiteralMode | VisitStringLiteralKeyOfMode | VisitStringLiteralIndexedAccessMode;
 
 export interface VisitorContext {
     program: ts.Program;

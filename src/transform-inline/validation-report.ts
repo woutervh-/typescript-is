@@ -18,14 +18,14 @@ export interface ConditionalValidationReport {
 export interface ArrayEveryValidationReport {
     type: 'array-every';
     arrayAccessor: ts.Expression;
-    itemAccessor: ts.Expression;
+    itemIdentifier: ts.Identifier;
     report: ValidationReport;
 }
 
 export interface ObjectEveryValidationReport {
     type: 'object-every';
     objectAccessor: ts.Expression;
-    keyAccessor: ts.Expression;
+    keyIdentifier: ts.Identifier;
     report: ValidationReport;
 }
 
@@ -60,12 +60,12 @@ export function createConditionalValidationReport(condition: ts.Expression, reas
     return { type: 'conditional', condition, reason };
 }
 
-export function createArrayEveryValidationReport(arrayAccessor: ts.Expression, itemAccessor: ts.Expression, report: ValidationReport): ArrayEveryValidationReport {
-    return { type: 'array-every', arrayAccessor, itemAccessor, report };
+export function createArrayEveryValidationReport(arrayAccessor: ts.Expression, itemIdentifier: ts.Identifier, report: ValidationReport): ArrayEveryValidationReport {
+    return { type: 'array-every', arrayAccessor, itemIdentifier, report };
 }
 
-export function createObjectEveryValidationReport(objectAccessor: ts.Expression, keyAccessor: ts.Expression, report: ValidationReport): ObjectEveryValidationReport {
-    return { type: 'object-every', objectAccessor, keyAccessor, report };
+export function createObjectEveryValidationReport(objectAccessor: ts.Expression, keyIdentifier: ts.Identifier, report: ValidationReport): ObjectEveryValidationReport {
+    return { type: 'object-every', objectAccessor, keyIdentifier, report };
 }
 
 export function createConjunctionValidationReport(reports: ValidationReport[]): ConjunctionValidationReport {
