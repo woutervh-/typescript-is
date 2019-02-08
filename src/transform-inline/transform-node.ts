@@ -37,7 +37,7 @@ function createArrowFunction(accessor: ts.Identifier, type: ts.Type, optional: b
                     ts.createIf(
                         ts.createStrictEquality(errorIdentifier, ts.createNull()),
                         ts.createReturn(accessor),
-                        ts.createThrow(errorIdentifier)
+                        ts.createThrow(ts.createNew(ts.createIdentifier('Error'), undefined, [errorIdentifier]))
                     )
                 ]
                 : [ts.createReturn(expression)]

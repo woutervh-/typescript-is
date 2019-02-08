@@ -34,7 +34,7 @@ describe('createIs', () => {
 
 describe('createAssertType', () => {
     describe('createAssertType<number>', () => {
-        const expectedMessageRegExp = /Type assertion failed.$/;
+        const expectedMessageRegExp = /Validation failed at \$: expected a number$/;
         const assertNumber = createAssertType<number>();
 
         it('should return a function', () => {
