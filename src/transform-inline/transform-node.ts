@@ -10,6 +10,7 @@ function createArrowFunction(accessor: ts.Identifier, type: ts.Type, optional: b
         : visitType(type, accessor, { ...visitorContext });
 
     const expression = createExpression(validationReport, isAssert);
+    const errorIdentifier = ts.createIdentifier('error');
 
     return ts.createArrowFunction(
         undefined,
@@ -26,23 +27,21 @@ function createArrowFunction(accessor: ts.Identifier, type: ts.Type, optional: b
         ],
         undefined,
         undefined,
-        ts.createBlock([
+        ts.createBlock(
             isAssert
-                ? ts.createIf(
-                    ts.createLogicalNot(expression),
-                    ts.createThrow(
-                        ts.createNew(
-                            ts.createIdentifier('Error'),
-                            undefined,
-                            [
-                                ts.createStringLiteral('Type assertion failed.')
-                            ]
-                        )
+                ? [
+                    ts.createVariableStatement(
+                        [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
+                        [ts.createVariableDeclaration(errorIdentifier, undefined, expression)]
                     ),
-                    ts.createReturn(accessor)
-                )
-                : ts.createReturn(expression)
-        ])
+                    ts.createIf(
+                        ts.createStrictEquality(errorIdentifier, ts.createNull()),
+                        ts.createReturn(accessor),
+                        ts.createThrow(errorIdentifier)
+                    )
+                ]
+                : [ts.createReturn(expression)]
+        )
     );
 }
 
