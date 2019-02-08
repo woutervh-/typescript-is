@@ -112,4 +112,20 @@ describe('assertType', () => {
             assert.throws(() => assertType<{ nested: Nested }>(false), expectedMessageRegExp);
         });
     });
+
+    describe('assertType<{ [Key: string]: boolean }>', () => {
+        it('should return valid objects that are passed to it', () => {
+            assert.deepStrictEqual(assertType<{ [Key: string]: boolean }>({}), {});
+            assert.deepStrictEqual(assertType<{ [Key: string]: boolean }>({ foo: true }), { foo: true });
+            assert.deepStrictEqual(assertType<{ [Key: string]: boolean }>({ bar: false }), { bar: false });
+        });
+
+        it('should throw an error if objects with non-boolen values are passed to it', () => {
+            const expectedMessageRegExp = /at \$; cause: at \$\.\[\]: expected boolean$/;
+            assert.throws(() => assertType<{ [Key: string]: boolean }>({ foo: 0 }), expectedMessageRegExp);
+            assert.throws(() => assertType<{ [Key: string]: boolean }>({ bar: 'foo' }), expectedMessageRegExp);
+            assert.throws(() => assertType<{ [Key: string]: boolean }>({ bar: [] }), expectedMessageRegExp);
+            assert.throws(() => assertType<{ [Key: string]: boolean }>({ bar: null }), expectedMessageRegExp);
+        });
+    });
 });

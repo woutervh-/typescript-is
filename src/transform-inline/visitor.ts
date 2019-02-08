@@ -219,13 +219,15 @@ function visitRegularObjectType(type: ts.ObjectType, accessor: ts.Expression, vi
             // There is a string index type { [Key: string]: T }.
             const keyIdentifier = ts.createIdentifier('key');
             const itemAccessor = ts.createElementAccess(accessor, keyIdentifier);
-
+            visitorContext.pathStack.push('[]');
+            const typeReport = visitType(stringIndexType, itemAccessor, visitorContext);
+            visitorContext.pathStack.pop();
             validationReports.push(
                 createObjectEveryValidationReport(
                     visitorContext.pathStack.slice(),
                     accessor,
                     keyIdentifier,
-                    visitType(stringIndexType, itemAccessor, visitorContext)
+                    typeReport
                 )
             );
         }

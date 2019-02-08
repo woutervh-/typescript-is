@@ -306,6 +306,7 @@ function createArrayEveryExpression(validationReport: ArrayEveryValidationReport
 
 function createObjectEveryExpression(validationReport: ObjectEveryValidationReport, reportError: boolean) {
     if (reportError) {
+        const prevIdentifier = ts.createIdentifier('prev');
         const itemArrowFunction = createExpression(validationReport.report, reportError);
         return createSimpleArrowFunction(
             ts.createCall(
@@ -315,7 +316,7 @@ function createObjectEveryExpression(validationReport: ObjectEveryValidationRepo
                         undefined,
                         [validationReport.objectAccessor]
                     ),
-                    ts.createIdentifier('every')
+                    ts.createIdentifier('reduce')
                 ),
                 undefined,
                 [
@@ -327,21 +328,24 @@ function createObjectEveryExpression(validationReport: ObjectEveryValidationRepo
                                 undefined,
                                 undefined,
                                 undefined,
+                                prevIdentifier
+                            ),
+                            ts.createParameter(
+                                undefined,
+                                undefined,
+                                undefined,
                                 validationReport.keyIdentifier
                             )
                         ],
                         undefined,
                         undefined,
-                        ts.createBlock([
-                            ts.createReturn(
-                                ts.createBinary(
-                                    ts.createStrictEquality(ts.createTypeOf(validationReport.keyIdentifier), ts.createStringLiteral('string')),
-                                    ts.SyntaxKind.AmpersandAmpersandToken,
-                                    ts.createCall(itemArrowFunction, undefined, undefined)
-                                )
-                            )
-                        ])
-                    )
+                        ts.createBinary(
+                            prevIdentifier,
+                            ts.SyntaxKind.BarBarToken,
+                            ts.createCall(itemArrowFunction, undefined, undefined)
+                        )
+                    ),
+                    ts.createNull()
                 ]
             )
         );
@@ -371,17 +375,7 @@ function createObjectEveryExpression(validationReport: ObjectEveryValidationRepo
                     ],
                     undefined,
                     undefined,
-                    ts.createBlock([
-                        ts.createReturn(
-                            ts.createBinary(
-                                // Check if key is of type string.
-                                ts.createStrictEquality(ts.createTypeOf(validationReport.keyIdentifier), ts.createStringLiteral('string')),
-                                ts.SyntaxKind.AmpersandAmpersandToken,
-                                // Check if value is of the given index type.
-                                itemExpression
-                            )
-                        )
-                    ])
+                    itemExpression
                 )
             ]
         );
