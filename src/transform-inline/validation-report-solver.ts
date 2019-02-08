@@ -268,7 +268,7 @@ function createArrayEveryExpression(validationReport: ArrayEveryValidationReport
                         undefined,
                         ts.createBinary(
                             prevIdentifier,
-                            ts.SyntaxKind.AmpersandAmpersandToken,
+                            ts.SyntaxKind.BarBarToken,
                             ts.createCall(itemArrowFunction, undefined, undefined)
                         )
                     ),

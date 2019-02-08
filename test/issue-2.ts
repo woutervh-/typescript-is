@@ -56,12 +56,12 @@ describe('assertType', () => {
         });
 
         it('should throw an error if objects where foo is not an array of numbers are passed to it', () => {
-            const expectedMessageRegExp = /at \$; cause: at \$: expected object$/;
-            assert.throws(() => assertType<{ foo: number[] }>([0, '0']), expectedMessageRegExp);
-            assert.throws(() => assertType<{ foo: number[] }>(['1']), expectedMessageRegExp);
-            assert.throws(() => assertType<{ foo: number[] }>([{}]), expectedMessageRegExp);
-            assert.throws(() => assertType<{ foo: number[] }>([[]]), expectedMessageRegExp);
-            assert.throws(() => assertType<{ foo: number[] }>([null]), expectedMessageRegExp);
+            const expectedMessageRegExp = /at \$; cause: at \$; cause: at \$\.foo; cause: at \$\.foo\.\[\]: expected number$/;
+            assert.throws(() => assertType<{ foo: number[] }>({ foo: [0, '0'] }), expectedMessageRegExp);
+            assert.throws(() => assertType<{ foo: number[] }>({ foo: ['1'] }), expectedMessageRegExp);
+            assert.throws(() => assertType<{ foo: number[] }>({ foo: [{}] }), expectedMessageRegExp);
+            assert.throws(() => assertType<{ foo: number[] }>({ foo: [[]] }), expectedMessageRegExp);
+            assert.throws(() => assertType<{ foo: number[] }>({ foo: [null] }), expectedMessageRegExp);
         });
     });
 
@@ -85,7 +85,7 @@ describe('assertType', () => {
 
         it('should throw an error if nested objects without foo are passed to it', () => {
             const expectedMessageRegExp = /at \$; cause: at \$; cause: at \$\.nested; cause: at \$\.nested; cause: at \$\.nested: expected 'foo' in object$/;
-            assert.throws(() => assertType<{ nested: Nested }>({ nested: { } }), expectedMessageRegExp);
+            assert.throws(() => assertType<{ nested: Nested }>({ nested: {} }), expectedMessageRegExp);
             assert.throws(() => assertType<{ nested: Nested }>({ nested: { foh: 'bar' } }), expectedMessageRegExp);
         });
 

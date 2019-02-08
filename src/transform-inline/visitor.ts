@@ -89,7 +89,7 @@ function visitTupleObjectType(type: ts.TupleType, accessor: ts.Expression, visit
         }
         const itemReports: ValidationReport[] = [];
         for (let i = 0; i < type.typeArguments.length; i++) {
-            visitorContext.pathStack.push(i.toString());
+            visitorContext.pathStack.push(`[${i}]`);
             itemReports.push(visitType(type.typeArguments[i], ts.createElementAccess(accessor, i), visitorContext));
             visitorContext.pathStack.pop();
         }
@@ -129,7 +129,7 @@ function visitArrayObjectType(type: ts.ObjectType, accessor: ts.Expression, visi
             throw new Error('Expected array ObjectType to have a number index type.');
         }
         const itemIdentifier = ts.createIdentifier('item');
-        visitorContext.pathStack.push('[number]');
+        visitorContext.pathStack.push('[]');
         const typeReport = visitType(numberIndexType, itemIdentifier, visitorContext);
         visitorContext.pathStack.pop();
         return createConjunctionValidationReport(
