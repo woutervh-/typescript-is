@@ -63,6 +63,8 @@ function visitPropertySignature(node: ts.PropertySignature, accessor: ts.Express
 function visitDeclaration(node: ts.Declaration, accessor: ts.Expression, visitorContext: VisitorContext) {
     if (ts.isPropertySignature(node)) {
         return visitPropertySignature(node, accessor, visitorContext);
+    } else if ((node.kind & ts.SyntaxKind.MethodSignature) !== 0) {
+        throw new Error('Encountered a method declaration, but methods are not supported. Please check the README.');
     } else {
         throw new Error('Unsupported declaration kind: ' + node.kind);
     }
@@ -513,6 +515,14 @@ function visitNumber(type: ts.Type, accessor: ts.Expression, visitorContext: Vis
     }
 }
 
+function visitBigInt(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
+    if (visitorContext.mode.type === 'type-check') {
+        return ts.createStrictEquality(ts.createTypeOf(accessor), ts.createStringLiteral('bigint'));
+    } else {
+        throw new Error('visitBigInt should only be called during type-check mode.');
+    }
+}
+
 function visitBoolean(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
     if (visitorContext.mode.type === 'type-check') {
         return createConditionalValidationReport(
@@ -554,6 +564,9 @@ export function visitType(type: ts.Type, accessor: ts.Expression, visitorContext
     } else if ((ts.TypeFlags.Number & type.flags) !== 0) {
         // Number
         return visitNumber(type, accessor, visitorContext);
+    } else if ((ts.TypeFlags.BigInt & type.flags) !== 0) {
+        // BigInt
+        return visitBigInt(type, accessor, visitorContext);
     } else if ((ts.TypeFlags.Boolean & type.flags) !== 0) {
         // Boolean
         return visitBoolean(type, accessor, visitorContext);
