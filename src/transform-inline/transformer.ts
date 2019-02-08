@@ -13,8 +13,7 @@ export default function transformer(program: ts.Program): ts.TransformerFactory<
         mode: {
             type: 'type-check'
         },
-        pathStack: ['$'],
-        reportError: false
+        pathStack: ['$']
     };
     return (context: ts.TransformationContext) => (file: ts.SourceFile) => transformNodeAndChildren(file, program, context, visitorContext);
 }

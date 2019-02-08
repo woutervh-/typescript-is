@@ -29,8 +29,7 @@ const visitorContext: VisitorContext = {
     program,
     typeMapperStack: [],
     mode: { type: 'type-check' },
-    pathStack: ['$'],
-    reportError: false
+    pathStack: ['$']
 };
 
 function visitNodeAndChildren(node: ts.Node) {

@@ -6,10 +6,10 @@ import { createExpression } from './validation-report-solver';
 
 function createArrowFunction(accessor: ts.Identifier, type: ts.Type, optional: boolean, visitorContext: VisitorContext, isAssert: boolean) {
     const validationReport = optional
-        ? visitUndefinedOrType(type, accessor, { ...visitorContext, reportError: false })
-        : visitType(type, accessor, { ...visitorContext, reportError: false });
+        ? visitUndefinedOrType(type, accessor, { ...visitorContext })
+        : visitType(type, accessor, { ...visitorContext });
 
-    const expression = createExpression(validationReport, visitorContext);
+    const expression = createExpression(validationReport, isAssert);
 
     return ts.createArrowFunction(
         undefined,

@@ -41,5 +41,4 @@ export interface VisitorContext {
     typeMapperStack: ((source: ts.Type) => ts.Type | undefined)[];
     mode: VisitMode;
     pathStack: string[];
-    reportError: boolean;
 }

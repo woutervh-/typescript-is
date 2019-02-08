@@ -1,6 +1,5 @@
 import * as ts from 'typescript';
-import { ValidationReport } from './validation-report';
-import { VisitorContext } from './visitor-context';
+import { ValidationReport, AlwaysFalseValidationReport, AlwaysTrueValidationReport, ConditionalValidationReport, DisjunctionValidationReport, ConjunctionValidationReport, ArrayEveryValidationReport, ObjectEveryValidationReport } from './validation-report';
 
 export function reduceNonConditionals(validationReport: ValidationReport): boolean {
     if (validationReport.type === 'always-true') {
@@ -16,53 +15,49 @@ export function reduceNonConditionals(validationReport: ValidationReport): boole
     }
 }
 
-export function createExpression(validationReport: ValidationReport, visitorContext: VisitorContext): ts.Expression {
+export function createExpression(validationReport: ValidationReport, reportError: boolean): ts.Expression {
     if (validationReport.type === 'always-true') {
-        return createAlwaysTrueExpression(visitorContext);
+        return createAlwaysTrueExpression(validationReport, reportError);
     } else if (validationReport.type === 'always-false') {
-        return createAlwaysFalseExpression(validationReport.reason, visitorContext);
+        return createAlwaysFalseExpression(validationReport, reportError);
     } else if (validationReport.type === 'conditional') {
-        return createConditionalExpression(
-            validationReport.condition,
-            validationReport.reason,
-            visitorContext
-        );
+        return createConditionalExpression(validationReport, reportError);
     } else if (validationReport.type === 'conjunction') {
-        return createConjunctionExpression(validationReport.reports.map((report) => createExpression(report, visitorContext)), visitorContext);
+        return createConjunctionExpression(validationReport, reportError);
     } else if (validationReport.type === 'disjunction') {
-        return createDisjunctionExpression(validationReport.reports.map((report) => createExpression(report, visitorContext)), visitorContext);
+        return createDisjunctionExpression(validationReport, reportError);
     } else if (validationReport.type === 'array-every') {
-        return createArrayEveryExpression(validationReport.arrayAccessor, validationReport.itemIdentifier, createExpression(validationReport.report, visitorContext));
+        return createArrayEveryExpression(validationReport, reportError);
     } else {
-        return createObjectEveryExpression(validationReport.objectAccessor, validationReport.keyIdentifier, createExpression(validationReport.report, visitorContext));
+        return createObjectEveryExpression(validationReport, reportError);
     }
 }
 
-function createAlwaysFalseExpression(reason: string, visitorContext: VisitorContext) {
-    if (visitorContext.reportError) {
-        return ts.createStringLiteral(`Validation failed at ${visitorContext.pathStack.join('')}: ${reason}`);
+function createAlwaysFalseExpression(validationReport: AlwaysFalseValidationReport, reportError: boolean) {
+    if (reportError) {
+        return ts.createStringLiteral(`Validation failed at ${validationReport.path.join('')}: ${validationReport.reason}`);
     } else {
         return ts.createFalse();
     }
 }
 
-function createAlwaysTrueExpression(visitorContext: VisitorContext) {
-    if (visitorContext.reportError) {
+function createAlwaysTrueExpression(validationReport: AlwaysTrueValidationReport, reportError: boolean) {
+    if (reportError) {
         return ts.createNull();
     } else {
         return ts.createTrue();
     }
 }
 
-function createConditionalExpression(condition: ts.Expression, reason: string, visitorContext: VisitorContext): ts.Expression {
-    if (visitorContext.reportError) {
+function createConditionalExpression(validationReport: ConditionalValidationReport, reportError: boolean): ts.Expression {
+    if (reportError) {
         return ts.createConditional(
-            condition,
+            validationReport.condition,
             ts.createNull(),
-            ts.createStringLiteral(`Validation failed at ${visitorContext.pathStack.join('')}: ${reason}`)
+            ts.createStringLiteral(`Validation failed at ${validationReport.path.join('')}: ${validationReport.reason}`)
         );
     } else {
-        return condition;
+        return validationReport.condition;
     }
 }
 
@@ -113,8 +108,9 @@ function createErrorReducerExpression(conditions: ts.Expression[], errorsIdentif
     );
 }
 
-function createDisjunctionExpression(conditions: ts.Expression[], visitorContext: VisitorContext): ts.Expression {
-    if (visitorContext.reportError) {
+function createDisjunctionExpression(validationReport: DisjunctionValidationReport, reportError: boolean): ts.Expression {
+    const conditions = validationReport.reports.map((report) => createExpression(report, reportError));
+    if (reportError) {
         const errorsIdentifier = ts.createIdentifier('errors');
         return createErrorReducerExpression(
             conditions,
@@ -129,7 +125,7 @@ function createDisjunctionExpression(conditions: ts.Expression[], visitorContext
                     ts.createNumericLiteral(conditions.length.toString())
                 ),
                 ts.createBinary(
-                    ts.createStringLiteral(`Validation failed at ${visitorContext.pathStack.join('')}: no valid alternative (`),
+                    ts.createStringLiteral(`Validation failed at ${validationReport.path.join('')}: no valid alternative (`),
                     ts.SyntaxKind.PlusToken,
                     ts.createBinary(
                         ts.createCall(
@@ -159,8 +155,9 @@ function createDisjunctionExpression(conditions: ts.Expression[], visitorContext
     }
 }
 
-function createConjunctionExpression(conditions: ts.Expression[], visitorContext: VisitorContext): ts.Expression {
-    if (visitorContext.reportError) {
+function createConjunctionExpression(validationReport: ConjunctionValidationReport, reportError: boolean): ts.Expression {
+    const conditions = validationReport.reports.map((report) => createExpression(report, reportError));
+    if (reportError) {
         const errorsIdentifier = ts.createIdentifier('errors');
         return createErrorReducerExpression(
             conditions,
@@ -175,7 +172,7 @@ function createConjunctionExpression(conditions: ts.Expression[], visitorContext
                     ts.createNumericLiteral('1')
                 ),
                 ts.createBinary(
-                    ts.createStringLiteral(`Validation failed at ${visitorContext.pathStack.join('')}: invalid condition (`),
+                    ts.createStringLiteral(`Validation failed at ${validationReport.path.join('')}: invalid condition (`),
                     ts.SyntaxKind.PlusToken,
                     ts.createBinary(
                         ts.createCall(
@@ -205,9 +202,11 @@ function createConjunctionExpression(conditions: ts.Expression[], visitorContext
     }
 }
 
-function createArrayEveryExpression(arrayAccessor: ts.Expression, itemIdentifier: ts.Identifier, itemExpression: ts.Expression) {
+function createArrayEveryExpression(validationReport: ArrayEveryValidationReport, reportError: boolean) {
+    // TODO: if reportError === true
+    const itemExpression = createExpression(validationReport.report, reportError);
     return ts.createCall(
-        ts.createPropertyAccess(arrayAccessor, ts.createIdentifier('every')),
+        ts.createPropertyAccess(validationReport.arrayAccessor, ts.createIdentifier('every')),
         undefined,
         [
             ts.createArrowFunction(
@@ -218,7 +217,7 @@ function createArrayEveryExpression(arrayAccessor: ts.Expression, itemIdentifier
                         undefined,
                         undefined,
                         undefined,
-                        itemIdentifier
+                        validationReport.itemIdentifier
                     )
                 ],
                 undefined,
@@ -231,13 +230,15 @@ function createArrayEveryExpression(arrayAccessor: ts.Expression, itemIdentifier
     );
 }
 
-function createObjectEveryExpression(objectAccessor: ts.Expression, keyIdentifier: ts.Identifier, itemExpression: ts.Expression) {
+function createObjectEveryExpression(validationReport: ObjectEveryValidationReport, reportError: boolean) {
+    // TODO: if reportError === true
+    const itemExpression = createExpression(validationReport.report, reportError);
     return ts.createCall(
         ts.createPropertyAccess(
             ts.createCall(
                 ts.createPropertyAccess(ts.createIdentifier('Object'), ts.createIdentifier('keys')),
                 undefined,
-                [objectAccessor]
+                [validationReport.objectAccessor]
             ),
             ts.createIdentifier('every')
         ),
@@ -251,7 +252,7 @@ function createObjectEveryExpression(objectAccessor: ts.Expression, keyIdentifie
                         undefined,
                         undefined,
                         undefined,
-                        keyIdentifier
+                        validationReport.keyIdentifier
                     )
                 ],
                 undefined,
@@ -260,7 +261,7 @@ function createObjectEveryExpression(objectAccessor: ts.Expression, keyIdentifie
                     ts.createReturn(
                         ts.createBinary(
                             // Check if key is of type string.
-                            ts.createStrictEquality(ts.createTypeOf(keyIdentifier), ts.createStringLiteral('string')),
+                            ts.createStrictEquality(ts.createTypeOf(validationReport.keyIdentifier), ts.createStringLiteral('string')),
                             ts.SyntaxKind.AmpersandAmpersandToken,
                             // Check if value is of the given index type.
                             itemExpression
