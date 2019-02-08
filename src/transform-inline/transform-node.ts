@@ -32,7 +32,7 @@ function createArrowFunction(accessor: ts.Identifier, type: ts.Type, optional: b
                 ? [
                     ts.createVariableStatement(
                         [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
-                        [ts.createVariableDeclaration(errorIdentifier, undefined, expression)]
+                        [ts.createVariableDeclaration(errorIdentifier, undefined, ts.createCall(expression, undefined, undefined))]
                     ),
                     ts.createIf(
                         ts.createStrictEquality(errorIdentifier, ts.createNull()),

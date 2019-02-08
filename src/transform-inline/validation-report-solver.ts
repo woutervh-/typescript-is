@@ -33,9 +33,13 @@ export function createExpression(validationReport: ValidationReport, reportError
     }
 }
 
+function createSimpleArrowFunction(expression: ts.Expression) {
+    return ts.createArrowFunction(undefined, undefined, [], undefined, undefined, expression);
+}
+
 function createAlwaysFalseExpression(validationReport: AlwaysFalseValidationReport, reportError: boolean) {
     if (reportError) {
-        return ts.createStringLiteral(`Validation failed at ${validationReport.path.join('')}: ${validationReport.reason}`);
+        return createSimpleArrowFunction(ts.createStringLiteral(`at ${validationReport.path.join('.')}: ${validationReport.reason}`));
     } else {
         return ts.createFalse();
     }
@@ -43,7 +47,7 @@ function createAlwaysFalseExpression(validationReport: AlwaysFalseValidationRepo
 
 function createAlwaysTrueExpression(validationReport: AlwaysTrueValidationReport, reportError: boolean) {
     if (reportError) {
-        return ts.createNull();
+        return createSimpleArrowFunction(ts.createNull());
     } else {
         return ts.createTrue();
     }
@@ -51,20 +55,26 @@ function createAlwaysTrueExpression(validationReport: AlwaysTrueValidationReport
 
 function createConditionalExpression(validationReport: ConditionalValidationReport, reportError: boolean): ts.Expression {
     if (reportError) {
-        return ts.createConditional(
-            validationReport.condition,
-            ts.createNull(),
-            ts.createStringLiteral(`Validation failed at ${validationReport.path.join('')}: ${validationReport.reason}`)
+        return createSimpleArrowFunction(
+            ts.createConditional(
+                validationReport.condition,
+                ts.createNull(),
+                ts.createStringLiteral(`at ${validationReport.path.join('.')}: ${validationReport.reason}`)
+            )
         );
     } else {
         return validationReport.condition;
     }
 }
 
-function createErrorReducerExpression(conditions: ts.Expression[], errorsIdentifier: ts.Identifier, returnExpression: ts.Expression): ts.Expression {
-    const errorIdentifier = ts.createIdentifier('error');
-    return ts.createCall(
-        ts.createArrowFunction(
+function createDisjunctionExpression(validationReport: DisjunctionValidationReport, reportError: boolean): ts.Expression {
+    const conditions = validationReport.reports.map((report) => createExpression(report, reportError));
+    if (reportError) {
+        const errorsIdentifier = ts.createIdentifier('errors');
+        const errorIdentifier = ts.createIdentifier('error');
+        const prevIdentifier = ts.createIdentifier('prev');
+        const nextIdentifier = ts.createIdentifier('next');
+        return ts.createArrowFunction(
             undefined,
             undefined,
             [],
@@ -79,7 +89,7 @@ function createErrorReducerExpression(conditions: ts.Expression[], errorsIdentif
                         ts.createCall(
                             ts.createPropertyAccess(
                                 ts.createArrayLiteral(conditions),
-                                'filter'
+                                'reduce'
                             ),
                             undefined,
                             [
@@ -87,61 +97,64 @@ function createErrorReducerExpression(conditions: ts.Expression[], errorsIdentif
                                     undefined,
                                     undefined,
                                     [
-                                        ts.createParameter(undefined, undefined, undefined, errorIdentifier, undefined, undefined, undefined)
+                                        ts.createParameter(undefined, undefined, undefined, prevIdentifier, undefined, undefined, undefined),
+                                        ts.createParameter(undefined, undefined, undefined, nextIdentifier, undefined, undefined, undefined)
                                     ],
                                     undefined,
                                     undefined,
-                                    ts.createStrictInequality(
-                                        errorIdentifier,
-                                        ts.createNull()
-                                    )
-                                )
+                                    ts.createBlock([
+                                        ts.createVariableStatement(
+                                            [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
+                                            [ts.createVariableDeclaration(
+                                                errorIdentifier,
+                                                undefined,
+                                                ts.createCall(nextIdentifier, undefined, undefined)
+                                            )]
+                                        ),
+                                        ts.createReturn(
+                                            ts.createBinary(
+                                                prevIdentifier,
+                                                ts.SyntaxKind.AmpersandAmpersandToken,
+                                                ts.createBinary(
+                                                    errorIdentifier,
+                                                    ts.SyntaxKind.AmpersandAmpersandToken,
+                                                    ts.createArrayLiteral([
+                                                        ts.createSpread(prevIdentifier),
+                                                        errorIdentifier
+                                                    ])
+                                                )
+                                            )
+                                        )
+                                    ])
+                                ),
+                                ts.createArrayLiteral()
                             ]
                         )
                     )]
                 ),
-                ts.createReturn(returnExpression)
-            ])
-        ),
-        undefined,
-        undefined
-    );
-}
-
-function createDisjunctionExpression(validationReport: DisjunctionValidationReport, reportError: boolean): ts.Expression {
-    const conditions = validationReport.reports.map((report) => createExpression(report, reportError));
-    if (reportError) {
-        const errorsIdentifier = ts.createIdentifier('errors');
-        return createErrorReducerExpression(
-            conditions,
-            errorsIdentifier,
-            ts.createConditional(
-                ts.createBinary(
-                    ts.createPropertyAccess(
-                        errorsIdentifier,
-                        'length'
-                    ),
-                    ts.SyntaxKind.GreaterThanEqualsToken,
-                    ts.createNumericLiteral(conditions.length.toString())
-                ),
-                ts.createBinary(
-                    ts.createStringLiteral(`Validation failed at ${validationReport.path.join('')}: no valid alternative (`),
-                    ts.SyntaxKind.PlusToken,
+                ts.createReturn(
                     ts.createBinary(
-                        ts.createCall(
-                            ts.createPropertyAccess(
-                                errorsIdentifier,
-                                'join'
-                            ),
-                            undefined,
-                            [ts.createStringLiteral('; ')]
-                        ),
-                        ts.SyntaxKind.PlusToken,
-                        ts.createStringLiteral(')')
+                        errorsIdentifier,
+                        ts.SyntaxKind.AmpersandAmpersandToken,
+                        ts.createBinary(
+                            ts.createStringLiteral(`at ${validationReport.path.join('.')}; all causes: (`),
+                            ts.SyntaxKind.PlusToken,
+                            ts.createBinary(
+                                ts.createCall(
+                                    ts.createPropertyAccess(
+                                        errorsIdentifier,
+                                        'join'
+                                    ),
+                                    undefined,
+                                    [ts.createStringLiteral('; ')]
+                                ),
+                                ts.SyntaxKind.PlusToken,
+                                ts.createStringLiteral(')')
+                            )
+                        )
                     )
-                ),
-                ts.createNull()
-            )
+                )
+            ])
         );
     } else {
         return conditions.reduce((condition, expression) =>
@@ -158,37 +171,60 @@ function createDisjunctionExpression(validationReport: DisjunctionValidationRepo
 function createConjunctionExpression(validationReport: ConjunctionValidationReport, reportError: boolean): ts.Expression {
     const conditions = validationReport.reports.map((report) => createExpression(report, reportError));
     if (reportError) {
-        const errorsIdentifier = ts.createIdentifier('errors');
-        return createErrorReducerExpression(
-            conditions,
-            errorsIdentifier,
-            ts.createConditional(
-                ts.createBinary(
-                    ts.createPropertyAccess(
-                        errorsIdentifier,
-                        'length'
-                    ),
-                    ts.SyntaxKind.GreaterThanEqualsToken,
-                    ts.createNumericLiteral('1')
-                ),
-                ts.createBinary(
-                    ts.createStringLiteral(`Validation failed at ${validationReport.path.join('')}: invalid condition (`),
-                    ts.SyntaxKind.PlusToken,
-                    ts.createBinary(
+        const errorIdentifier = ts.createIdentifier('error');
+        const prevIdentifier = ts.createIdentifier('prev');
+        const nextIdentifier = ts.createIdentifier('next');
+        return ts.createArrowFunction(
+            undefined,
+            undefined,
+            [],
+            undefined,
+            undefined,
+            ts.createBlock([
+                ts.createVariableStatement(
+                    [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
+                    [ts.createVariableDeclaration(
+                        errorIdentifier,
+                        undefined,
                         ts.createCall(
                             ts.createPropertyAccess(
-                                errorsIdentifier,
-                                'join'
+                                ts.createArrayLiteral(conditions),
+                                'reduce'
                             ),
                             undefined,
-                            [ts.createStringLiteral('; ')]
-                        ),
-                        ts.SyntaxKind.PlusToken,
-                        ts.createStringLiteral(')')
-                    )
+                            [
+                                ts.createArrowFunction(
+                                    undefined,
+                                    undefined,
+                                    [
+                                        ts.createParameter(undefined, undefined, undefined, prevIdentifier, undefined, undefined, undefined),
+                                        ts.createParameter(undefined, undefined, undefined, nextIdentifier, undefined, undefined, undefined)
+                                    ],
+                                    undefined,
+                                    undefined,
+                                    ts.createBinary(
+                                        prevIdentifier,
+                                        ts.SyntaxKind.BarBarToken,
+                                        ts.createCall(nextIdentifier, undefined, undefined)
+                                    )
+                                ),
+                                ts.createNull()
+                            ]
+                        )
+                    )]
                 ),
-                ts.createNull()
-            )
+                ts.createReturn(
+                    ts.createBinary(
+                        errorIdentifier,
+                        ts.SyntaxKind.AmpersandAmpersandToken,
+                        ts.createBinary(
+                            ts.createStringLiteral(`at ${validationReport.path.join('.')}; cause: `),
+                            ts.SyntaxKind.PlusToken,
+                            errorIdentifier
+                        )
+                    )
+                )
+            ])
         );
     } else {
         return conditions.reduce((condition, expression) =>
@@ -203,72 +239,151 @@ function createConjunctionExpression(validationReport: ConjunctionValidationRepo
 }
 
 function createArrayEveryExpression(validationReport: ArrayEveryValidationReport, reportError: boolean) {
-    // TODO: if reportError === true
-    const itemExpression = createExpression(validationReport.report, reportError);
-    return ts.createCall(
-        ts.createPropertyAccess(validationReport.arrayAccessor, ts.createIdentifier('every')),
-        undefined,
-        [
-            ts.createArrowFunction(
-                undefined,
+    if (reportError) {
+        const prevIdentifier = ts.createIdentifier('prev');
+        const itemArrowFunction = createExpression(validationReport.report, reportError);
+        return createSimpleArrowFunction(
+            ts.createCall(
+                ts.createPropertyAccess(validationReport.arrayAccessor, ts.createIdentifier('reduce')),
                 undefined,
                 [
-                    ts.createParameter(
+                    ts.createArrowFunction(
                         undefined,
                         undefined,
+                        [
+                            ts.createParameter(
+                                undefined,
+                                undefined,
+                                undefined,
+                                prevIdentifier
+                            ),
+                            ts.createParameter(
+                                undefined,
+                                undefined,
+                                undefined,
+                                validationReport.itemIdentifier
+                            )
+                        ],
                         undefined,
-                        validationReport.itemIdentifier
-                    )
-                ],
-                undefined,
-                undefined,
-                ts.createBlock([
-                    ts.createReturn(itemExpression)
-                ])
+                        undefined,
+                        ts.createBinary(
+                            prevIdentifier,
+                            ts.SyntaxKind.AmpersandAmpersandToken,
+                            ts.createCall(itemArrowFunction, undefined, undefined)
+                        )
+                    ),
+                    ts.createNull()
+                ]
             )
-        ]
-    );
+        );
+    } else {
+        const itemExpression = createExpression(validationReport.report, reportError);
+        return ts.createCall(
+            ts.createPropertyAccess(validationReport.arrayAccessor, ts.createIdentifier('every')),
+            undefined,
+            [
+                ts.createArrowFunction(
+                    undefined,
+                    undefined,
+                    [
+                        ts.createParameter(
+                            undefined,
+                            undefined,
+                            undefined,
+                            validationReport.itemIdentifier
+                        )
+                    ],
+                    undefined,
+                    undefined,
+                    ts.createBlock([
+                        ts.createReturn(itemExpression)
+                    ])
+                )
+            ]
+        );
+    }
 }
 
 function createObjectEveryExpression(validationReport: ObjectEveryValidationReport, reportError: boolean) {
-    // TODO: if reportError === true
-    const itemExpression = createExpression(validationReport.report, reportError);
-    return ts.createCall(
-        ts.createPropertyAccess(
+    if (reportError) {
+        const itemArrowFunction = createExpression(validationReport.report, reportError);
+        return createSimpleArrowFunction(
             ts.createCall(
-                ts.createPropertyAccess(ts.createIdentifier('Object'), ts.createIdentifier('keys')),
-                undefined,
-                [validationReport.objectAccessor]
-            ),
-            ts.createIdentifier('every')
-        ),
-        undefined,
-        [
-            ts.createArrowFunction(
-                undefined,
+                ts.createPropertyAccess(
+                    ts.createCall(
+                        ts.createPropertyAccess(ts.createIdentifier('Object'), ts.createIdentifier('keys')),
+                        undefined,
+                        [validationReport.objectAccessor]
+                    ),
+                    ts.createIdentifier('every')
+                ),
                 undefined,
                 [
-                    ts.createParameter(
+                    ts.createArrowFunction(
                         undefined,
                         undefined,
+                        [
+                            ts.createParameter(
+                                undefined,
+                                undefined,
+                                undefined,
+                                validationReport.keyIdentifier
+                            )
+                        ],
                         undefined,
-                        validationReport.keyIdentifier
+                        undefined,
+                        ts.createBlock([
+                            ts.createReturn(
+                                ts.createBinary(
+                                    ts.createStrictEquality(ts.createTypeOf(validationReport.keyIdentifier), ts.createStringLiteral('string')),
+                                    ts.SyntaxKind.AmpersandAmpersandToken,
+                                    ts.createCall(itemArrowFunction, undefined, undefined)
+                                )
+                            )
+                        ])
                     )
-                ],
-                undefined,
-                undefined,
-                ts.createBlock([
-                    ts.createReturn(
-                        ts.createBinary(
-                            // Check if key is of type string.
-                            ts.createStrictEquality(ts.createTypeOf(validationReport.keyIdentifier), ts.createStringLiteral('string')),
-                            ts.SyntaxKind.AmpersandAmpersandToken,
-                            // Check if value is of the given index type.
-                            itemExpression
-                        )
-                    )
-                ])
+                ]
             )
-        ]
-    );
+        );
+    } else {
+        const itemExpression = createExpression(validationReport.report, reportError);
+        return ts.createCall(
+            ts.createPropertyAccess(
+                ts.createCall(
+                    ts.createPropertyAccess(ts.createIdentifier('Object'), ts.createIdentifier('keys')),
+                    undefined,
+                    [validationReport.objectAccessor]
+                ),
+                ts.createIdentifier('every')
+            ),
+            undefined,
+            [
+                ts.createArrowFunction(
+                    undefined,
+                    undefined,
+                    [
+                        ts.createParameter(
+                            undefined,
+                            undefined,
+                            undefined,
+                            validationReport.keyIdentifier
+                        )
+                    ],
+                    undefined,
+                    undefined,
+                    ts.createBlock([
+                        ts.createReturn(
+                            ts.createBinary(
+                                // Check if key is of type string.
+                                ts.createStrictEquality(ts.createTypeOf(validationReport.keyIdentifier), ts.createStringLiteral('string')),
+                                ts.SyntaxKind.AmpersandAmpersandToken,
+                                // Check if value is of the given index type.
+                                itemExpression
+                            )
+                        )
+                    ])
+                )
+            ]
+        );
+    }
 }
