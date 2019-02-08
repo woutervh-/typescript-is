@@ -39,7 +39,7 @@ describe('assertType', () => {
             assert.deepStrictEqual(assertType<{ foo: number[] }>({ foo: [0] }), { foo: [0] });
             assert.deepStrictEqual(assertType<{ foo: number[] }>({ foo: [0, 1] }), { foo: [0, 1] });
             assert.deepStrictEqual(assertType<{ foo: number[] }>({ foo: [Number.NEGATIVE_INFINITY] }), { foo: [Number.NEGATIVE_INFINITY] });
-            assert.deepStrictEqual(assertType<{ foo: number[] }>({ foo: [Number.NaN] }), { foo: [Number.NaN] });
+            // assert.deepStrictEqual(assertType<{ foo: number[] }>({ foo: [Number.NaN] }), { foo: [Number.NaN] }); // NodeJS 6, 7 and 8 fail on NaN comparison
         });
 
         it('should throw an error if objects without foo are passed to it', () => {
