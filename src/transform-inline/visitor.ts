@@ -517,7 +517,10 @@ function visitNumber(type: ts.Type, accessor: ts.Expression, visitorContext: Vis
 
 function visitBigInt(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
     if (visitorContext.mode.type === 'type-check') {
-        return ts.createStrictEquality(ts.createTypeOf(accessor), ts.createStringLiteral('bigint'));
+        return createConditionalValidationReport(
+            ts.createStrictEquality(ts.createTypeOf(accessor), ts.createStringLiteral('bigint')),
+            'expected a bigint'
+        );
     } else {
         throw new Error('visitBigInt should only be called during type-check mode.');
     }
