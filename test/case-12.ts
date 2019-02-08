@@ -3,7 +3,7 @@ import { is } from '../index';
 
 describe('is', () => {
     describe('is<object>', () => {
-        it('should return false for booleans, numbers, and strings', () => {
+        it('should return false for booleans, numbers, strings, null and undefined', () => {
             assert.strictEqual(is<object>(true), false);
             assert.strictEqual(is<object>(false), false);
             assert.strictEqual(is<object>(0), false);
@@ -12,14 +12,14 @@ describe('is', () => {
             assert.strictEqual(is<object>(''), false);
             assert.strictEqual(is<object>('1'), false);
             assert.strictEqual(is<object>('foo'), false);
+            assert.strictEqual(is<object>(null), false);
+            assert.strictEqual(is<object>(undefined), false);
         });
 
         it('should return true for any other object', () => {
             assert.strictEqual(is<object>({}), true);
             assert.strictEqual(is<object>([]), true);
             assert.strictEqual(is<object>(new Error()), true);
-            assert.strictEqual(is<object>(null), true);
-            assert.strictEqual(is<object>(undefined), true);
         });
     });
 

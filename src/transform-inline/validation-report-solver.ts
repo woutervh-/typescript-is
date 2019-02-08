@@ -153,7 +153,8 @@ function createDisjunctionExpression(conditions: ts.Expression[], visitorContext
                 condition,
                 ts.SyntaxKind.BarBarToken,
                 expression
-            )
+            ),
+            ts.createFalse()
         );
     }
 }
@@ -198,7 +199,8 @@ function createConjunctionExpression(conditions: ts.Expression[], visitorContext
                 condition,
                 ts.SyntaxKind.AmpersandAmpersandToken,
                 expression
-            )
+            ),
+            ts.createTrue()
         );
     }
 }

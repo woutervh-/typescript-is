@@ -204,6 +204,14 @@ function visitRegularObjectType(type: ts.ObjectType, accessor: ts.Expression, vi
         }
 
         return createConjunctionValidationReport(validationReports);
+    } else if (visitorContext.mode.type === 'string-literal-keyof') {
+        const value = visitorContext.mode.value;
+        const match = properties.some((property) => property.name === value);
+        if (match) {
+            return createAlwaysTrueValidationReport();
+        } else {
+            return createAlwaysFalseValidationReport(`'${visitorContext.mode.value}' is not assignable to any key of object.`);
+        }
     } else if (visitorContext.mode.type === 'keyof') {
         // In keyof mode we check if the accessor is equal to one of the property names.
         return createConditionalValidationReport(
