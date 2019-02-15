@@ -3,8 +3,10 @@ import NestedError = require('nested-error-stacks');
 import { VisitorContext } from './visitor-context';
 import { transformNode } from './transform-node';
 
-export default function transformer(program: ts.Program): ts.TransformerFactory<ts.SourceFile> {
-    console.log(`typescript-is: transforming program with ${program.getSourceFiles().length} source files; using TypeScript ${ts.version}.`);
+export default function transformer(program: ts.Program, options?: { [Key: string]: unknown }): ts.TransformerFactory<ts.SourceFile> {
+    if (options && typeof options === 'object' && options !== null && options.verbose) {
+        console.log(`typescript-is: transforming program with ${program.getSourceFiles().length} source files; using TypeScript ${ts.version}.`);
+    }
 
     const visitorContext: VisitorContext = {
         program,
