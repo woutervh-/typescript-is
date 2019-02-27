@@ -113,10 +113,7 @@ function createConjunctionFunction(functionDeclarations: ts.FunctionDeclaration[
                                 ts.createCall(
                                     conditionIdentifier,
                                     undefined,
-                                    [
-                                        accessorIdentifier,
-                                        pathIdentifier
-                                    ]
+                                    [accessorIdentifier, pathIdentifier]
                                 )
                             )
                         ]
@@ -206,10 +203,7 @@ function createDisjunctionFunction(functionDeclarations: ts.FunctionDeclaration[
                                 ts.createCall(
                                     conditionIdentifier,
                                     undefined,
-                                    [
-                                        accessorIdentifier,
-                                        pathIdentifier
-                                    ]
+                                    [accessorIdentifier, pathIdentifier]
                                 )
                             )
                         ]
@@ -225,7 +219,21 @@ function createDisjunctionFunction(functionDeclarations: ts.FunctionDeclaration[
                     ts.createIdentifier('Error'),
                     undefined,
                     [
-                        ts.createStringLiteral('Invalid TODO') // TODO:
+                        createBinaries(
+                            [
+                                ts.createStringLiteral('validation failed at '),
+                                ts.createCall(
+                                    ts.createPropertyAccess(
+                                        pathIdentifier,
+                                        'join'
+                                    ),
+                                    undefined,
+                                    [ts.createStringLiteral('.')]
+                                ),
+                                ts.createStringLiteral(`, because there are no valid alternatives.`)
+                            ],
+                            ts.SyntaxKind.PlusToken
+                        )
                     ]
                 )
             )
@@ -643,56 +651,21 @@ function visitLiteralType(type: ts.LiteralType, visitorContext: VisitorContext) 
 
 function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorContext: VisitorContext) {
     if (!visitorContext.functionMap.has(type)) {
-        const conditions = type.types.map((type) => {
-            const functionDeclaration = visitType(type, visitorContext);
-            return ts.createCall(
-                functionDeclaration.name!,
-                undefined,
-                [
-                    accessorIdentifier,
-                    pathIdentifier
-                ]
-            );
-        });
+        const functionDeclarations = type.types.map((type) => visitType(type, visitorContext));
 
         if (tsutils.isUnionType(type)) {
             visitorContext.functionMap.set(
                 type,
-
+                createDisjunctionFunction(functionDeclarations, `f${visitorContext.functionMap.size}`)
             );
         } else {
-
+            visitorContext.functionMap.set(
+                type,
+                createConjunctionFunction(functionDeclarations, `f${visitorContext.functionMap.size}`)
+            );
         }
     }
     return visitorContext.functionMap.get(type)!;
-
-    let token: ts.SyntaxKind.BarBarToken | ts.SyntaxKind.AmpersandAmpersandToken;
-    if (tsutils.isUnionType(type)) {
-        if (visitorContext.mode.type === 'keyof' || visitorContext.mode.type === 'indexed-access') {
-            token = ts.SyntaxKind.AmpersandAmpersandToken;
-        } else {
-            token = ts.SyntaxKind.BarBarToken;
-        }
-    } else if (tsutils.isIntersectionType(type)) {
-        if (visitorContext.mode.type === 'keyof' || visitorContext.mode.type === 'indexed-access') {
-            token = ts.SyntaxKind.BarBarToken;
-        } else {
-            token = ts.SyntaxKind.AmpersandAmpersandToken;
-        }
-    } else {
-        throw new Error('UnionOrIntersection type is expected to be a Union or Intersection type.');
-    }
-    if (token === ts.SyntaxKind.BarBarToken) {
-        return createDisjunctionValidationReport(
-            visitorContext.pathStack.slice(),
-            type.types.map((type) => visitType(type, accessor, visitorContext))
-        );
-    } else {
-        return createConjunctionValidationReport(
-            visitorContext.pathStack.slice(),
-            type.types.map((type) => visitType(type, accessor, visitorContext))
-        );
-    }
 }
 
 function visitBooleanLiteral(type: ts.Type, visitorContext: VisitorContext) {
@@ -973,6 +946,50 @@ export function visitType(type: ts.Type, visitorContext: VisitorContext): ts.Fun
 }
 
 export function visitUndefinedOrType(type: ts.Type, visitorContext: VisitorContext) {
+    const errorIdentifier = ts.createIdentifier('error');
+    const functionDeclaration = visitType(type, visitorContext);
+    return ts.createFunctionDeclaration(
+        undefined,
+        undefined,
+        undefined,
+        `optional_${functionDeclaration.name!.text}`,
+        undefined,
+        [
+            ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined),
+            ts.createParameter(undefined, undefined, undefined, pathIdentifier, undefined, undefined, undefined)
+        ],
+        undefined,
+        ts.createBlock([
+            ts.createIf(
+                ts.createStrictInequality(
+                    accessorIdentifier,
+                    ts.createIdentifier('undefined')
+                ),
+                ts.createBlock([
+                    ts.createVariableStatement(
+                        [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
+                        [
+                            ts.createVariableDeclaration(
+                                errorIdentifier,
+                                undefined,
+                                ts.createCall(
+                                    functionDeclaration.name!,
+                                    undefined,
+                                    [accessorIdentifier, pathIdentifier]
+                                )
+                            )
+                        ]
+                    ),
+                    ts.createIf(
+                        errorIdentifier,
+                        ts.createReturn(errorIdentifier)
+                    )
+                ])
+            ),
+            ts.createReturn(ts.createNull())
+        ])
+    );
+
     return createDisjunctionValidationReport(
         visitorContext.pathStack.slice(),
         [
