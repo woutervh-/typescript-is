@@ -5,8 +5,8 @@ import { VisitorContext } from './visitor-context';
 const accessorIdentifier = ts.createIdentifier('object');
 const pathIdentifier = ts.createIdentifier('object');
 
-function createManyBinary(expressions: ts.Expression, operator: ts.SyntaxKind) {
-    
+function createBinaries(expressions: ts.Expression[], operator: ts.BinaryOperator) {
+    return expressions.reduce((previous, expression) => ts.createBinary(previous, operator, expression));
 }
 
 function createAcceptingFunction(functionName: string) {
@@ -40,10 +40,9 @@ function createRejectingFunction(reason: string, functionName: string) {
                     ts.createIdentifier('Error'),
                     undefined,
                     [
-                        ts.createBinary(
-                            ts.createStringLiteral('Validation failed at '),
-                            ts.SyntaxKind.PlusToken,
-                            ts.createBinary(
+                        createBinaries(
+                            [
+                                ts.createStringLiteral('validation failed at '),
                                 ts.createCall(
                                     ts.createPropertyAccess(
                                         pathIdentifier,
@@ -52,9 +51,9 @@ function createRejectingFunction(reason: string, functionName: string) {
                                     undefined,
                                     [ts.createStringLiteral('.')]
                                 ),
-                                ts.SyntaxKind.PlusToken,
                                 ts.createStringLiteral(`, because ${reason}`)
-                            )
+                            ],
+                            ts.SyntaxKind.PlusToken
                         )
                     ]
                 )
@@ -129,10 +128,9 @@ function createConjunctionFunction(functionDeclarations: ts.FunctionDeclaration[
                                 ts.createIdentifier('Error'),
                                 undefined,
                                 [
-                                    ts.createBinary(
-                                        ts.createStringLiteral('Validation failed at '),
-                                        ts.SyntaxKind.PlusToken,
-                                        ts.createBinary(
+                                    createBinaries(
+                                        [
+                                            ts.createStringLiteral('validation failed at '),
                                             ts.createCall(
                                                 ts.createPropertyAccess(
                                                     pathIdentifier,
@@ -141,13 +139,10 @@ function createConjunctionFunction(functionDeclarations: ts.FunctionDeclaration[
                                                 undefined,
                                                 [ts.createStringLiteral('.')]
                                             ),
-                                            ts.SyntaxKind.PlusToken,
-                                            ts.createBinary(
-                                                ts.createStringLiteral(`, because: `),
-                                                ts.SyntaxKind.PlusToken,
-                                                errorIdentifier
-                                            )
-                                        )
+                                            ts.createStringLiteral(`, because: `),
+                                            errorIdentifier
+                                        ],
+                                        ts.SyntaxKind.PlusToken
                                     )
                                 ]
                             )
@@ -156,6 +151,84 @@ function createConjunctionFunction(functionDeclarations: ts.FunctionDeclaration[
                 ])
             ),
             ts.createReturn(ts.createNull())
+        ])
+    );
+}
+
+function createDisjunctionFunction(functionDeclarations: ts.FunctionDeclaration[], functionName: string) {
+    const conditionsIdentifier = ts.createIdentifier('conditions');
+    const conditionIdentifier = ts.createIdentifier('condition');
+    const errorIdentifier = ts.createIdentifier('error');
+    return ts.createFunctionDeclaration(
+        undefined,
+        undefined,
+        undefined,
+        functionName,
+        undefined,
+        [
+            ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined),
+            ts.createParameter(undefined, undefined, undefined, pathIdentifier, undefined, undefined, undefined)
+        ],
+        undefined,
+        ts.createBlock([
+            ts.createVariableStatement(
+                [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
+                [
+                    ts.createVariableDeclaration(
+                        conditionsIdentifier,
+                        undefined,
+                        ts.createArrayLiteral(
+                            functionDeclarations.map((functionDeclaration) => functionDeclaration.name!)
+                        )
+                    )
+                ]
+            ),
+            ts.createForOf(
+                undefined,
+                ts.createVariableDeclarationList(
+                    [
+                        ts.createVariableDeclaration(
+                            conditionIdentifier,
+                            undefined,
+                            undefined
+                        )
+                    ],
+                    ts.NodeFlags.Const
+                ),
+                conditionsIdentifier,
+                ts.createBlock([
+                    ts.createVariableStatement(
+                        [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
+                        [
+                            ts.createVariableDeclaration(
+                                errorIdentifier,
+                                undefined,
+                                ts.createCall(
+                                    conditionIdentifier,
+                                    undefined,
+                                    [
+                                        accessorIdentifier,
+                                        pathIdentifier
+                                    ]
+                                )
+                            )
+                        ]
+                    ),
+                    ts.createIf(
+                        ts.createLogicalNot(errorIdentifier),
+                        ts.createReturn(ts.createNull())
+                    )
+                ])
+            ),
+            ts.createReturn(
+                ts.createNew(
+                    ts.createIdentifier('Error'),
+                    undefined,
+                    [
+                        ts.createStringLiteral('Invalid TODO') // TODO:
+                    ]
+                )
+            )
         ])
     );
 }
@@ -180,10 +253,9 @@ function createAssertionFunction(expression: ts.Expression, reason: string, func
                         ts.createIdentifier('Error'),
                         undefined,
                         [
-                            ts.createBinary(
-                                ts.createStringLiteral('Validation failed at '),
-                                ts.SyntaxKind.PlusToken,
-                                ts.createBinary(
+                            createBinaries(
+                                [
+                                    ts.createStringLiteral('validation failed at '),
                                     ts.createCall(
                                         ts.createPropertyAccess(
                                             pathIdentifier,
@@ -192,9 +264,9 @@ function createAssertionFunction(expression: ts.Expression, reason: string, func
                                         undefined,
                                         [ts.createStringLiteral('.')]
                                     ),
-                                    ts.SyntaxKind.PlusToken,
                                     ts.createStringLiteral(`, because ${reason}`)
-                                )
+                                ],
+                                ts.SyntaxKind.PlusToken
                             )
                         ]
                     )
