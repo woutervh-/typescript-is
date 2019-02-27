@@ -1,8 +1,209 @@
 import * as ts from 'typescript';
 import * as tsutils from 'tsutils';
 import { VisitorContext } from './visitor-context';
-import { ValidationReport, createDisjunctionValidationReport, createConditionalValidationReport, createAlwaysTrueValidationReport, createAlwaysFalseValidationReport, createConjunctionValidationReport, createArrayEveryValidationReport, createObjectEveryValidationReport } from './validation-report';
-import { reduceNonConditionals } from './validation-report-solver';
+
+const accessorIdentifier = ts.createIdentifier('object');
+const pathIdentifier = ts.createIdentifier('object');
+
+function createManyBinary(expressions: ts.Expression, operator: ts.SyntaxKind) {
+    
+}
+
+function createAcceptingFunction(functionName: string) {
+    return ts.createFunctionDeclaration(
+        undefined,
+        undefined,
+        undefined,
+        functionName,
+        undefined,
+        [],
+        undefined,
+        ts.createBlock([ts.createReturn(ts.createNull())])
+    );
+}
+
+function createRejectingFunction(reason: string, functionName: string) {
+    return ts.createFunctionDeclaration(
+        undefined,
+        undefined,
+        undefined,
+        functionName,
+        undefined,
+        [
+            ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined),
+            ts.createParameter(undefined, undefined, undefined, pathIdentifier, undefined, undefined, undefined)
+        ],
+        undefined,
+        ts.createBlock([
+            ts.createReturn(
+                ts.createNew(
+                    ts.createIdentifier('Error'),
+                    undefined,
+                    [
+                        ts.createBinary(
+                            ts.createStringLiteral('Validation failed at '),
+                            ts.SyntaxKind.PlusToken,
+                            ts.createBinary(
+                                ts.createCall(
+                                    ts.createPropertyAccess(
+                                        pathIdentifier,
+                                        'join'
+                                    ),
+                                    undefined,
+                                    [ts.createStringLiteral('.')]
+                                ),
+                                ts.SyntaxKind.PlusToken,
+                                ts.createStringLiteral(`, because ${reason}`)
+                            )
+                        )
+                    ]
+                )
+            )
+        ])
+    );
+}
+
+function createConjunctionFunction(functionDeclarations: ts.FunctionDeclaration[], functionName: string) {
+    const conditionsIdentifier = ts.createIdentifier('conditions');
+    const conditionIdentifier = ts.createIdentifier('condition');
+    const errorIdentifier = ts.createIdentifier('error');
+    return ts.createFunctionDeclaration(
+        undefined,
+        undefined,
+        undefined,
+        functionName,
+        undefined,
+        [
+            ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined),
+            ts.createParameter(undefined, undefined, undefined, pathIdentifier, undefined, undefined, undefined)
+        ],
+        undefined,
+        ts.createBlock([
+            ts.createVariableStatement(
+                [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
+                [
+                    ts.createVariableDeclaration(
+                        conditionsIdentifier,
+                        undefined,
+                        ts.createArrayLiteral(
+                            functionDeclarations.map((functionDeclaration) => functionDeclaration.name!)
+                        )
+                    )
+                ]
+            ),
+            ts.createForOf(
+                undefined,
+                ts.createVariableDeclarationList(
+                    [
+                        ts.createVariableDeclaration(
+                            conditionIdentifier,
+                            undefined,
+                            undefined
+                        )
+                    ],
+                    ts.NodeFlags.Const
+                ),
+                conditionsIdentifier,
+                ts.createBlock([
+                    ts.createVariableStatement(
+                        [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
+                        [
+                            ts.createVariableDeclaration(
+                                errorIdentifier,
+                                undefined,
+                                ts.createCall(
+                                    conditionIdentifier,
+                                    undefined,
+                                    [
+                                        accessorIdentifier,
+                                        pathIdentifier
+                                    ]
+                                )
+                            )
+                        ]
+                    ),
+                    ts.createIf(
+                        errorIdentifier,
+                        ts.createReturn(
+                            ts.createNew(
+                                ts.createIdentifier('Error'),
+                                undefined,
+                                [
+                                    ts.createBinary(
+                                        ts.createStringLiteral('Validation failed at '),
+                                        ts.SyntaxKind.PlusToken,
+                                        ts.createBinary(
+                                            ts.createCall(
+                                                ts.createPropertyAccess(
+                                                    pathIdentifier,
+                                                    'join'
+                                                ),
+                                                undefined,
+                                                [ts.createStringLiteral('.')]
+                                            ),
+                                            ts.SyntaxKind.PlusToken,
+                                            ts.createBinary(
+                                                ts.createStringLiteral(`, because: `),
+                                                ts.SyntaxKind.PlusToken,
+                                                errorIdentifier
+                                            )
+                                        )
+                                    )
+                                ]
+                            )
+                        )
+                    )
+                ])
+            ),
+            ts.createReturn(ts.createNull())
+        ])
+    );
+}
+
+function createAssertionFunction(expression: ts.Expression, reason: string, functionName: string) {
+    return ts.createFunctionDeclaration(
+        undefined,
+        undefined,
+        undefined,
+        functionName,
+        undefined,
+        [
+            ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined),
+            ts.createParameter(undefined, undefined, undefined, pathIdentifier, undefined, undefined, undefined)
+        ],
+        undefined,
+        ts.createBlock([
+            ts.createIf(
+                expression,
+                ts.createReturn(
+                    ts.createNew(
+                        ts.createIdentifier('Error'),
+                        undefined,
+                        [
+                            ts.createBinary(
+                                ts.createStringLiteral('Validation failed at '),
+                                ts.SyntaxKind.PlusToken,
+                                ts.createBinary(
+                                    ts.createCall(
+                                        ts.createPropertyAccess(
+                                            pathIdentifier,
+                                            'join'
+                                        ),
+                                        undefined,
+                                        [ts.createStringLiteral('.')]
+                                    ),
+                                    ts.SyntaxKind.PlusToken,
+                                    ts.createStringLiteral(`, because ${reason}`)
+                                )
+                            )
+                        ]
+                    )
+                ),
+                ts.createReturn(ts.createNull())
+            )
+        ])
+    );
+}
 
 function createPropertyCheck(accessor: ts.Expression, property: ts.Expression, type: ts.Type, optional: boolean, visitorContext: VisitorContext) {
     const name = ts.isStringLiteral(property) ? property.text : '[unknown]';
@@ -335,35 +536,64 @@ function visitObjectType(type: ts.ObjectType, accessor: ts.Expression, visitorCo
     return validationReport;
 }
 
-function visitLiteralType(type: ts.LiteralType, accessor: ts.Expression, visitorContext: VisitorContext) {
-    if (visitorContext.mode.type === 'type-check') {
+function visitLiteralType(type: ts.LiteralType, visitorContext: VisitorContext) {
+    if (!visitorContext.functionMap.has(type)) {
         if (typeof type.value === 'string') {
-            return createConditionalValidationReport(
-                visitorContext.pathStack.slice(),
-                ts.createStrictEquality(accessor, ts.createStringLiteral(type.value)),
-                `expected string '${type.value}'`
+            visitorContext.functionMap.set(
+                type,
+                createAssertionFunction(
+                    ts.createStrictInequality(
+                        accessorIdentifier,
+                        ts.createStringLiteral(type.value)
+                    ),
+                    `expected string '${type.value}'`,
+                    `f${visitorContext.functionMap.size}`
+                )
             );
         } else if (typeof type.value === 'number') {
-            return createConditionalValidationReport(
-                visitorContext.pathStack.slice(),
-                ts.createStrictEquality(accessor, ts.createNumericLiteral(type.value.toString())),
-                `expected number ${type.value}`
+            visitorContext.functionMap.set(
+                type,
+                createAssertionFunction(
+                    ts.createStrictInequality(
+                        accessorIdentifier,
+                        ts.createNumericLiteral(type.value.toString())
+                    ),
+                    `expected number '${type.value}'`,
+                    `f${visitorContext.functionMap.size}`
+                )
             );
         } else {
             throw new Error('Type value is expected to be a string or number.');
         }
-    } else if (visitorContext.mode.type === 'string-literal') {
-        if (type.value === visitorContext.mode.value) {
-            return createAlwaysTrueValidationReport(visitorContext.pathStack);
-        } else {
-            return createAlwaysFalseValidationReport(visitorContext.pathStack.slice(), `'${visitorContext.mode.value}' is not assignable to '${type.value}'.`);
-        }
-    } else {
-        throw new Error('visitLiteralType should only be called during type-check or string-literal mode.');
     }
+    return visitorContext.functionMap.get(type)!;
 }
 
-function visitUnionOrIntersectionType(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
+function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorContext: VisitorContext) {
+    if (!visitorContext.functionMap.has(type)) {
+        const conditions = type.types.map((type) => {
+            const functionDeclaration = visitType(type, visitorContext);
+            return ts.createCall(
+                functionDeclaration.name!,
+                undefined,
+                [
+                    accessorIdentifier,
+                    pathIdentifier
+                ]
+            );
+        });
+
+        if (tsutils.isUnionType(type)) {
+            visitorContext.functionMap.set(
+                type,
+
+            );
+        } else {
+
+        }
+    }
+    return visitorContext.functionMap.get(type)!;
+
     let token: ts.SyntaxKind.BarBarToken | ts.SyntaxKind.AmpersandAmpersandToken;
     if (tsutils.isUnionType(type)) {
         if (visitorContext.mode.type === 'keyof' || visitorContext.mode.type === 'indexed-access') {
@@ -393,298 +623,284 @@ function visitUnionOrIntersectionType(type: ts.Type, accessor: ts.Expression, vi
     }
 }
 
-function visitBooleanLiteral(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
-    if (visitorContext.mode.type === 'type-check') {
+function visitBooleanLiteral(type: ts.Type, visitorContext: VisitorContext) {
+    if (!visitorContext.functionMap.has(type)) {
         // Using internal TypeScript API, hacky.
-        if ((type as { intrinsicName?: string }).intrinsicName === 'true') {
-            return createConditionalValidationReport(
-                visitorContext.pathStack.slice(),
-                ts.createStrictEquality(
-                    accessor,
-                    ts.createTrue()
-                ),
-                'expected true'
+        const intrinsicName: string | undefined = (type as { intrinsicName?: string }).intrinsicName;
+        if (intrinsicName === 'true') {
+            visitorContext.functionMap.set(
+                type,
+                createAssertionFunction(
+                    ts.createStrictInequality(
+                        accessorIdentifier,
+                        ts.createTrue()
+                    ),
+                    `expected true`,
+                    `f${visitorContext.functionMap.size}`
+                )
+            );
+        } else if (intrinsicName === 'false') {
+            visitorContext.functionMap.set(
+                type,
+                createAssertionFunction(
+                    ts.createStrictInequality(
+                        accessorIdentifier,
+                        ts.createFalse()
+                    ),
+                    `expected false`,
+                    `f${visitorContext.functionMap.size}`
+                )
             );
         } else {
-            return createConditionalValidationReport(
-                visitorContext.pathStack.slice(),
-                ts.createStrictEquality(
-                    accessor,
-                    ts.createFalse()
-                ),
-                'expected false'
-            );
+            throw new Error(`Unsupported boolean literal with intrinsic name: ${intrinsicName}.`);
         }
-    } else if (visitorContext.mode.type === 'string-literal') {
-        return createAlwaysFalseValidationReport(visitorContext.pathStack.slice(), 'Boolean literals cannot be used as an index type.');
-    } else {
-        throw new Error('visitBooleanLiteral should only be called during type-check or string-literal mode.');
     }
+    return visitorContext.functionMap.get(type)!;
 }
 
-function visitNonPrimitiveType(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
-    if (visitorContext.mode.type === 'type-check') {
+function visitNonPrimitiveType(type: ts.Type, visitorContext: VisitorContext) {
+    if (!visitorContext.functionMap.has(type)) {
         // Using internal TypeScript API, hacky.
         const intrinsicName: string | undefined = (type as { intrinsicName?: string }).intrinsicName;
         if (intrinsicName === 'object') {
             const conditions: ts.Expression[] = [
                 ts.createStrictInequality(
-                    ts.createTypeOf(accessor),
+                    ts.createTypeOf(accessorIdentifier),
                     ts.createStringLiteral('boolean')
                 ),
                 ts.createStrictInequality(
-                    ts.createTypeOf(accessor),
+                    ts.createTypeOf(accessorIdentifier),
                     ts.createStringLiteral('number')
                 ),
                 ts.createStrictInequality(
-                    ts.createTypeOf(accessor),
+                    ts.createTypeOf(accessorIdentifier),
                     ts.createStringLiteral('string')
                 ),
                 ts.createStrictInequality(
-                    accessor,
+                    accessorIdentifier,
                     ts.createNull()
                 ),
                 ts.createStrictInequality(
-                    accessor,
+                    accessorIdentifier,
                     ts.createIdentifier('undefined')
                 )
             ];
-            return createConditionalValidationReport(
-                visitorContext.pathStack.slice(),
-                conditions.reduce((condition, expression) =>
-                    ts.createBinary(
-                        condition,
-                        ts.SyntaxKind.AmpersandAmpersandToken,
-                        expression
-                    )
-                ),
-                'expected non-primitive'
+            const condition = conditions.reduce((condition, expression) =>
+                ts.createBinary(
+                    condition,
+                    ts.SyntaxKind.AmpersandAmpersandToken,
+                    expression
+                )
+            );
+            visitorContext.functionMap.set(
+                type,
+                createAssertionFunction(
+                    ts.createLogicalNot(condition),
+                    `expected a non-primitive`,
+                    `f${visitorContext.functionMap.size}`
+                )
             );
         } else {
             throw new Error(`Unsupported non-primitive with intrinsic name: ${intrinsicName}.`);
         }
-    } else if (visitorContext.mode.type === 'string-literal') {
-        return createAlwaysFalseValidationReport(visitorContext.pathStack.slice(), 'Non-primitive cannot be used as an index type.');
-    } else {
-        throw new Error('visitNonPrimitiveType should only be called during type-check or string-literal mode.');
     }
+    return visitorContext.functionMap.get(type)!;
 }
 
-function visitTypeParameter(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
-    const typeMapper = visitorContext.typeMapperStack.reduceRight<(source: ts.Type) => ts.Type | undefined>((previous, next) => (source: ts.Type) => previous(source) || next(source), () => undefined);
-    const mappedType = typeMapper(type) || type.getDefault();
-    if (mappedType === undefined) {
-        throw new Error('Unbound type parameter, missing type node.');
-    }
-    return visitType(mappedType, accessor, visitorContext);
-}
-
-function visitIndexType(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
-    if (visitorContext.mode.type === 'type-check' || visitorContext.mode.type === 'string-literal') {
-        // Using internal TypeScript API, hacky.
-        const indexedType = (type as { type?: ts.Type }).type;
-        if (indexedType === undefined) {
-            throw new Error('Could not get indexed type of index type.');
-        }
-        if (visitorContext.mode.type === 'type-check') {
-            return visitType(indexedType, accessor, { ...visitorContext, mode: { type: 'keyof' } });
-        } else {
-            return visitType(indexedType, accessor, { ...visitorContext, mode: { type: 'string-literal-keyof', value: visitorContext.mode.value } });
-        }
-    } else {
-        throw new Error('visitIndexType should only be called during type-check mode.');
-    }
-}
-
-function visitIndexedAccessType(type: ts.IndexedAccessType, accessor: ts.Expression, visitorContext: VisitorContext) {
-    // T[U] -> index type = U, object type = T
-    if (visitorContext.mode.type === 'type-check') {
-        return visitType(type.objectType, accessor, { ...visitorContext, mode: { type: 'indexed-access', indexType: type.indexType } });
-    } else if (visitorContext.mode.type === 'string-literal') {
-        return visitType(type.objectType, accessor, { ...visitorContext, mode: { type: 'string-literal-indexed-access', indexType: type.indexType, value: visitorContext.mode.value } });
-    } else {
-        throw new Error('visitIndexedAccessType should only be called during type-check or string-literal mode.');
-    }
-}
-
-function visitAny(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
-    if (visitorContext.mode.type === 'type-check') {
-        return createAlwaysTrueValidationReport(visitorContext.pathStack);
-    } else if (visitorContext.mode.type === 'keyof') {
-        return createConditionalValidationReport(
-            visitorContext.pathStack.slice(),
-            ts.createStrictEquality(ts.createTypeOf(accessor), ts.createStringLiteral('string')),
-            'expected string'
+function visitAny(type: ts.Type, visitorContext: VisitorContext) {
+    if (!visitorContext.functionMap.has(type)) {
+        visitorContext.functionMap.set(
+            type,
+            createAcceptingFunction(`f${visitorContext.functionMap.size}`)
         );
-    } else if (visitorContext.mode.type === 'string-literal') {
-        return createAlwaysFalseValidationReport(visitorContext.pathStack.slice(), '`any` cannot be used as an index type.');
-    } else {
-        return createAlwaysTrueValidationReport(visitorContext.pathStack);
     }
+    return visitorContext.functionMap.get(type)!;
 }
 
-function visitUnknown(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
-    if (visitorContext.mode.type === 'type-check') {
-        return createAlwaysTrueValidationReport(visitorContext.pathStack);
-    } else if (visitorContext.mode.type === 'keyof') {
-        return createAlwaysFalseValidationReport(visitorContext.pathStack.slice(), 'type is never');
-    } else if (visitorContext.mode.type === 'string-literal') {
-        return createAlwaysFalseValidationReport(visitorContext.pathStack.slice(), '`unknown` cannot be used as an index type.');
-    } else {
-        throw new Error('visitUnknown should only be called during type-check, keyof, or string-literal mode.');
-    }
-}
-
-function visitNever(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
-    return createAlwaysFalseValidationReport(visitorContext.pathStack.slice(), 'type is never');
-}
-
-function visitNull(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
-    if (visitorContext.mode.type === 'type-check') {
-        return createConditionalValidationReport(
-            visitorContext.pathStack.slice(),
-            ts.createStrictEquality(accessor, ts.createNull()),
-            'expected null'
+function visitUnknown(type: ts.Type, visitorContext: VisitorContext) {
+    if (!visitorContext.functionMap.has(type)) {
+        visitorContext.functionMap.set(
+            type,
+            createAcceptingFunction(`f${visitorContext.functionMap.size}`)
         );
-    } else if (visitorContext.mode.type === 'string-literal') {
-        return createAlwaysFalseValidationReport(visitorContext.pathStack.slice(), '`null` cannot be used as an index type.');
-    } else {
-        throw new Error('visitNull should only be called during type-check or string-literal mode.');
     }
+    return visitorContext.functionMap.get(type)!;
 }
 
-function visitUndefined(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
-    if (visitorContext.mode.type === 'type-check') {
-        return createConditionalValidationReport(
-            visitorContext.pathStack.slice(),
-            ts.createStrictEquality(accessor, ts.createIdentifier('undefined')),
-            'expected undefined'
+function visitNever(type: ts.Type, visitorContext: VisitorContext) {
+    if (!visitorContext.functionMap.has(type)) {
+        visitorContext.functionMap.set(
+            type,
+            createRejectingFunction('type is never', `f${visitorContext.functionMap.size}`)
         );
-    } else if (visitorContext.mode.type === 'string-literal') {
-        return createAlwaysFalseValidationReport(visitorContext.pathStack.slice(), '`undefined` cannot be used as an index type.');
-    } else {
-        throw new Error('visitUndefined should only be called during type-check or string-literal mode.');
     }
+    return visitorContext.functionMap.get(type)!;
 }
 
-function visitNumber(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
-    if (visitorContext.mode.type === 'type-check') {
-        return createConditionalValidationReport(
-            visitorContext.pathStack.slice(),
-            ts.createStrictEquality(ts.createTypeOf(accessor), ts.createStringLiteral('number')),
-            'expected number'
+function visitNull(type: ts.Type, visitorContext: VisitorContext) {
+    if (!visitorContext.functionMap.has(type)) {
+        visitorContext.functionMap.set(
+            type,
+            createAssertionFunction(
+                ts.createStrictInequality(
+                    accessorIdentifier,
+                    ts.createNull()
+                ),
+                'expected null',
+                `f${visitorContext.functionMap.size}`
+            )
         );
-    } else if (visitorContext.mode.type === 'string-literal') {
-        return createAlwaysFalseValidationReport(visitorContext.pathStack.slice(), '`number` is not assignable to string.');
-    } else {
-        throw new Error('visitNumber should only be called during type-check or string-literal mode.');
     }
+    return visitorContext.functionMap.get(type)!;
 }
 
-function visitBigInt(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
-    if (visitorContext.mode.type === 'type-check') {
-        return createConditionalValidationReport(
-            visitorContext.pathStack.slice(),
-            ts.createStrictEquality(ts.createTypeOf(accessor), ts.createStringLiteral('bigint')),
-            'expected bigint'
+function visitUndefined(type: ts.Type, visitorContext: VisitorContext) {
+    if (!visitorContext.functionMap.has(type)) {
+        visitorContext.functionMap.set(
+            type,
+            createAssertionFunction(
+                ts.createStrictInequality(
+                    accessorIdentifier,
+                    ts.createIdentifier('undefined')
+                ),
+                'expected undefined',
+                `f${visitorContext.functionMap.size}`
+            )
         );
-    } else if (visitorContext.mode.type === 'string-literal') {
-        return createAlwaysFalseValidationReport(visitorContext.pathStack.slice(), '`bigint` cannot be used as an index type.');
-    } else {
-        throw new Error('visitBigInt should only be called during type-check or string-literal mode.');
     }
+    return visitorContext.functionMap.get(type)!;
 }
 
-function visitBoolean(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
-    if (visitorContext.mode.type === 'type-check') {
-        return createConditionalValidationReport(
-            visitorContext.pathStack.slice(),
-            ts.createStrictEquality(ts.createTypeOf(accessor), ts.createStringLiteral('boolean')),
-            'expected boolean'
+function visitNumber(type: ts.Type, visitorContext: VisitorContext) {
+    if (!visitorContext.functionMap.has(type)) {
+        visitorContext.functionMap.set(
+            type,
+            createAssertionFunction(
+                ts.createStrictInequality(
+                    ts.createTypeOf(accessorIdentifier),
+                    ts.createStringLiteral('number')
+                ),
+                'expected a number',
+                `f${visitorContext.functionMap.size}`
+            )
         );
-    } else if (visitorContext.mode.type === 'string-literal') {
-        return createAlwaysFalseValidationReport(visitorContext.pathStack.slice(), '`boolean` cannot be used as an index type.');
-    } else {
-        throw new Error('visitBoolean should only be called during type-check or string-literal mode.');
     }
+    return visitorContext.functionMap.get(type)!;
 }
 
-function visitString(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
-    if (visitorContext.mode.type === 'type-check') {
-        return createConditionalValidationReport(
-            visitorContext.pathStack.slice(),
-            ts.createStrictEquality(ts.createTypeOf(accessor), ts.createStringLiteral('string')),
-            'expected string'
+function visitBigInt(type: ts.Type, visitorContext: VisitorContext) {
+    if (!visitorContext.functionMap.has(type)) {
+        visitorContext.functionMap.set(
+            type,
+            createAssertionFunction(
+                ts.createStrictInequality(
+                    ts.createTypeOf(accessorIdentifier),
+                    ts.createStringLiteral('bigint')
+                ),
+                'expected a bigint',
+                `f${visitorContext.functionMap.size}`
+            )
         );
-    } else if (visitorContext.mode.type === 'string-literal') {
-        return createAlwaysTrueValidationReport(visitorContext.pathStack);
-    } else {
-        throw new Error('visitString should only be called during type-check or string-literal mode.');
     }
+    return visitorContext.functionMap.get(type)!;
 }
 
-export function visitType(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext): ValidationReport {
+function visitBoolean(type: ts.Type, visitorContext: VisitorContext) {
+    if (!visitorContext.functionMap.has(type)) {
+        visitorContext.functionMap.set(
+            type,
+            createAssertionFunction(
+                ts.createStrictInequality(
+                    ts.createTypeOf(accessorIdentifier),
+                    ts.createStringLiteral('boolean')
+                ),
+                'expected a boolean',
+                `f${visitorContext.functionMap.size}`
+            )
+        );
+    }
+    return visitorContext.functionMap.get(type)!;
+}
+
+function visitString(type: ts.Type, visitorContext: VisitorContext) {
+    if (!visitorContext.functionMap.has(type)) {
+        visitorContext.functionMap.set(
+            type,
+            createAssertionFunction(
+                ts.createStrictInequality(
+                    ts.createTypeOf(accessorIdentifier),
+                    ts.createStringLiteral('string')
+                ),
+                `expected a string`,
+                `f${visitorContext.functionMap.size}`
+            )
+        );
+    }
+    return visitorContext.functionMap.get(type)!;
+}
+
+export function visitType(type: ts.Type, visitorContext: VisitorContext): ts.FunctionDeclaration {
     if ((ts.TypeFlags.Any & type.flags) !== 0) {
         // Any
-        return visitAny(type, accessor, visitorContext);
+        return visitAny(type, visitorContext);
     } else if ((ts.TypeFlags.Unknown & type.flags) !== 0) {
         // Unknown
-        return visitUnknown(type, accessor, visitorContext);
+        return visitUnknown(type, visitorContext);
     } else if ((ts.TypeFlags.Never & type.flags) !== 0) {
         // Never
-        return visitNever(type, accessor, visitorContext);
+        return visitNever(type, visitorContext);
     } else if ((ts.TypeFlags.Null & type.flags) !== 0) {
         // Null
-        return visitNull(type, accessor, visitorContext);
+        return visitNull(type, visitorContext);
     } else if ((ts.TypeFlags.Undefined & type.flags) !== 0) {
         // Undefined
-        return visitUndefined(type, accessor, visitorContext);
+        return visitUndefined(type, visitorContext);
     } else if ((ts.TypeFlags.Number & type.flags) !== 0) {
         // Number
-        return visitNumber(type, accessor, visitorContext);
+        return visitNumber(type, visitorContext);
     } else if ((ts.TypeFlags.BigInt & type.flags) !== 0) {
         // BigInt
-        return visitBigInt(type, accessor, visitorContext);
+        return visitBigInt(type, visitorContext);
     } else if ((ts.TypeFlags.Boolean & type.flags) !== 0) {
         // Boolean
-        return visitBoolean(type, accessor, visitorContext);
+        return visitBoolean(type, visitorContext);
     } else if ((ts.TypeFlags.String & type.flags) !== 0) {
         // String
-        return visitString(type, accessor, visitorContext);
+        return visitString(type, visitorContext);
     } else if ((ts.TypeFlags.BooleanLiteral & type.flags) !== 0) {
         // Boolean literal (true/false)
-        return visitBooleanLiteral(type, accessor, visitorContext);
+        return visitBooleanLiteral(type, visitorContext);
     } else if ((ts.TypeFlags.TypeParameter & type.flags) !== 0) {
         // Type parameter
-        return visitTypeParameter(type, accessor, visitorContext);
+        return visitTypeParameter(type, visitorContext);
     } else if (tsutils.isObjectType(type)) {
         // Object type (including interfaces, arrays, tuples)
         if ((ts.ObjectFlags.Class & type.objectFlags) !== 0) {
             throw new Error('Classes cannot be validated. Please check the README.');
         } else {
-            return visitObjectType(type, accessor, visitorContext);
+            return visitObjectType(type, visitorContext);
         }
     } else if (tsutils.isLiteralType(type)) {
         // Literal string/number types ('foo')
-        return visitLiteralType(type, accessor, visitorContext);
+        return visitLiteralType(type, visitorContext);
     } else if (tsutils.isUnionOrIntersectionType(type)) {
         // Union or intersection type (| or &)
-        return visitUnionOrIntersectionType(type, accessor, visitorContext);
+        return visitUnionOrIntersectionType(type, visitorContext);
     } else if ((ts.TypeFlags.NonPrimitive & type.flags) !== 0) {
         // Non-primitive such as object
-        return visitNonPrimitiveType(type, accessor, visitorContext);
+        return visitNonPrimitiveType(type, visitorContext);
     } else if ((ts.TypeFlags.Index & type.flags) !== 0) {
         // Index type: keyof T
-        return visitIndexType(type, accessor, visitorContext);
+        return visitIndexType(type, visitorContext);
     } else if (tsutils.isIndexedAccessType(type)) {
         // Indexed access type: T[U]
-        return visitIndexedAccessType(type, accessor, visitorContext);
+        return visitIndexedAccessType(type, visitorContext);
     } else {
         throw new Error('Could not generate type-check; unsupported type with flags: ' + type.flags);
     }
 }
 
-export function visitUndefinedOrType(type: ts.Type, accessor: ts.Expression, visitorContext: VisitorContext) {
+export function visitUndefinedOrType(type: ts.Type, visitorContext: VisitorContext) {
     return createDisjunctionValidationReport(
         visitorContext.pathStack.slice(),
         [
