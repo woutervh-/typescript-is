@@ -11,11 +11,13 @@ function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorC
         const functionDeclarations = type.types.map((type) => visitType(type, visitorContext));
 
         if (tsutils.isUnionType(type)) {
+            // keyof (T | U) = (keyof T) & (keyof U)
             visitorContext.functionMap.set(
                 name,
                 VisitorUtils.createConjunctionFunction(functionDeclarations, name)
             );
         } else {
+            // keyof (T & U) = (keyof T) | (keyof U)
             visitorContext.functionMap.set(
                 name,
                 VisitorUtils.createDisjunctionFunction(functionDeclarations, name)
@@ -26,6 +28,7 @@ function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorC
 }
 
 function visitIndexType(visitorContext: VisitorContext) {
+    // keyof keyof T = never (actually it's the methods of string, but we'll ignore those since they're not serializable)
     return VisitorUtils.getNeverFunction(visitorContext);
 }
 
@@ -33,6 +36,7 @@ function visitNonPrimitiveType(type: ts.Type, visitorContext: VisitorContext) {
     // Using internal TypeScript API, hacky.
     const intrinsicName: string | undefined = (type as { intrinsicName?: string }).intrinsicName;
     if (intrinsicName === 'object') {
+        // keyof object = never
         return VisitorUtils.getNeverFunction(visitorContext);
     } else {
         throw new Error(`Unsupported non-primitive with intrinsic name: ${intrinsicName}.`);
@@ -40,36 +44,48 @@ function visitNonPrimitiveType(type: ts.Type, visitorContext: VisitorContext) {
 }
 
 function visitLiteralType(visitorContext: VisitorContext) {
+    // keyof 'string' = never and keyof 0xFF = never (actually they are the methods of string and number, but we'll ignore those since they're not serializable)
     return VisitorUtils.getNeverFunction(visitorContext);
 }
 
 function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
-    // In keyof mode we check if the object is equal to one of the property names.
     const name = VisitorUtils.getFullTypeName(type, visitorContext, 'keyof');
     if (!visitorContext.functionMap.has(name)) {
-        const properties = visitorContext.checker.getPropertiesOfType(type);
-        const names = properties.map((property) => property.name);
-        const condition = VisitorUtils.createBinaries(
-            names.map((name) => ts.createStrictEquality(objectIdentifier, ts.createStringLiteral(name))),
-            ts.SyntaxKind.BarBarToken
-        );
-        visitorContext.functionMap.set(
-            name,
-            VisitorUtils.createAssertionFunction(
-                ts.createLogicalNot(condition),
-                `expected ${names.map((name) => `'${name}'`).join('|')}`,
-                name
-            )
-        );
+        const stringIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.String);
+        if (stringIndexType) {
+            // There is a string index type { [Key: string]: T }.
+            // keyof { [Key: string]: U } = string
+            return VisitorUtils.getStringFunction(visitorContext);
+        } else {
+            // In keyof mode we check if the object is equal to one of the property names.
+            // keyof { x: T } = x
+            const properties = visitorContext.checker.getPropertiesOfType(type);
+            const names = properties.map((property) => property.name);
+            const condition = VisitorUtils.createBinaries(
+                names.map((name) => ts.createStrictEquality(objectIdentifier, ts.createStringLiteral(name))),
+                ts.SyntaxKind.BarBarToken
+            );
+            visitorContext.functionMap.set(
+                name,
+                VisitorUtils.createAssertionFunction(
+                    ts.createLogicalNot(condition),
+                    `expected ${names.map((name) => `'${name}'`).join('|')}`,
+                    name
+                )
+            );
+        }
     }
     return visitorContext.functionMap.get(name)!;
 }
 
 function visitTupleObjectType(visitorContext: VisitorContext) {
+    // keyof [U, T] = number
+    // TODO: actually they're only specific numbers (0, 1, 2...)
     return VisitorUtils.getNumberFunction(visitorContext);
 }
 
 function visitArrayObjectType(visitorContext: VisitorContext) {
+    // keyof [] = number
     return VisitorUtils.getNumberFunction(visitorContext);
 }
 
@@ -106,42 +122,52 @@ function visitTypeParameter(type: ts.Type, visitorContext: VisitorContext) {
 }
 
 function visitBoolean(visitorContext: VisitorContext) {
+    // keyof boolean = never
     return VisitorUtils.getNeverFunction(visitorContext);
 }
 
 function visitString(visitorContext: VisitorContext) {
+    // keyof string = never (actually it's all the methods of string, but we'll ignore those since they're not serializable)
     return VisitorUtils.getNeverFunction(visitorContext);
 }
 
 function visitBooleanLiteral(visitorContext: VisitorContext) {
+    // keyof true = never and keyof false = never
     return VisitorUtils.getNeverFunction(visitorContext);
 }
 
 function visitBigInt(visitorContext: VisitorContext) {
+    // keyof bigint = never
     return VisitorUtils.getNeverFunction(visitorContext);
 }
 
 function visitNumber(visitorContext: VisitorContext) {
+    // keyof number = never
     return VisitorUtils.getNeverFunction(visitorContext);
 }
 
 function visitUndefined(visitorContext: VisitorContext) {
+    // keyof undefined = never
     return VisitorUtils.getNeverFunction(visitorContext);
 }
 
 function visitNull(visitorContext: VisitorContext) {
+    // keyof null = never
     return VisitorUtils.getNeverFunction(visitorContext);
 }
 
 function visitNever(visitorContext: VisitorContext) {
+    // keyof never = never
     return VisitorUtils.getNeverFunction(visitorContext);
 }
 
 function visitUnknown(visitorContext: VisitorContext) {
+    // keyof unknown = never
     return VisitorUtils.getNeverFunction(visitorContext);
 }
 
 function visitAny(visitorContext: VisitorContext) {
+    // keyof any = string (or symbol or number but we'll ignore those since they're not serializable)
     return VisitorUtils.getStringFunction(visitorContext);
 }
 

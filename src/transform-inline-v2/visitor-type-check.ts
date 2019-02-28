@@ -3,6 +3,7 @@ import * as tsutils from 'tsutils';
 import { VisitorContext } from './visitor-context';
 import * as VisitorUtils from './visitor-utils';
 import * as VisitorKeyof from './visitor-keyof';
+import * as VisitorIndexedAccess from './visitor-indexed-access';
 
 const objectIdentifier = ts.createIdentifier('object');
 const pathIdentifier = ts.createIdentifier('path');
@@ -330,7 +331,11 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                             )
                         ]);
                     }),
-                    // TODO: check property index,
+                    // TODO: check property index
+                    // const stringIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.String);
+                    // if (stringIndexType) { }
+                    // There is a string index type { [Key: string]: T }.
+
                     // ts.createForOf(
                     //     undefined,
                     //     ts.createVariableDeclarationList(
@@ -573,11 +578,17 @@ function visitString(visitorContext: VisitorContext) {
 }
 
 function visitIndexType(type: ts.Type, visitorContext: VisitorContext) {
+    // keyof T
     const indexedType = (type as { type?: ts.Type }).type;
     if (indexedType === undefined) {
         throw new Error('Could not get indexed type of index type.');
     }
     return VisitorKeyof.visitType(indexedType, visitorContext);
+}
+
+function visitIndexedAccessType(type: ts.IndexedAccessType, visitorContext: VisitorContext) {
+    // T[U] -> index type = U, object type = T
+    return VisitorIndexedAccess.visitType(type.objectType, type.indexType, visitorContext);
 }
 
 export function visitType(type: ts.Type, visitorContext: VisitorContext): ts.FunctionDeclaration {
