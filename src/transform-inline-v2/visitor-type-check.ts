@@ -30,8 +30,7 @@ function createRejectingFunction(reason: string, functionName: string) {
         functionName,
         undefined,
         [
-            ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined),
-            ts.createParameter(undefined, undefined, undefined, pathIdentifier, undefined, undefined, undefined)
+            ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined)
         ],
         undefined,
         ts.createBlock([
@@ -73,8 +72,7 @@ function createConjunctionFunction(functionDeclarations: ts.FunctionDeclaration[
         functionName,
         undefined,
         [
-            ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined),
-            ts.createParameter(undefined, undefined, undefined, pathIdentifier, undefined, undefined, undefined)
+            ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined)
         ],
         undefined,
         ts.createBlock([
@@ -113,7 +111,7 @@ function createConjunctionFunction(functionDeclarations: ts.FunctionDeclaration[
                                 ts.createCall(
                                     conditionIdentifier,
                                     undefined,
-                                    [accessorIdentifier, pathIdentifier]
+                                    [accessorIdentifier]
                                 )
                             )
                         ]
@@ -163,8 +161,7 @@ function createDisjunctionFunction(functionDeclarations: ts.FunctionDeclaration[
         functionName,
         undefined,
         [
-            ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined),
-            ts.createParameter(undefined, undefined, undefined, pathIdentifier, undefined, undefined, undefined)
+            ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined)
         ],
         undefined,
         ts.createBlock([
@@ -203,7 +200,7 @@ function createDisjunctionFunction(functionDeclarations: ts.FunctionDeclaration[
                                 ts.createCall(
                                     conditionIdentifier,
                                     undefined,
-                                    [accessorIdentifier, pathIdentifier]
+                                    [accessorIdentifier]
                                 )
                             )
                         ]
@@ -249,8 +246,7 @@ function createAssertionFunction(expression: ts.Expression, reason: string, func
         functionName,
         undefined,
         [
-            ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined),
-            ts.createParameter(undefined, undefined, undefined, pathIdentifier, undefined, undefined, undefined)
+            ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined)
         ],
         undefined,
         ts.createBlock([
@@ -285,289 +281,413 @@ function createAssertionFunction(expression: ts.Expression, reason: string, func
     );
 }
 
-function createPropertyCheck(accessor: ts.Expression, property: ts.Expression, type: ts.Type, optional: boolean, visitorContext: VisitorContext) {
-    const name = ts.isStringLiteral(property) ? property.text : '[unknown]';
-    if (visitorContext.mode.type === 'type-check') {
-        const propertyAccessor = ts.createElementAccess(accessor, property);
-        visitorContext.pathStack.push(name);
-        const report = visitType(type, propertyAccessor, visitorContext);
-        visitorContext.pathStack.pop();
-        if (optional) {
-            return createDisjunctionValidationReport(
-                visitorContext.pathStack.slice(),
-                [
-                    createConditionalValidationReport(
-                        visitorContext.pathStack.slice(),
-                        ts.createLogicalNot(
-                            ts.createBinary(
-                                property,
-                                ts.SyntaxKind.InKeyword,
-                                accessor
-                            )
-                        ),
-                        `found '${name}' in object`
-                    ),
-                    report
-                ]
-            );
-        } else {
-            return createConjunctionValidationReport(
-                visitorContext.pathStack.slice(),
-                [
-                    createConditionalValidationReport(
-                        visitorContext.pathStack.slice(),
-                        ts.createBinary(
-                            property,
-                            ts.SyntaxKind.InKeyword,
-                            accessor
-                        ),
-                        `expected '${name}' in object`
-                    ),
-                    report
-                ]
-            );
-        }
-    } else {
-        return visitType(type, accessor, { ...visitorContext, mode: { type: 'type-check' } });
-    }
-}
-
-function visitPropertyName(node: ts.PropertyName, accessor: ts.Expression, visitorContext: VisitorContext) {
-    // Identifier | StringLiteral | NumericLiteral | ComputedPropertyName
-    if (ts.isIdentifier(node)) {
-        return ts.createStringLiteral(node.text);
-    } else if (ts.isStringLiteral(node)) {
-        return ts.createStringLiteral(node.text);
-    } else if (ts.isNumericLiteral(node)) {
-        return ts.createStringLiteral(node.text);
-    } else {
-        return node.expression;
-    }
-}
-
-function visitPropertySignature(node: ts.PropertySignature, accessor: ts.Expression, visitorContext: VisitorContext) {
-    if (node.type === undefined) {
-        throw new Error('Visiting property without type.');
-    }
-    const type = visitorContext.checker.getTypeFromTypeNode(node.type);
-    return createPropertyCheck(accessor, visitPropertyName(node.name, accessor, visitorContext), type, node.questionToken !== undefined, visitorContext);
-}
-
-function visitDeclaration(node: ts.Declaration, accessor: ts.Expression, visitorContext: VisitorContext) {
-    if (ts.isPropertySignature(node)) {
-        return visitPropertySignature(node, accessor, visitorContext);
-    } else if ((node.kind & ts.SyntaxKind.MethodSignature) !== 0) {
-        throw new Error('Encountered a method declaration, but methods are not supported. Please check the README.');
-    } else {
-        throw new Error('Unsupported declaration kind: ' + node.kind);
-    }
-}
-
-function visitTupleObjectType(type: ts.TupleType, accessor: ts.Expression, visitorContext: VisitorContext) {
-    if (visitorContext.mode.type === 'type-check') {
+function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext) {
+    if (!visitorContext.functionMap.has(type)) {
         if (type.typeArguments === undefined) {
             throw new Error('Expected tuple type to have type arguments.');
         }
-        const itemReports: ValidationReport[] = [];
-        for (let i = 0; i < type.typeArguments.length; i++) {
-            visitorContext.pathStack.push(`[${i}]`);
-            itemReports.push(visitType(type.typeArguments[i], ts.createElementAccess(accessor, i), visitorContext));
-            visitorContext.pathStack.pop();
-        }
-        return createConjunctionValidationReport(
-            visitorContext.pathStack.slice(),
-            [
-                createConditionalValidationReport(
-                    visitorContext.pathStack.slice(),
-                    ts.createBinary(
-                        ts.createCall(
-                            ts.createPropertyAccess(ts.createIdentifier('Array'), ts.createIdentifier('isArray')),
-                            undefined,
-                            [accessor]
+
+        const functionDeclarations = type.typeArguments.map((type) => visitType(type, visitorContext));
+        const errorIdentifier = ts.createIdentifier('error');
+
+        visitorContext.functionMap.set(
+            type,
+            ts.createFunctionDeclaration(
+                undefined,
+                undefined,
+                undefined,
+                `f${visitorContext.functionMap.size}`,
+                undefined,
+                [
+                    ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined)
+                ],
+                undefined,
+                ts.createBlock([
+                    ts.createIf(
+                        ts.createBinary(
+                            ts.createLogicalNot(
+                                ts.createCall(
+                                    ts.createPropertyAccess(
+                                        ts.createIdentifier('Array'),
+                                        'isArray'
+                                    ),
+                                    undefined,
+                                    [accessorIdentifier]
+                                )
+                            ),
+                            ts.SyntaxKind.BarBarToken,
+                            ts.createStrictInequality(
+                                ts.createPropertyAccess(
+                                    accessorIdentifier,
+                                    'length'
+                                ),
+                                ts.createNumericLiteral(type.typeArguments.length.toString())
+                            )
                         ),
-                        ts.SyntaxKind.AmpersandAmpersandToken,
-                        ts.createStrictEquality(
-                            ts.createPropertyAccess(accessor, ts.createIdentifier('length')),
-                            ts.createNumericLiteral(type.typeArguments.length.toString())
+                        ts.createReturn(
+                            ts.createNew(
+                                ts.createIdentifier('Error'),
+                                undefined,
+                                [
+                                    createBinaries(
+                                        [
+                                            ts.createStringLiteral('validation failed at '),
+                                            ts.createCall(
+                                                ts.createPropertyAccess(
+                                                    pathIdentifier,
+                                                    'join'
+                                                ),
+                                                undefined,
+                                                [ts.createStringLiteral('.')]
+                                            ),
+                                            ts.createStringLiteral(`, expected an array of length ${type.typeArguments.length}`)
+                                        ],
+                                        ts.SyntaxKind.PlusToken
+                                    )
+                                ]
+                            )
                         )
                     ),
-                    `expected array of length ${type.typeArguments.length}`
-                ),
-                ...itemReports
-            ]
+                    ...functionDeclarations.map((functionDeclaration, index) =>
+                        ts.createBlock([
+                            ts.createExpressionStatement(
+                                ts.createCall(
+                                    ts.createPropertyAccess(pathIdentifier, 'push'),
+                                    undefined,
+                                    [ts.createStringLiteral(`[${index}]`)]
+                                )
+                            ),
+                            ts.createVariableStatement(
+                                [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
+                                [
+                                    ts.createVariableDeclaration(
+                                        errorIdentifier,
+                                        undefined,
+                                        ts.createCall(
+                                            functionDeclaration.name!,
+                                            undefined,
+                                            [accessorIdentifier]
+                                        )
+                                    )
+                                ]
+                            ),
+                            ts.createExpressionStatement(
+                                ts.createCall(
+                                    ts.createPropertyAccess(pathIdentifier, 'pop'),
+                                    undefined,
+                                    undefined
+                                )
+                            ),
+                            ts.createIf(
+                                errorIdentifier,
+                                ts.createReturn(errorIdentifier)
+                            )
+                        ])
+                    ),
+                    ts.createReturn(ts.createNull())
+                ])
+            )
         );
-    } else if (visitorContext.mode.type === 'string-literal') {
-        return createAlwaysFalseValidationReport(visitorContext.pathStack.slice(), 'Tuple type cannot be used as an index type.');
-    } else {
-        throw new Error('visitTupleObjectType should only be called during type-check or string-literal mode.');
     }
+    return visitorContext.functionMap.get(type)!;
 }
 
-function visitArrayObjectType(type: ts.ObjectType, accessor: ts.Expression, visitorContext: VisitorContext) {
-    if (visitorContext.mode.type === 'type-check') {
+function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
+    if (!visitorContext.functionMap.has(type)) {
         const numberIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.Number);
         if (numberIndexType === undefined) {
             throw new Error('Expected array ObjectType to have a number index type.');
         }
-        const itemIdentifier = ts.createIdentifier('item');
-        visitorContext.pathStack.push('[]');
-        const typeReport = visitType(numberIndexType, itemIdentifier, visitorContext);
-        visitorContext.pathStack.pop();
-        return createConjunctionValidationReport(
-            visitorContext.pathStack.slice(),
-            [
-                createConditionalValidationReport(
-                    visitorContext.pathStack.slice(),
-                    ts.createCall(
-                        ts.createPropertyAccess(ts.createIdentifier('Array'), ts.createIdentifier('isArray')),
-                        undefined,
-                        [accessor]
-                    ),
-                    'expected array'
-                ),
-                createArrayEveryValidationReport(
-                    visitorContext.pathStack.slice(),
-                    accessor,
-                    itemIdentifier,
-                    typeReport
-                )
-            ]
-        );
-    } else if (visitorContext.mode.type === 'string-literal') {
-        return createAlwaysFalseValidationReport(visitorContext.pathStack.slice(), 'Array type cannot be used as an index type.');
-    } else {
-        throw new Error('visitArrayObjectType should only be called during type-check or string-literal mode.');
-    }
-}
-
-function visitPropertySymbol(property: ts.Symbol, accessor: ts.Expression, visitorContext: VisitorContext) {
-    if ('valueDeclaration' in property) {
-        return visitDeclaration(property.valueDeclaration, accessor, visitorContext);
-    } else {
-        // Using internal TypeScript API, hacky.
-        const propertyType = (property as { type?: ts.Type }).type;
-        const propertyName = (property as { name?: string }).name;
-        const optional = ((property as ts.Symbol).flags & ts.SymbolFlags.Optional) !== 0;
-        if (propertyType !== undefined && propertyName !== undefined) {
-            return createPropertyCheck(accessor, ts.createStringLiteral(propertyName), propertyType, optional, visitorContext);
-        } else {
-            throw new Error('Expected a valueDeclaration or a property name and type.');
-        }
-    }
-}
-
-function visitRegularObjectType(type: ts.ObjectType, accessor: ts.Expression, visitorContext: VisitorContext) {
-    const properties = visitorContext.checker.getPropertiesOfType(type);
-
-    if (visitorContext.mode.type === 'type-check') {
-        const validationReports: ValidationReport[] = [];
-        validationReports.push(
-            // Check the object itself: is it an object? Not an array? Not null?
-            createConditionalValidationReport(
-                visitorContext.pathStack.slice(),
+        const functionDeclaration = visitType(numberIndexType, visitorContext);
+        const indexIdentifier = ts.createIdentifier('i');
+        const errorIdentifier = ts.createIdentifier('error');
+        visitorContext.functionMap.set(
+            type,
+            ts.createFunctionDeclaration(
+                undefined,
+                undefined,
+                undefined,
+                `f${visitorContext.functionMap.size}`,
+                undefined,
                 [
-                    ts.createStrictEquality(
-                        ts.createTypeOf(accessor),
-                        ts.createStringLiteral('object')
-                    ),
-                    ts.createStrictInequality(
-                        accessor,
-                        ts.createNull()
-                    ),
-                    ts.createLogicalNot(
-                        ts.createCall(
-                            ts.createPropertyAccess(ts.createIdentifier('Array'), ts.createIdentifier('isArray')),
-                            undefined,
-                            [accessor]
+                    ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined)
+                ],
+                undefined,
+                ts.createBlock([
+                    ts.createIf(
+                        ts.createLogicalNot(
+                            ts.createCall(
+                                ts.createPropertyAccess(ts.createIdentifier('Array'), 'isArray'),
+                                undefined,
+                                [accessorIdentifier]
+                            )
+                        ),
+                        ts.createReturn(
+                            ts.createNew(
+                                ts.createIdentifier('Error'),
+                                undefined,
+                                [
+                                    createBinaries(
+                                        [
+                                            ts.createStringLiteral('validation failed at '),
+                                            ts.createCall(
+                                                ts.createPropertyAccess(
+                                                    pathIdentifier,
+                                                    'join'
+                                                ),
+                                                undefined,
+                                                [ts.createStringLiteral('.')]
+                                            ),
+                                            ts.createStringLiteral(`, expected an array`)
+                                        ],
+                                        ts.SyntaxKind.PlusToken
+                                    )
+                                ]
+                            )
                         )
-                    )
-                ].reduce((condition, expression) =>
-                    ts.createBinary(
-                        condition,
-                        ts.SyntaxKind.AmpersandAmpersandToken,
-                        expression
-                    )
-                ),
-                'expected object'
+                    ),
+                    ts.createFor(
+                        ts.createVariableDeclarationList(
+                            [
+                                ts.createVariableDeclaration(indexIdentifier, undefined, ts.createNumericLiteral('0'))
+                            ],
+                            ts.NodeFlags.Let
+                        ),
+                        ts.createBinary(
+                            indexIdentifier,
+                            ts.SyntaxKind.LessThanToken,
+                            ts.createPropertyAccess(accessorIdentifier, 'length')
+                        ),
+                        ts.createPostfixIncrement(indexIdentifier),
+                        ts.createBlock([
+                            ts.createExpressionStatement(
+                                ts.createCall(
+                                    ts.createPropertyAccess(pathIdentifier, 'push'),
+                                    undefined,
+                                    [
+                                        createBinaries(
+                                            [
+                                                ts.createStringLiteral('['),
+                                                indexIdentifier,
+                                                ts.createStringLiteral(']')
+                                            ],
+                                            ts.SyntaxKind.PlusToken
+                                        )
+                                    ]
+                                )
+                            ),
+                            ts.createVariableStatement(
+                                [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
+                                [
+                                    ts.createVariableDeclaration(
+                                        errorIdentifier,
+                                        undefined,
+                                        ts.createCall(
+                                            functionDeclaration.name!,
+                                            undefined,
+                                            [accessorIdentifier]
+                                        )
+                                    )
+                                ]
+                            ),
+                            ts.createExpressionStatement(
+                                ts.createCall(
+                                    ts.createPropertyAccess(pathIdentifier, 'pop'),
+                                    undefined,
+                                    undefined
+                                )
+                            ),
+                            ts.createIf(
+                                errorIdentifier,
+                                ts.createReturn(errorIdentifier)
+                            )
+                        ])
+                    ),
+                    ts.createReturn(ts.createNull())
+                ])
             )
         );
-        for (const property of properties) {
-            // Visit each property.
-            validationReports.push(visitPropertySymbol(property, accessor, visitorContext));
-        }
-        const stringIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.String);
-        if (stringIndexType) {
-            // There is a string index type { [Key: string]: T }.
-            const keyIdentifier = ts.createIdentifier('key');
-            const itemAccessor = ts.createElementAccess(accessor, keyIdentifier);
-            visitorContext.pathStack.push('[]');
-            const typeReport = visitType(stringIndexType, itemAccessor, visitorContext);
-            visitorContext.pathStack.pop();
-            validationReports.push(
-                createObjectEveryValidationReport(
-                    visitorContext.pathStack.slice(),
-                    accessor,
-                    keyIdentifier,
-                    typeReport
-                )
-            );
-        }
-
-        return createConjunctionValidationReport(visitorContext.pathStack.slice(), validationReports);
-    } else if (visitorContext.mode.type === 'string-literal-keyof') {
-        const value = visitorContext.mode.value;
-        const match = properties.some((property) => property.name === value);
-        if (match) {
-            return createAlwaysTrueValidationReport(visitorContext.pathStack);
-        } else {
-            return createAlwaysFalseValidationReport(visitorContext.pathStack.slice(), `'${visitorContext.mode.value}' is not assignable to any key of object.`);
-        }
-    } else if (visitorContext.mode.type === 'keyof') {
-        // In keyof mode we check if the accessor is equal to one of the property names.
-        return createConditionalValidationReport(
-            visitorContext.pathStack.slice(),
-            properties
-                .map((property) =>
-                    ts.createStrictEquality(accessor, ts.createStringLiteral(property.name))
-                )
-                .reduce<ts.Expression>((condition, expression) =>
-                    ts.createBinary(
-                        condition,
-                        ts.SyntaxKind.BarBarToken,
-                        expression
-                    ),
-                    ts.createFalse()
-                ),
-            `expected one of (${properties.map((property) => property.name).join(', ')})`
-        );
-    } else if (visitorContext.mode.type === 'indexed-access') {
-        // In indexed-access mode we check if the accessor is of the property type T[U].
-        const indexType = visitorContext.mode.indexType;
-        return createDisjunctionValidationReport(
-            visitorContext.pathStack.slice(),
-            properties
-                .map((property) => {
-                    // TODO: would be cool to have checker.isAssignableTo(indexType, createStringLiteralType(property.name))
-                    // https://github.com/Microsoft/TypeScript/issues/9879
-                    const stringLiteralReport = visitType(indexType, accessor, { ...visitorContext, mode: { type: 'string-literal', value: property.name } });
-                    if (reduceNonConditionals(stringLiteralReport)) {
-                        return visitPropertySymbol(property, accessor, visitorContext);
-                    } else {
-                        return createAlwaysTrueValidationReport(visitorContext.pathStack);
-                    }
-                })
-        );
-    } else if (visitorContext.mode.type === 'string-literal') {
-        return createAlwaysFalseValidationReport(visitorContext.pathStack.slice(), 'Object type cannot be used as an index type.');
-    } else {
-        throw new Error('Not yet implemented.');
     }
+    return visitorContext.functionMap.get(type)!;
 }
 
-function visitObjectType(type: ts.ObjectType, accessor: ts.Expression, visitorContext: VisitorContext) {
+function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
+    if (!visitorContext.functionMap.has(type)) {
+        visitorContext.functionMap.set(
+            type,
+            ts.createFunctionDeclaration(
+                undefined,
+                undefined,
+                undefined,
+                `f${visitorContext.functionMap.size}`,
+                undefined,
+                [
+                    ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined)
+                ],
+                undefined,
+                ts.createBlock([
+                    ts.createIf(
+                        createBinaries(
+                            [
+                                ts.createStrictInequality(
+                                    ts.createTypeOf(accessorIdentifier),
+                                    ts.createStringLiteral('object')
+                                ),
+                                ts.createStrictEquality(
+                                    accessorIdentifier,
+                                    ts.createNull()
+                                ),
+                                ts.createCall(
+                                    ts.createPropertyAccess(ts.createLiteral('Array'), 'isArray'),
+                                    undefined,
+                                    [accessorIdentifier]
+                                )
+                            ],
+                            ts.SyntaxKind.BarBarToken
+                        ),
+                        ts.createReturn(
+                            ts.createNew(
+                                ts.createIdentifier('Error'),
+                                undefined,
+                                [
+                                    createBinaries(
+                                        [
+                                            ts.createStringLiteral('validation failed at '),
+                                            ts.createCall(
+                                                ts.createPropertyAccess(
+                                                    pathIdentifier,
+                                                    'join'
+                                                ),
+                                                undefined,
+                                                [ts.createStringLiteral('.')]
+                                            ),
+                                            ts.createStringLiteral(`, expected an object`)
+                                        ],
+                                        ts.SyntaxKind.PlusToken
+                                    )
+                                ]
+                            )
+                        )
+                    ),
+                    // TODO: check values,
+                    ts.createReturn(ts.createNull())
+                ])
+            )
+        );
+    }
+    return visitorContext.functionMap.get(type)!;
+
+    // const properties = visitorContext.checker.getPropertiesOfType(type);
+
+    // if (visitorContext.mode.type === 'type-check') {
+    //     const validationReports: ValidationReport[] = [];
+    //     validationReports.push(
+    //         // Check the object itself: is it an object? Not an array? Not null?
+    //         createConditionalValidationReport(
+    //             visitorContext.pathStack.slice(),
+    //             [
+    //                 ts.createStrictEquality(
+    //                     ts.createTypeOf(accessor),
+    //                     ts.createStringLiteral('object')
+    //                 ),
+    //                 ts.createStrictInequality(
+    //                     accessor,
+    //                     ts.createNull()
+    //                 ),
+    //                 ts.createLogicalNot(
+    //                     ts.createCall(
+    //                         ts.createPropertyAccess(ts.createIdentifier('Array'), ts.createIdentifier('isArray')),
+    //                         undefined,
+    //                         [accessor]
+    //                     )
+    //                 )
+    //             ].reduce((condition, expression) =>
+    //                 ts.createBinary(
+    //                     condition,
+    //                     ts.SyntaxKind.AmpersandAmpersandToken,
+    //                     expression
+    //                 )
+    //             ),
+    //             'expected object'
+    //         )
+    //     );
+    //     for (const property of properties) {
+    //         // Visit each property.
+    //         validationReports.push(visitPropertySymbol(property, accessor, visitorContext));
+    //     }
+    //     const stringIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.String);
+    //     if (stringIndexType) {
+    //         // There is a string index type { [Key: string]: T }.
+    //         const keyIdentifier = ts.createIdentifier('key');
+    //         const itemAccessor = ts.createElementAccess(accessor, keyIdentifier);
+    //         visitorContext.pathStack.push('[]');
+    //         const typeReport = visitType(stringIndexType, itemAccessor, visitorContext);
+    //         visitorContext.pathStack.pop();
+    //         validationReports.push(
+    //             createObjectEveryValidationReport(
+    //                 visitorContext.pathStack.slice(),
+    //                 accessor,
+    //                 keyIdentifier,
+    //                 typeReport
+    //             )
+    //         );
+    //     }
+
+    //     return createConjunctionValidationReport(visitorContext.pathStack.slice(), validationReports);
+    // } else if (visitorContext.mode.type === 'string-literal-keyof') {
+    //     const value = visitorContext.mode.value;
+    //     const match = properties.some((property) => property.name === value);
+    //     if (match) {
+    //         return createAlwaysTrueValidationReport(visitorContext.pathStack);
+    //     } else {
+    //         return createAlwaysFalseValidationReport(visitorContext.pathStack.slice(), `'${visitorContext.mode.value}' is not assignable to any key of object.`);
+    //     }
+    // } else if (visitorContext.mode.type === 'keyof') {
+    //     // In keyof mode we check if the accessor is equal to one of the property names.
+    //     return createConditionalValidationReport(
+    //         visitorContext.pathStack.slice(),
+    //         properties
+    //             .map((property) =>
+    //                 ts.createStrictEquality(accessor, ts.createStringLiteral(property.name))
+    //             )
+    //             .reduce<ts.Expression>((condition, expression) =>
+    //                 ts.createBinary(
+    //                     condition,
+    //                     ts.SyntaxKind.BarBarToken,
+    //                     expression
+    //                 ),
+    //                 ts.createFalse()
+    //             ),
+    //         `expected one of (${properties.map((property) => property.name).join(', ')})`
+    //     );
+    // } else if (visitorContext.mode.type === 'indexed-access') {
+    //     // In indexed-access mode we check if the accessor is of the property type T[U].
+    //     const indexType = visitorContext.mode.indexType;
+    //     return createDisjunctionValidationReport(
+    //         visitorContext.pathStack.slice(),
+    //         properties
+    //             .map((property) => {
+    //                 // TODO: would be cool to have checker.isAssignableTo(indexType, createStringLiteralType(property.name))
+    //                 // https://github.com/Microsoft/TypeScript/issues/9879
+    //                 const stringLiteralReport = visitType(indexType, accessor, { ...visitorContext, mode: { type: 'string-literal', value: property.name } });
+    //                 if (reduceNonConditionals(stringLiteralReport)) {
+    //                     return visitPropertySymbol(property, accessor, visitorContext);
+    //                 } else {
+    //                     return createAlwaysTrueValidationReport(visitorContext.pathStack);
+    //                 }
+    //             })
+    //     );
+    // } else if (visitorContext.mode.type === 'string-literal') {
+    //     return createAlwaysFalseValidationReport(visitorContext.pathStack.slice(), 'Object type cannot be used as an index type.');
+    // } else {
+    //     throw new Error('Not yet implemented.');
+    // }
+}
+
+function visitTypeReference(type: ts.TypeReference, visitorContext: VisitorContext) {
     const mappers: ((source: ts.Type) => ts.Type | undefined)[] = [];
-    (function checkBaseTypes(type: ts.Type) {
-        if (tsutils.isTypeReference(type) && tsutils.isInterfaceType(type.target)) {
+    (function checkBaseTypes(type: ts.TypeReference) {
+        if (tsutils.isInterfaceType(type.target)) {
             const baseTypes = visitorContext.checker.getBaseTypes(type.target);
             for (const baseType of baseTypes) {
                 if (tsutils.isTypeReference(baseType) && baseType.target.typeParameters !== undefined && baseType.typeArguments !== undefined) {
@@ -585,35 +705,44 @@ function visitObjectType(type: ts.ObjectType, accessor: ts.Expression, visitorCo
             }
         }
     })(type);
-    let targetType: ts.ObjectType;
-    if (tsutils.isTypeReference(type)) {
-        if (type.target.typeParameters !== undefined && type.typeArguments !== undefined) {
-            const typeParameters = type.target.typeParameters;
-            const typeArguments = type.typeArguments;
-            mappers.push((source: ts.Type) => {
-                for (let i = 0; i < typeParameters.length; i++) {
-                    if (source === typeParameters[i]) {
-                        return typeArguments[i];
-                    }
+    if (type.target.typeParameters !== undefined && type.typeArguments !== undefined) {
+        const typeParameters = type.target.typeParameters;
+        const typeArguments = type.typeArguments;
+        mappers.push((source: ts.Type) => {
+            for (let i = 0; i < typeParameters.length; i++) {
+                if (source === typeParameters[i]) {
+                    return typeArguments[i];
                 }
-            });
-        }
-        targetType = type.target;
-    } else {
-        targetType = type;
+            }
+        });
     }
     const mapper = mappers.reduce<(source: ts.Type) => ts.Type | undefined>((previous, next) => (source: ts.Type) => previous(source) || next(source), () => undefined);
-    let validationReport: ValidationReport;
     visitorContext.typeMapperStack.push(mapper);
-    if (tsutils.isTupleType(targetType)) {
-        validationReport = visitTupleObjectType(targetType, accessor, visitorContext);
-    } else if (visitorContext.checker.getIndexTypeOfType(targetType, ts.IndexKind.Number)) {
-        validationReport = visitArrayObjectType(targetType, accessor, visitorContext);
-    } else {
-        validationReport = visitRegularObjectType(targetType, accessor, visitorContext);
-    }
+    const result = visitType(type.target, visitorContext);
     visitorContext.typeMapperStack.pop();
-    return validationReport;
+    return result;
+}
+
+function visitTypeParameter(type: ts.Type, visitorContext: VisitorContext) {
+    const typeMapper = visitorContext.typeMapperStack.reduceRight<(source: ts.Type) => ts.Type | undefined>((previous, next) => (source: ts.Type) => previous(source) || next(source), () => undefined);
+    const mappedType = typeMapper(type) || type.getDefault();
+    if (mappedType === undefined) {
+        throw new Error('Unbound type parameter, missing type node.');
+    }
+    return visitType(mappedType, visitorContext);
+}
+
+function visitObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
+    if (tsutils.isTupleType(type)) {
+        // Tuple with finite length.
+        return visitTupleObjectType(type, visitorContext);
+    } else if (visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.Number)) {
+        // Index type is number -> array type.
+        return visitArrayObjectType(type, visitorContext);
+    } else {
+        // Index type is string -> regular object type.
+        return visitRegularObjectType(type, visitorContext);
+    }
 }
 
 function visitLiteralType(type: ts.LiteralType, visitorContext: VisitorContext) {
@@ -915,6 +1044,9 @@ export function visitType(type: ts.Type, visitorContext: VisitorContext): ts.Fun
     } else if ((ts.TypeFlags.BooleanLiteral & type.flags) !== 0) {
         // Boolean literal (true/false)
         return visitBooleanLiteral(type, visitorContext);
+    } else if (tsutils.isTypeReference(type)) {
+        // Type references.
+        return visitTypeReference(type, visitorContext);
     } else if ((ts.TypeFlags.TypeParameter & type.flags) !== 0) {
         // Type parameter
         return visitTypeParameter(type, visitorContext);
@@ -934,12 +1066,12 @@ export function visitType(type: ts.Type, visitorContext: VisitorContext): ts.Fun
     } else if ((ts.TypeFlags.NonPrimitive & type.flags) !== 0) {
         // Non-primitive such as object
         return visitNonPrimitiveType(type, visitorContext);
-    } else if ((ts.TypeFlags.Index & type.flags) !== 0) {
-        // Index type: keyof T
-        return visitIndexType(type, visitorContext);
-    } else if (tsutils.isIndexedAccessType(type)) {
-        // Indexed access type: T[U]
-        return visitIndexedAccessType(type, visitorContext);
+        // } else if ((ts.TypeFlags.Index & type.flags) !== 0) {
+        //     // Index type: keyof T
+        //     return visitIndexType(type, visitorContext);
+        // } else if (tsutils.isIndexedAccessType(type)) {
+        //     // Indexed access type: T[U]
+        //     return visitIndexedAccessType(type, visitorContext);
     } else {
         throw new Error('Could not generate type-check; unsupported type with flags: ' + type.flags);
     }
@@ -955,8 +1087,7 @@ export function visitUndefinedOrType(type: ts.Type, visitorContext: VisitorConte
         `optional_${functionDeclaration.name!.text}`,
         undefined,
         [
-            ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined),
-            ts.createParameter(undefined, undefined, undefined, pathIdentifier, undefined, undefined, undefined)
+            ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined)
         ],
         undefined,
         ts.createBlock([
@@ -975,7 +1106,7 @@ export function visitUndefinedOrType(type: ts.Type, visitorContext: VisitorConte
                                 ts.createCall(
                                     functionDeclaration.name!,
                                     undefined,
-                                    [accessorIdentifier, pathIdentifier]
+                                    [accessorIdentifier]
                                 )
                             )
                         ]
@@ -988,13 +1119,5 @@ export function visitUndefinedOrType(type: ts.Type, visitorContext: VisitorConte
             ),
             ts.createReturn(ts.createNull())
         ])
-    );
-
-    return createDisjunctionValidationReport(
-        visitorContext.pathStack.slice(),
-        [
-            visitUndefined(type, accessor, visitorContext),
-            visitType(type, accessor, visitorContext)
-        ]
     );
 }
