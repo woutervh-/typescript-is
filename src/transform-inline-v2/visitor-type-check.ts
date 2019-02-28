@@ -85,13 +85,7 @@ function createConjunctionFunction(functionDeclarations: ts.FunctionDeclaration[
             ts.createForOf(
                 undefined,
                 ts.createVariableDeclarationList(
-                    [
-                        ts.createVariableDeclaration(
-                            conditionIdentifier,
-                            undefined,
-                            undefined
-                        )
-                    ],
+                    [ts.createVariableDeclaration(conditionIdentifier, undefined, undefined)],
                     ts.NodeFlags.Const
                 ),
                 conditionsIdentifier,
@@ -168,13 +162,7 @@ function createDisjunctionFunction(functionDeclarations: ts.FunctionDeclaration[
             ts.createForOf(
                 undefined,
                 ts.createVariableDeclarationList(
-                    [
-                        ts.createVariableDeclaration(
-                            conditionIdentifier,
-                            undefined,
-                            undefined
-                        )
-                    ],
+                    [ts.createVariableDeclaration(conditionIdentifier, undefined, undefined)],
                     ts.NodeFlags.Const
                 ),
                 conditionsIdentifier,
@@ -409,9 +397,7 @@ function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContex
                     ),
                     ts.createFor(
                         ts.createVariableDeclarationList(
-                            [
-                                ts.createVariableDeclaration(indexIdentifier, undefined, ts.createNumericLiteral('0'))
-                            ],
+                            [ts.createVariableDeclaration(indexIdentifier, undefined, ts.createNumericLiteral('0'))],
                             ts.NodeFlags.Let
                         ),
                         ts.createBinary(
@@ -474,6 +460,10 @@ function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContex
 
 function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
     if (!visitorContext.functionMap.has(type)) {
+        const properties = visitorContext.checker.getPropertiesOfType(type);
+        // const keyIdentifier = ts.createIdentifier('key');
+        const errorIdentifier = ts.createIdentifier('error');
+
         visitorContext.functionMap.set(
             type,
             ts.createFunctionDeclaration(
@@ -524,15 +514,48 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                             )
                         )
                     ),
-                    // TODO: check values,
+                    ...properties.map((property) =>
+                        ts.createBlock([
+                            ts.createVariableStatement(
+                                [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
+                                [
+                                    ts.createVariableDeclaration(
+                                        errorIdentifier,
+                                        undefined,
+                                        ts.createCall(
+                                            functionDeclaration.name!,
+                                            undefined,
+                                            [objectIdentifier]
+                                        )
+                                    )
+                                ]
+                            )
+                        ])
+                    )
+                    // TODO: check property index,
+                    // ts.createForOf(
+                    //     undefined,
+                    //     ts.createVariableDeclarationList(
+                    //         [ts.createVariableDeclaration(keyIdentifier, undefined, undefined)],
+                    //         ts.NodeFlags.Const
+                    //     ),
+                    //     ts.createCall(ts.createPropertyAccess(ts.createIdentifier('Object'), 'keys'), undefined, [objectIdentifier]),
+                    //     ts.createBlock([
+                    //         ts.createExpressionStatement(
+                    //             ts.createCall(
+                    //                 ts.createPropertyAccess(pathIdentifier, 'push'),
+                    //                 undefined,
+                    //                 []
+                    //             )
+                    //         ),
+                    //     ])
+                    // ),
                     ts.createReturn(ts.createNull())
                 ])
             )
         );
     }
     return visitorContext.functionMap.get(type)!;
-
-    // const properties = visitorContext.checker.getPropertiesOfType(type);
 
     // if (visitorContext.mode.type === 'type-check') {
     //     const validationReports: ValidationReport[] = [];
