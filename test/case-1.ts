@@ -2,6 +2,26 @@ import * as assert from 'assert';
 import { is } from '../index';
 
 describe('is', () => {
+    describe('is<Nested<string> | Nested<number>>', () => {
+        interface Nested<T> {
+            value: T;
+        }
+
+        it('should return true for nested objects with strings or numbers', () => {
+            assert.strictEqual(is<Nested<string> | Nested<number>>({ value: 'foo' }), true);
+            assert.strictEqual(is<Nested<string> | Nested<number>>({ value: 123 }), true);
+        });
+
+        it('should return false for nested objects with other types', () => {
+            assert.strictEqual(is<Nested<string> | Nested<number>>({ value: [] }), false);
+            assert.strictEqual(is<Nested<string> | Nested<number>>({ value: {} }), false);
+            assert.strictEqual(is<Nested<string> | Nested<number>>({ value: null }), false);
+            assert.strictEqual(is<Nested<string> | Nested<number>>({ value: undefined }), false);
+            assert.strictEqual(is<Nested<string> | Nested<number>>({ value: true }), false);
+            assert.strictEqual(is<Nested<string> | Nested<number>>({ value: false }), false);
+        });
+    });
+
     describe('is<Foo<Bar<number>, string>>', () => {
         interface Bar<V> {
             item: V;

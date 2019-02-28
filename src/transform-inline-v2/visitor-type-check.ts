@@ -46,7 +46,7 @@ function createRejectingFunction(reason: string, functionName: string) {
                             undefined,
                             [ts.createStringLiteral('.')]
                         ),
-                        ts.createStringLiteral(`, because ${reason}`)
+                        ts.createStringLiteral(`: ${reason}`)
                     ],
                     ts.SyntaxKind.PlusToken
                 )
@@ -124,7 +124,7 @@ function createConjunctionFunction(functionDeclarations: ts.FunctionDeclaration[
                                         undefined,
                                         [ts.createStringLiteral('.')]
                                     ),
-                                    ts.createStringLiteral(`, because: `),
+                                    ts.createStringLiteral(`: `),
                                     errorIdentifier
                                 ],
                                 ts.SyntaxKind.PlusToken
@@ -211,7 +211,7 @@ function createDisjunctionFunction(functionDeclarations: ts.FunctionDeclaration[
                             undefined,
                             [ts.createStringLiteral('.')]
                         ),
-                        ts.createStringLiteral(`, because there are no valid alternatives.`)
+                        ts.createStringLiteral(`: there are no valid alternatives.`)
                     ],
                     ts.SyntaxKind.PlusToken
                 )
@@ -246,7 +246,7 @@ function createAssertionFunction(expression: ts.Expression, reason: string, func
                                 undefined,
                                 [ts.createStringLiteral('.')]
                             ),
-                            ts.createStringLiteral(`, because ${reason}`)
+                            ts.createStringLiteral(`: ${reason}`)
                         ],
                         ts.SyntaxKind.PlusToken
                     )
@@ -283,10 +283,7 @@ function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext
                         ts.createBinary(
                             ts.createLogicalNot(
                                 ts.createCall(
-                                    ts.createPropertyAccess(
-                                        ts.createIdentifier('Array'),
-                                        'isArray'
-                                    ),
+                                    ts.createPropertyAccess(ts.createIdentifier('Array'), 'isArray'),
                                     undefined,
                                     [objectIdentifier]
                                 )
@@ -312,7 +309,7 @@ function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext
                                         undefined,
                                         [ts.createStringLiteral('.')]
                                     ),
-                                    ts.createStringLiteral(`, expected an array of length ${type.typeArguments.length}`)
+                                    ts.createStringLiteral(`: expected an array of length ${type.typeArguments.length}`)
                                 ],
                                 ts.SyntaxKind.PlusToken
                             )
@@ -404,7 +401,7 @@ function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContex
                                         undefined,
                                         [ts.createStringLiteral('.')]
                                     ),
-                                    ts.createStringLiteral(`, expected an array`)
+                                    ts.createStringLiteral(`: expected an array`)
                                 ],
                                 ts.SyntaxKind.PlusToken
                             )
@@ -502,7 +499,7 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                                     ts.createNull()
                                 ),
                                 ts.createCall(
-                                    ts.createPropertyAccess(ts.createLiteral('Array'), 'isArray'),
+                                    ts.createPropertyAccess(ts.createIdentifier('Array'), 'isArray'),
                                     undefined,
                                     [objectIdentifier]
                                 )
@@ -521,7 +518,7 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                                         undefined,
                                         [ts.createStringLiteral('.')]
                                     ),
-                                    ts.createStringLiteral(`, expected an object`)
+                                    ts.createStringLiteral(`: expected an object`)
                                 ],
                                 ts.SyntaxKind.PlusToken
                             )

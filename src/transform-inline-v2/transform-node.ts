@@ -13,12 +13,12 @@ function createArrowFunction(type: ts.Type, optional: boolean, visitorContext: P
         : visitType(type, { ...visitorContext, functionMap });
 
     const errorIdentifier = ts.createIdentifier('error');
-    const declarations: ts.FunctionDeclaration[] = [];
-    for (const declaration of functionMap.values()) {
-        declarations.push(declaration);
-    }
 
-    console.log(functionMap.size, declarations.length);
+    // Why I can't use [...functionMap.values()] ??? I have no idea... weird as fuck bug.
+    const declarations: ts.FunctionDeclaration[] = [];
+    functionMap.forEach((declaration) => {
+        declarations.push(declaration);
+    });
 
     return ts.createArrowFunction(
         undefined,
@@ -40,33 +40,7 @@ function createArrowFunction(type: ts.Type, optional: boolean, visitorContext: P
                 [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
                 [ts.createVariableDeclaration(pathIdentifier, undefined, ts.createArrayLiteral([ts.createStringLiteral('$')]))]
             ),
-            ...functionMap.values(),
-            // ...[...functionMap.values()].map((functionDeclaration) => {
-            //     return ts.createVariableStatement(
-            //         [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
-            //         [ts.createVariableDeclaration(
-            //             functionDeclaration.name!,
-            //             undefined,
-            //             ts.createNumericLiteral('1')
-            //             // ts.createArrowFunction(
-            //             //     undefined,
-            //             //     undefined,
-            //             //     functionDeclaration.parameters,
-            //             //     undefined,
-            //             //     undefined,
-            //             //     functionDeclaration.body!
-            //             // )
-            //         )]
-            //     );
-            // }),
-            // ts.createVariableStatement(
-            //     [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
-            //     [ts.createVariableDeclaration(
-            //         functionDeclaration.name!,
-            //         undefined,
-            //         ts.createNumericLiteral('1')
-            //     )]
-            // ),
+            ...declarations,
             ts.createVariableStatement(
                 [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
                 [ts.createVariableDeclaration(errorIdentifier, undefined, ts.createCall(functionDeclaration.name!, undefined, [objectIdentifier]))]
