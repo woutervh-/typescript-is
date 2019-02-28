@@ -1,12 +1,12 @@
 import * as ts from 'typescript';
 
 export interface VisitorContext extends PartialVisitorContext {
-    functionMap: Map<ts.Type, ts.FunctionDeclaration>;
+    functionMap: Map<string, ts.FunctionDeclaration>;
 }
 
 export interface PartialVisitorContext {
     program: ts.Program;
     checker: ts.TypeChecker;
-    typeMapperStack: ((source: ts.Type) => ts.Type | undefined)[];
+    typeMapperStack: Map<ts.Type, ts.Type>[];
     previousTypeReference: ts.Type | null;
 }
