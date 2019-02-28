@@ -2,8 +2,8 @@ import * as ts from 'typescript';
 import * as tsutils from 'tsutils';
 import { VisitorContext } from './visitor-context';
 
-const accessorIdentifier = ts.createIdentifier('object');
-const pathIdentifier = ts.createIdentifier('object');
+const objectIdentifier = ts.createIdentifier('object');
+const pathIdentifier = ts.createIdentifier('path');
 
 function createBinaries(expressions: ts.Expression[], operator: ts.BinaryOperator) {
     return expressions.reduce((previous, expression) => ts.createBinary(previous, operator, expression));
@@ -30,31 +30,25 @@ function createRejectingFunction(reason: string, functionName: string) {
         functionName,
         undefined,
         [
-            ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined)
+            ts.createParameter(undefined, undefined, undefined, objectIdentifier, undefined, undefined, undefined)
         ],
         undefined,
         ts.createBlock([
             ts.createReturn(
-                ts.createNew(
-                    ts.createIdentifier('Error'),
-                    undefined,
+                createBinaries(
                     [
-                        createBinaries(
-                            [
-                                ts.createStringLiteral('validation failed at '),
-                                ts.createCall(
-                                    ts.createPropertyAccess(
-                                        pathIdentifier,
-                                        'join'
-                                    ),
-                                    undefined,
-                                    [ts.createStringLiteral('.')]
-                                ),
-                                ts.createStringLiteral(`, because ${reason}`)
-                            ],
-                            ts.SyntaxKind.PlusToken
-                        )
-                    ]
+                        ts.createStringLiteral('validation failed at '),
+                        ts.createCall(
+                            ts.createPropertyAccess(
+                                pathIdentifier,
+                                'join'
+                            ),
+                            undefined,
+                            [ts.createStringLiteral('.')]
+                        ),
+                        ts.createStringLiteral(`, because ${reason}`)
+                    ],
+                    ts.SyntaxKind.PlusToken
                 )
             )
         ])
@@ -72,7 +66,7 @@ function createConjunctionFunction(functionDeclarations: ts.FunctionDeclaration[
         functionName,
         undefined,
         [
-            ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined)
+            ts.createParameter(undefined, undefined, undefined, objectIdentifier, undefined, undefined, undefined)
         ],
         undefined,
         ts.createBlock([
@@ -111,7 +105,7 @@ function createConjunctionFunction(functionDeclarations: ts.FunctionDeclaration[
                                 ts.createCall(
                                     conditionIdentifier,
                                     undefined,
-                                    [accessorIdentifier]
+                                    [objectIdentifier]
                                 )
                             )
                         ]
@@ -119,27 +113,21 @@ function createConjunctionFunction(functionDeclarations: ts.FunctionDeclaration[
                     ts.createIf(
                         errorIdentifier,
                         ts.createReturn(
-                            ts.createNew(
-                                ts.createIdentifier('Error'),
-                                undefined,
+                            createBinaries(
                                 [
-                                    createBinaries(
-                                        [
-                                            ts.createStringLiteral('validation failed at '),
-                                            ts.createCall(
-                                                ts.createPropertyAccess(
-                                                    pathIdentifier,
-                                                    'join'
-                                                ),
-                                                undefined,
-                                                [ts.createStringLiteral('.')]
-                                            ),
-                                            ts.createStringLiteral(`, because: `),
-                                            errorIdentifier
-                                        ],
-                                        ts.SyntaxKind.PlusToken
-                                    )
-                                ]
+                                    ts.createStringLiteral('validation failed at '),
+                                    ts.createCall(
+                                        ts.createPropertyAccess(
+                                            pathIdentifier,
+                                            'join'
+                                        ),
+                                        undefined,
+                                        [ts.createStringLiteral('.')]
+                                    ),
+                                    ts.createStringLiteral(`, because: `),
+                                    errorIdentifier
+                                ],
+                                ts.SyntaxKind.PlusToken
                             )
                         )
                     )
@@ -161,7 +149,7 @@ function createDisjunctionFunction(functionDeclarations: ts.FunctionDeclaration[
         functionName,
         undefined,
         [
-            ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined)
+            ts.createParameter(undefined, undefined, undefined, objectIdentifier, undefined, undefined, undefined)
         ],
         undefined,
         ts.createBlock([
@@ -200,7 +188,7 @@ function createDisjunctionFunction(functionDeclarations: ts.FunctionDeclaration[
                                 ts.createCall(
                                     conditionIdentifier,
                                     undefined,
-                                    [accessorIdentifier]
+                                    [objectIdentifier]
                                 )
                             )
                         ]
@@ -212,26 +200,20 @@ function createDisjunctionFunction(functionDeclarations: ts.FunctionDeclaration[
                 ])
             ),
             ts.createReturn(
-                ts.createNew(
-                    ts.createIdentifier('Error'),
-                    undefined,
+                createBinaries(
                     [
-                        createBinaries(
-                            [
-                                ts.createStringLiteral('validation failed at '),
-                                ts.createCall(
-                                    ts.createPropertyAccess(
-                                        pathIdentifier,
-                                        'join'
-                                    ),
-                                    undefined,
-                                    [ts.createStringLiteral('.')]
-                                ),
-                                ts.createStringLiteral(`, because there are no valid alternatives.`)
-                            ],
-                            ts.SyntaxKind.PlusToken
-                        )
-                    ]
+                        ts.createStringLiteral('validation failed at '),
+                        ts.createCall(
+                            ts.createPropertyAccess(
+                                pathIdentifier,
+                                'join'
+                            ),
+                            undefined,
+                            [ts.createStringLiteral('.')]
+                        ),
+                        ts.createStringLiteral(`, because there are no valid alternatives.`)
+                    ],
+                    ts.SyntaxKind.PlusToken
                 )
             )
         ])
@@ -246,33 +228,27 @@ function createAssertionFunction(expression: ts.Expression, reason: string, func
         functionName,
         undefined,
         [
-            ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined)
+            ts.createParameter(undefined, undefined, undefined, objectIdentifier, undefined, undefined, undefined)
         ],
         undefined,
         ts.createBlock([
             ts.createIf(
                 expression,
                 ts.createReturn(
-                    ts.createNew(
-                        ts.createIdentifier('Error'),
-                        undefined,
+                    createBinaries(
                         [
-                            createBinaries(
-                                [
-                                    ts.createStringLiteral('validation failed at '),
-                                    ts.createCall(
-                                        ts.createPropertyAccess(
-                                            pathIdentifier,
-                                            'join'
-                                        ),
-                                        undefined,
-                                        [ts.createStringLiteral('.')]
-                                    ),
-                                    ts.createStringLiteral(`, because ${reason}`)
-                                ],
-                                ts.SyntaxKind.PlusToken
-                            )
-                        ]
+                            ts.createStringLiteral('validation failed at '),
+                            ts.createCall(
+                                ts.createPropertyAccess(
+                                    pathIdentifier,
+                                    'join'
+                                ),
+                                undefined,
+                                [ts.createStringLiteral('.')]
+                            ),
+                            ts.createStringLiteral(`, because ${reason}`)
+                        ],
+                        ts.SyntaxKind.PlusToken
                     )
                 ),
                 ts.createReturn(ts.createNull())
@@ -299,7 +275,7 @@ function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext
                 `f${visitorContext.functionMap.size}`,
                 undefined,
                 [
-                    ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined)
+                    ts.createParameter(undefined, undefined, undefined, objectIdentifier, undefined, undefined, undefined)
                 ],
                 undefined,
                 ts.createBlock([
@@ -312,39 +288,33 @@ function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext
                                         'isArray'
                                     ),
                                     undefined,
-                                    [accessorIdentifier]
+                                    [objectIdentifier]
                                 )
                             ),
                             ts.SyntaxKind.BarBarToken,
                             ts.createStrictInequality(
                                 ts.createPropertyAccess(
-                                    accessorIdentifier,
+                                    objectIdentifier,
                                     'length'
                                 ),
                                 ts.createNumericLiteral(type.typeArguments.length.toString())
                             )
                         ),
                         ts.createReturn(
-                            ts.createNew(
-                                ts.createIdentifier('Error'),
-                                undefined,
+                            createBinaries(
                                 [
-                                    createBinaries(
-                                        [
-                                            ts.createStringLiteral('validation failed at '),
-                                            ts.createCall(
-                                                ts.createPropertyAccess(
-                                                    pathIdentifier,
-                                                    'join'
-                                                ),
-                                                undefined,
-                                                [ts.createStringLiteral('.')]
-                                            ),
-                                            ts.createStringLiteral(`, expected an array of length ${type.typeArguments.length}`)
-                                        ],
-                                        ts.SyntaxKind.PlusToken
-                                    )
-                                ]
+                                    ts.createStringLiteral('validation failed at '),
+                                    ts.createCall(
+                                        ts.createPropertyAccess(
+                                            pathIdentifier,
+                                            'join'
+                                        ),
+                                        undefined,
+                                        [ts.createStringLiteral('.')]
+                                    ),
+                                    ts.createStringLiteral(`, expected an array of length ${type.typeArguments.length}`)
+                                ],
+                                ts.SyntaxKind.PlusToken
                             )
                         )
                     ),
@@ -366,7 +336,7 @@ function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext
                                         ts.createCall(
                                             functionDeclaration.name!,
                                             undefined,
-                                            [accessorIdentifier]
+                                            [objectIdentifier]
                                         )
                                     )
                                 ]
@@ -410,7 +380,7 @@ function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContex
                 `f${visitorContext.functionMap.size}`,
                 undefined,
                 [
-                    ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined)
+                    ts.createParameter(undefined, undefined, undefined, objectIdentifier, undefined, undefined, undefined)
                 ],
                 undefined,
                 ts.createBlock([
@@ -419,30 +389,24 @@ function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContex
                             ts.createCall(
                                 ts.createPropertyAccess(ts.createIdentifier('Array'), 'isArray'),
                                 undefined,
-                                [accessorIdentifier]
+                                [objectIdentifier]
                             )
                         ),
                         ts.createReturn(
-                            ts.createNew(
-                                ts.createIdentifier('Error'),
-                                undefined,
+                            createBinaries(
                                 [
-                                    createBinaries(
-                                        [
-                                            ts.createStringLiteral('validation failed at '),
-                                            ts.createCall(
-                                                ts.createPropertyAccess(
-                                                    pathIdentifier,
-                                                    'join'
-                                                ),
-                                                undefined,
-                                                [ts.createStringLiteral('.')]
-                                            ),
-                                            ts.createStringLiteral(`, expected an array`)
-                                        ],
-                                        ts.SyntaxKind.PlusToken
-                                    )
-                                ]
+                                    ts.createStringLiteral('validation failed at '),
+                                    ts.createCall(
+                                        ts.createPropertyAccess(
+                                            pathIdentifier,
+                                            'join'
+                                        ),
+                                        undefined,
+                                        [ts.createStringLiteral('.')]
+                                    ),
+                                    ts.createStringLiteral(`, expected an array`)
+                                ],
+                                ts.SyntaxKind.PlusToken
                             )
                         )
                     ),
@@ -456,7 +420,7 @@ function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContex
                         ts.createBinary(
                             indexIdentifier,
                             ts.SyntaxKind.LessThanToken,
-                            ts.createPropertyAccess(accessorIdentifier, 'length')
+                            ts.createPropertyAccess(objectIdentifier, 'length')
                         ),
                         ts.createPostfixIncrement(indexIdentifier),
                         ts.createBlock([
@@ -485,7 +449,7 @@ function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContex
                                         ts.createCall(
                                             functionDeclaration.name!,
                                             undefined,
-                                            [accessorIdentifier]
+                                            [objectIdentifier]
                                         )
                                     )
                                 ]
@@ -522,7 +486,7 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                 `f${visitorContext.functionMap.size}`,
                 undefined,
                 [
-                    ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined)
+                    ts.createParameter(undefined, undefined, undefined, objectIdentifier, undefined, undefined, undefined)
                 ],
                 undefined,
                 ts.createBlock([
@@ -530,42 +494,36 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                         createBinaries(
                             [
                                 ts.createStrictInequality(
-                                    ts.createTypeOf(accessorIdentifier),
+                                    ts.createTypeOf(objectIdentifier),
                                     ts.createStringLiteral('object')
                                 ),
                                 ts.createStrictEquality(
-                                    accessorIdentifier,
+                                    objectIdentifier,
                                     ts.createNull()
                                 ),
                                 ts.createCall(
                                     ts.createPropertyAccess(ts.createLiteral('Array'), 'isArray'),
                                     undefined,
-                                    [accessorIdentifier]
+                                    [objectIdentifier]
                                 )
                             ],
                             ts.SyntaxKind.BarBarToken
                         ),
                         ts.createReturn(
-                            ts.createNew(
-                                ts.createIdentifier('Error'),
-                                undefined,
+                            createBinaries(
                                 [
-                                    createBinaries(
-                                        [
-                                            ts.createStringLiteral('validation failed at '),
-                                            ts.createCall(
-                                                ts.createPropertyAccess(
-                                                    pathIdentifier,
-                                                    'join'
-                                                ),
-                                                undefined,
-                                                [ts.createStringLiteral('.')]
-                                            ),
-                                            ts.createStringLiteral(`, expected an object`)
-                                        ],
-                                        ts.SyntaxKind.PlusToken
-                                    )
-                                ]
+                                    ts.createStringLiteral('validation failed at '),
+                                    ts.createCall(
+                                        ts.createPropertyAccess(
+                                            pathIdentifier,
+                                            'join'
+                                        ),
+                                        undefined,
+                                        [ts.createStringLiteral('.')]
+                                    ),
+                                    ts.createStringLiteral(`, expected an object`)
+                                ],
+                                ts.SyntaxKind.PlusToken
                             )
                         )
                     ),
@@ -717,8 +675,11 @@ function visitTypeReference(type: ts.TypeReference, visitorContext: VisitorConte
         });
     }
     const mapper = mappers.reduce<(source: ts.Type) => ts.Type | undefined>((previous, next) => (source: ts.Type) => previous(source) || next(source), () => undefined);
+    const previousTypeReference = visitorContext.previousTypeReference;
     visitorContext.typeMapperStack.push(mapper);
+    visitorContext.previousTypeReference = type;
     const result = visitType(type.target, visitorContext);
+    visitorContext.previousTypeReference = previousTypeReference;
     visitorContext.typeMapperStack.pop();
     return result;
 }
@@ -752,7 +713,7 @@ function visitLiteralType(type: ts.LiteralType, visitorContext: VisitorContext) 
                 type,
                 createAssertionFunction(
                     ts.createStrictInequality(
-                        accessorIdentifier,
+                        objectIdentifier,
                         ts.createStringLiteral(type.value)
                     ),
                     `expected string '${type.value}'`,
@@ -764,7 +725,7 @@ function visitLiteralType(type: ts.LiteralType, visitorContext: VisitorContext) 
                 type,
                 createAssertionFunction(
                     ts.createStrictInequality(
-                        accessorIdentifier,
+                        objectIdentifier,
                         ts.createNumericLiteral(type.value.toString())
                     ),
                     `expected number '${type.value}'`,
@@ -806,7 +767,7 @@ function visitBooleanLiteral(type: ts.Type, visitorContext: VisitorContext) {
                 type,
                 createAssertionFunction(
                     ts.createStrictInequality(
-                        accessorIdentifier,
+                        objectIdentifier,
                         ts.createTrue()
                     ),
                     `expected true`,
@@ -818,7 +779,7 @@ function visitBooleanLiteral(type: ts.Type, visitorContext: VisitorContext) {
                 type,
                 createAssertionFunction(
                     ts.createStrictInequality(
-                        accessorIdentifier,
+                        objectIdentifier,
                         ts.createFalse()
                     ),
                     `expected false`,
@@ -839,23 +800,23 @@ function visitNonPrimitiveType(type: ts.Type, visitorContext: VisitorContext) {
         if (intrinsicName === 'object') {
             const conditions: ts.Expression[] = [
                 ts.createStrictInequality(
-                    ts.createTypeOf(accessorIdentifier),
+                    ts.createTypeOf(objectIdentifier),
                     ts.createStringLiteral('boolean')
                 ),
                 ts.createStrictInequality(
-                    ts.createTypeOf(accessorIdentifier),
+                    ts.createTypeOf(objectIdentifier),
                     ts.createStringLiteral('number')
                 ),
                 ts.createStrictInequality(
-                    ts.createTypeOf(accessorIdentifier),
+                    ts.createTypeOf(objectIdentifier),
                     ts.createStringLiteral('string')
                 ),
                 ts.createStrictInequality(
-                    accessorIdentifier,
+                    objectIdentifier,
                     ts.createNull()
                 ),
                 ts.createStrictInequality(
-                    accessorIdentifier,
+                    objectIdentifier,
                     ts.createIdentifier('undefined')
                 )
             ];
@@ -917,7 +878,7 @@ function visitNull(type: ts.Type, visitorContext: VisitorContext) {
             type,
             createAssertionFunction(
                 ts.createStrictInequality(
-                    accessorIdentifier,
+                    objectIdentifier,
                     ts.createNull()
                 ),
                 'expected null',
@@ -934,7 +895,7 @@ function visitUndefined(type: ts.Type, visitorContext: VisitorContext) {
             type,
             createAssertionFunction(
                 ts.createStrictInequality(
-                    accessorIdentifier,
+                    objectIdentifier,
                     ts.createIdentifier('undefined')
                 ),
                 'expected undefined',
@@ -951,7 +912,7 @@ function visitNumber(type: ts.Type, visitorContext: VisitorContext) {
             type,
             createAssertionFunction(
                 ts.createStrictInequality(
-                    ts.createTypeOf(accessorIdentifier),
+                    ts.createTypeOf(objectIdentifier),
                     ts.createStringLiteral('number')
                 ),
                 'expected a number',
@@ -968,7 +929,7 @@ function visitBigInt(type: ts.Type, visitorContext: VisitorContext) {
             type,
             createAssertionFunction(
                 ts.createStrictInequality(
-                    ts.createTypeOf(accessorIdentifier),
+                    ts.createTypeOf(objectIdentifier),
                     ts.createStringLiteral('bigint')
                 ),
                 'expected a bigint',
@@ -985,7 +946,7 @@ function visitBoolean(type: ts.Type, visitorContext: VisitorContext) {
             type,
             createAssertionFunction(
                 ts.createStrictInequality(
-                    ts.createTypeOf(accessorIdentifier),
+                    ts.createTypeOf(objectIdentifier),
                     ts.createStringLiteral('boolean')
                 ),
                 'expected a boolean',
@@ -1002,7 +963,7 @@ function visitString(type: ts.Type, visitorContext: VisitorContext) {
             type,
             createAssertionFunction(
                 ts.createStrictInequality(
-                    ts.createTypeOf(accessorIdentifier),
+                    ts.createTypeOf(objectIdentifier),
                     ts.createStringLiteral('string')
                 ),
                 `expected a string`,
@@ -1044,7 +1005,7 @@ export function visitType(type: ts.Type, visitorContext: VisitorContext): ts.Fun
     } else if ((ts.TypeFlags.BooleanLiteral & type.flags) !== 0) {
         // Boolean literal (true/false)
         return visitBooleanLiteral(type, visitorContext);
-    } else if (tsutils.isTypeReference(type)) {
+    } else if (tsutils.isTypeReference(type) && visitorContext.previousTypeReference !== type) {
         // Type references.
         return visitTypeReference(type, visitorContext);
     } else if ((ts.TypeFlags.TypeParameter & type.flags) !== 0) {
@@ -1087,13 +1048,13 @@ export function visitUndefinedOrType(type: ts.Type, visitorContext: VisitorConte
         `optional_${functionDeclaration.name!.text}`,
         undefined,
         [
-            ts.createParameter(undefined, undefined, undefined, accessorIdentifier, undefined, undefined, undefined)
+            ts.createParameter(undefined, undefined, undefined, objectIdentifier, undefined, undefined, undefined)
         ],
         undefined,
         ts.createBlock([
             ts.createIf(
                 ts.createStrictInequality(
-                    accessorIdentifier,
+                    objectIdentifier,
                     ts.createIdentifier('undefined')
                 ),
                 ts.createBlock([
@@ -1106,7 +1067,7 @@ export function visitUndefinedOrType(type: ts.Type, visitorContext: VisitorConte
                                 ts.createCall(
                                     functionDeclaration.name!,
                                     undefined,
-                                    [accessorIdentifier]
+                                    [objectIdentifier]
                                 )
                             )
                         ]

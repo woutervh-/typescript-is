@@ -4,11 +4,11 @@
 
 import * as path from 'path';
 import * as ts from 'typescript';
-import { transformNode } from '../src/transform-inline/transform-node';
-import { VisitorContext } from '../src/transform-inline/visitor-context';
+import { transformNode } from '../src/transform-inline-v2/transform-node';
+import { PartialVisitorContext } from '../src/transform-inline-v2/visitor-context';
 
 const configFilename = path.resolve('tsconfig.json');
-const inFile = path.resolve('test', 'issue-12.ts');
+const inFile = path.resolve('test', 'case-1.ts');
 const content = ts.sys.readFile(configFilename);
 if (content === undefined) {
     throw new Error('Could not read config file.');
@@ -22,12 +22,13 @@ delete configParseResult.options.outFile;
 delete configParseResult.options.declaration;
 const program = ts.createProgram([inFile], configParseResult.options);
 
-const visitorContext: VisitorContext = {
+const visitorContext: PartialVisitorContext = {
     checker: program.getTypeChecker(),
     program,
     typeMapperStack: [],
-    mode: { type: 'type-check' },
-    pathStack: ['$']
+    // mode: { type: 'type-check' },
+    // pathStack: ['$'],
+    previousTypeReference: null
 };
 
 function visitNodeAndChildren(node: ts.Node) {
