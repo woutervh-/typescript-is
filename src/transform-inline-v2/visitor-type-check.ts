@@ -423,17 +423,17 @@ function visitLiteralType(type: ts.LiteralType, visitorContext: VisitorContext) 
 function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorContext: VisitorContext) {
     const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'type-check' });
     if (!visitorContext.functionMap.has(name)) {
-        const functionDeclarations = type.types.map((type) => visitType(type, visitorContext));
+        const functionNames = type.types.map((type) => visitType(type, visitorContext));
 
         if (tsutils.isUnionType(type)) {
             visitorContext.functionMap.set(
                 name,
-                VisitorUtils.createDisjunctionFunction(functionDeclarations, name)
+                VisitorUtils.createDisjunctionFunction(functionNames, name)
             );
         } else {
             visitorContext.functionMap.set(
                 name,
-                VisitorUtils.createConjunctionFunction(functionDeclarations, name)
+                VisitorUtils.createConjunctionFunction(functionNames, name)
             );
         }
     }
@@ -445,36 +445,28 @@ function visitBooleanLiteral(type: ts.Type, visitorContext: VisitorContext) {
     const intrinsicName: string | undefined = (type as { intrinsicName?: string }).intrinsicName;
     if (intrinsicName === 'true') {
         const name = '_true';
-        if (!visitorContext.functionMap.has(name)) {
-            visitorContext.functionMap.set(
-                name,
-                VisitorUtils.createAssertionFunction(
-                    ts.createStrictInequality(
-                        objectIdentifier,
-                        ts.createTrue()
-                    ),
-                    `expected true`,
-                    name
-                )
+        return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
+            return VisitorUtils.createAssertionFunction(
+                ts.createStrictInequality(
+                    objectIdentifier,
+                    ts.createTrue()
+                ),
+                `expected true`,
+                name
             );
-        }
-        return visitorContext.functionMap.get(name)!;
+        });
     } else if (intrinsicName === 'false') {
         const name = '_false';
-        if (!visitorContext.functionMap.has(name)) {
-            visitorContext.functionMap.set(
-                name,
-                VisitorUtils.createAssertionFunction(
-                    ts.createStrictInequality(
-                        objectIdentifier,
-                        ts.createFalse()
-                    ),
-                    `expected false`,
-                    name
-                )
+        return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
+            return VisitorUtils.createAssertionFunction(
+                ts.createStrictInequality(
+                    objectIdentifier,
+                    ts.createFalse()
+                ),
+                `expected false`,
+                name
             );
-        }
-        return visitorContext.functionMap.get(name)!;
+        });
     } else {
         throw new Error(`Unsupported boolean literal with intrinsic name: ${intrinsicName}.`);
     }
@@ -580,7 +572,7 @@ function visitIndexedAccessType(type: ts.IndexedAccessType, visitorContext: Visi
     return VisitorIndexedAccess.visitType(type.objectType, type.indexType, visitorContext);
 }
 
-export function visitType(type: ts.Type, visitorContext: VisitorContext): ts.FunctionDeclaration {
+export function visitType(type: ts.Type, visitorContext: VisitorContext): string {
     if ((ts.TypeFlags.Any & type.flags) !== 0) {
         // Any
         return visitAny(visitorContext);
@@ -645,46 +637,49 @@ export function visitType(type: ts.Type, visitorContext: VisitorContext): ts.Fun
 }
 
 export function visitUndefinedOrType(type: ts.Type, visitorContext: VisitorContext) {
-    const errorIdentifier = ts.createIdentifier('error');
-    const functionDeclaration = visitType(type, visitorContext);
-    return ts.createFunctionDeclaration(
-        undefined,
-        undefined,
-        undefined,
-        `optional_${functionDeclaration.name!.text}`,
-        undefined,
-        [
-            ts.createParameter(undefined, undefined, undefined, objectIdentifier, undefined, undefined, undefined)
-        ],
-        undefined,
-        ts.createBlock([
-            ts.createIf(
-                ts.createStrictInequality(
-                    objectIdentifier,
-                    ts.createIdentifier('undefined')
-                ),
-                ts.createBlock([
-                    ts.createVariableStatement(
-                        [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
-                        [
-                            ts.createVariableDeclaration(
-                                errorIdentifier,
-                                undefined,
-                                ts.createCall(
-                                    functionDeclaration.name!,
-                                    undefined,
-                                    [objectIdentifier]
-                                )
-                            )
-                        ]
+    const functionName = visitType(type, visitorContext);
+    const name = `optional_${functionName}`;
+    return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
+        const errorIdentifier = ts.createIdentifier('error');
+        return ts.createFunctionDeclaration(
+            undefined,
+            undefined,
+            undefined,
+            name,
+            undefined,
+            [
+                ts.createParameter(undefined, undefined, undefined, objectIdentifier, undefined, undefined, undefined)
+            ],
+            undefined,
+            ts.createBlock([
+                ts.createIf(
+                    ts.createStrictInequality(
+                        objectIdentifier,
+                        ts.createIdentifier('undefined')
                     ),
-                    ts.createIf(
-                        errorIdentifier,
-                        ts.createReturn(errorIdentifier)
-                    )
-                ])
-            ),
-            ts.createReturn(ts.createNull())
-        ])
-    );
+                    ts.createBlock([
+                        ts.createVariableStatement(
+                            [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
+                            [
+                                ts.createVariableDeclaration(
+                                    errorIdentifier,
+                                    undefined,
+                                    ts.createCall(
+                                        ts.createIdentifier(functionName),
+                                        undefined,
+                                        [objectIdentifier]
+                                    )
+                                )
+                            ]
+                        ),
+                        ts.createIf(
+                            errorIdentifier,
+                            ts.createReturn(errorIdentifier)
+                        )
+                    ])
+                ),
+                ts.createReturn(ts.createNull())
+            ])
+        );
+    });
 }

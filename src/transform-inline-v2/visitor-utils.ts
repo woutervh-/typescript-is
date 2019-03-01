@@ -5,6 +5,14 @@ import { VisitorContext } from './visitor-context';
 const objectIdentifier = ts.createIdentifier('object');
 const pathIdentifier = ts.createIdentifier('path');
 
+export function setFunctionIfNotExists(name: string, visitorContext: VisitorContext, factory: () => ts.FunctionDeclaration) {
+    if (!visitorContext.functionNames.has(name)) {
+        visitorContext.functionNames.add(name);
+        visitorContext.functionMap.set(name, factory());
+    }
+    return name;
+}
+
 export function getPropertyInfo(symbol: ts.Symbol, visitorContext: VisitorContext) {
     const name: string | undefined = symbol.name;
     if (name === undefined) {
@@ -116,143 +124,107 @@ export function getFullTypeName(type: ts.Type, visitorContext: VisitorContext, m
 
 export function getStringFunction(visitorContext: VisitorContext) {
     const name = '_string';
-    if (!visitorContext.functionMap.has(name)) {
-        visitorContext.functionMap.set(
-            name,
-            createAssertionFunction(
-                ts.createStrictInequality(
-                    ts.createTypeOf(objectIdentifier),
-                    ts.createStringLiteral('string')
-                ),
-                `expected a string`,
-                name
-            )
+    return setFunctionIfNotExists(name, visitorContext, () => {
+        return createAssertionFunction(
+            ts.createStrictInequality(
+                ts.createTypeOf(objectIdentifier),
+                ts.createStringLiteral('string')
+            ),
+            `expected a string`,
+            name
         );
-    }
-    return visitorContext.functionMap.get(name)!;
+    });
 }
 
 export function getBooleanFunction(visitorContext: VisitorContext) {
     const name = '_boolean';
-    if (!visitorContext.functionMap.has(name)) {
-        visitorContext.functionMap.set(
-            name,
-            createAssertionFunction(
-                ts.createStrictInequality(
-                    ts.createTypeOf(objectIdentifier),
-                    ts.createStringLiteral('boolean')
-                ),
-                'expected a boolean',
-                name
-            )
+    return setFunctionIfNotExists(name, visitorContext, () => {
+        return createAssertionFunction(
+            ts.createStrictInequality(
+                ts.createTypeOf(objectIdentifier),
+                ts.createStringLiteral('boolean')
+            ),
+            'expected a boolean',
+            name
         );
-    }
-    return visitorContext.functionMap.get(name)!;
+    });
 }
 
 export function getBigintFunction(visitorContext: VisitorContext) {
     const name = '_bigint';
-    if (!visitorContext.functionMap.has(name)) {
-        visitorContext.functionMap.set(
-            name,
-            createAssertionFunction(
-                ts.createStrictInequality(
-                    ts.createTypeOf(objectIdentifier),
-                    ts.createStringLiteral('bigint')
-                ),
-                'expected a bigint',
-                name
-            )
+    return setFunctionIfNotExists(name, visitorContext, () => {
+        return createAssertionFunction(
+            ts.createStrictInequality(
+                ts.createTypeOf(objectIdentifier),
+                ts.createStringLiteral('bigint')
+            ),
+            'expected a bigint',
+            name
         );
-    }
-    return visitorContext.functionMap.get(name)!;
+    });
 }
 
 export function getNumberFunction(visitorContext: VisitorContext) {
     const name = '_number';
-    if (!visitorContext.functionMap.has(name)) {
-        visitorContext.functionMap.set(
-            name,
-            createAssertionFunction(
-                ts.createStrictInequality(
-                    ts.createTypeOf(objectIdentifier),
-                    ts.createStringLiteral('number')
-                ),
-                'expected a number',
-                name
-            )
+    return setFunctionIfNotExists(name, visitorContext, () => {
+        return createAssertionFunction(
+            ts.createStrictInequality(
+                ts.createTypeOf(objectIdentifier),
+                ts.createStringLiteral('number')
+            ),
+            'expected a number',
+            name
         );
-    }
-    return visitorContext.functionMap.get(name)!;
+    });
 }
 
 export function getUndefinedFunction(visitorContext: VisitorContext) {
     const name = '_undefined';
-    if (!visitorContext.functionMap.has(name)) {
-        visitorContext.functionMap.set(
-            name,
-            createAssertionFunction(
-                ts.createStrictInequality(
-                    objectIdentifier,
-                    ts.createIdentifier('undefined')
-                ),
-                'expected undefined',
-                name
-            )
+    return setFunctionIfNotExists(name, visitorContext, () => {
+        return createAssertionFunction(
+            ts.createStrictInequality(
+                objectIdentifier,
+                ts.createIdentifier('undefined')
+            ),
+            'expected undefined',
+            name
         );
-    }
-    return visitorContext.functionMap.get(name)!;
+    });
 }
 
 export function getNullFunction(visitorContext: VisitorContext) {
     const name = '_null';
-    if (!visitorContext.functionMap.has(name)) {
-        visitorContext.functionMap.set(
-            name,
-            createAssertionFunction(
-                ts.createStrictInequality(
-                    objectIdentifier,
-                    ts.createNull()
-                ),
-                'expected null',
-                name
-            )
+    return setFunctionIfNotExists(name, visitorContext, () => {
+        return createAssertionFunction(
+            ts.createStrictInequality(
+                objectIdentifier,
+                ts.createNull()
+            ),
+            'expected null',
+            name
         );
-    }
-    return visitorContext.functionMap.get(name)!;
+    });
 }
 
 export function getNeverFunction(visitorContext: VisitorContext) {
     const name = '_never';
-    if (!visitorContext.functionMap.has(name)) {
-        visitorContext.functionMap.set(
-            name,
-            createRejectingFunction('type is never', name)
-        );
-    }
-    return visitorContext.functionMap.get(name)!;
+    return setFunctionIfNotExists(name, visitorContext, () => {
+        return createRejectingFunction('type is never', name);
+    });
 }
 
 export function getUnknownFunction(visitorContext: VisitorContext) {
     const name = '_unknown';
-    if (!visitorContext.functionMap.has(name)) {
-        visitorContext.functionMap.set(
-            name,
-            createAcceptingFunction(name)
-        );
-    }
-    return visitorContext.functionMap.get(name)!;
+    return setFunctionIfNotExists(name, visitorContext, () => {
+        return createAcceptingFunction(name);
+    });
 }
 
 export function getAnyFunction(visitorContext: VisitorContext) {
     const name = '_any';
-    if (!visitorContext.functionMap.has(name)) {
-        visitorContext.functionMap.set(
-            name,
-            createAcceptingFunction(name)
-        );
-    }
-    return visitorContext.functionMap.get(name)!;
+    return setFunctionIfNotExists(name, visitorContext, () => {
+        return createAcceptingFunction(name);
+    });
 }
 
 export function createBinaries(expressions: ts.Expression[], operator: ts.BinaryOperator, baseExpression?: ts.Expression) {
@@ -309,7 +281,7 @@ export function createRejectingFunction(reason: string, functionName: string) {
     );
 }
 
-export function createConjunctionFunction(functionDeclarations: ts.FunctionDeclaration[], functionName: string) {
+export function createConjunctionFunction(functionNames: string[], functionName: string) {
     const conditionsIdentifier = ts.createIdentifier('conditions');
     const conditionIdentifier = ts.createIdentifier('condition');
     const errorIdentifier = ts.createIdentifier('error');
@@ -331,7 +303,7 @@ export function createConjunctionFunction(functionDeclarations: ts.FunctionDecla
                         conditionsIdentifier,
                         undefined,
                         ts.createArrayLiteral(
-                            functionDeclarations.map((functionDeclaration) => functionDeclaration.name!)
+                            functionNames.map((functionName) => ts.createIdentifier(functionName))
                         )
                     )
                 ]
@@ -386,7 +358,7 @@ export function createConjunctionFunction(functionDeclarations: ts.FunctionDecla
     );
 }
 
-export function createDisjunctionFunction(functionDeclarations: ts.FunctionDeclaration[], functionName: string) {
+export function createDisjunctionFunction(functionNames: string[], functionName: string) {
     const conditionsIdentifier = ts.createIdentifier('conditions');
     const conditionIdentifier = ts.createIdentifier('condition');
     const errorIdentifier = ts.createIdentifier('error');
@@ -408,7 +380,7 @@ export function createDisjunctionFunction(functionDeclarations: ts.FunctionDecla
                         conditionsIdentifier,
                         undefined,
                         ts.createArrayLiteral(
-                            functionDeclarations.map((functionDeclaration) => functionDeclaration.name!)
+                            functionNames.map((functionName) => ts.createIdentifier(functionName))
                         )
                     )
                 ]

@@ -1,6 +1,7 @@
 import * as ts from 'typescript';
 
 export interface VisitorContext extends PartialVisitorContext {
+    functionNames: Set<string>;
     functionMap: Map<string, ts.FunctionDeclaration>;
 }
 

@@ -9,9 +9,10 @@ const pathIdentifier = ts.createIdentifier('path');
 
 function createArrowFunction(type: ts.Type, optional: boolean, visitorContext: PartialVisitorContext, isAssert: boolean) {
     const functionMap: VisitorContext['functionMap'] = new Map();
-    const functionDeclaration = optional
-        ? visitUndefinedOrType(type, { ...visitorContext, functionMap })
-        : visitType(type, { ...visitorContext, functionMap });
+    const functionNames: VisitorContext['functionNames'] = new Set();
+    const functionIdentifier = optional
+        ? visitUndefinedOrType(type, { ...visitorContext, functionNames, functionMap })
+        : visitType(type, { ...visitorContext, functionNames, functionMap });
 
     const errorIdentifier = ts.createIdentifier('error');
     const declarations = sliceMapValues(functionMap);
@@ -39,7 +40,7 @@ function createArrowFunction(type: ts.Type, optional: boolean, visitorContext: P
             ...declarations,
             ts.createVariableStatement(
                 [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
-                [ts.createVariableDeclaration(errorIdentifier, undefined, ts.createCall(functionDeclaration.name!, undefined, [objectIdentifier]))]
+                [ts.createVariableDeclaration(errorIdentifier, undefined, ts.createCall(functionIdentifier, undefined, [objectIdentifier]))]
             ),
             isAssert
                 ? ts.createIf(

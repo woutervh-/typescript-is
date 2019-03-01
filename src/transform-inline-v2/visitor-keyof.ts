@@ -172,7 +172,7 @@ function visitAny(visitorContext: VisitorContext) {
     return VisitorUtils.getStringFunction(visitorContext);
 }
 
-export function visitType(type: ts.Type, visitorContext: VisitorContext): ts.FunctionDeclaration {
+export function visitType(type: ts.Type, visitorContext: VisitorContext): string {
     if ((ts.TypeFlags.Any & type.flags) !== 0) {
         // Any
         return visitAny(visitorContext);
