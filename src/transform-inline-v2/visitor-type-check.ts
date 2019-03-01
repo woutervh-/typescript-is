@@ -302,7 +302,7 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                                         ts.createCall(
                                             functionDeclaration.name!,
                                             undefined,
-                                            [ts.createPropertyAccess(objectIdentifier, propertyInfo.name)]
+                                            [ts.createElementAccess(objectIdentifier, ts.createStringLiteral(propertyInfo.name))]
                                         )
                                     )
                                 ]
@@ -313,6 +313,10 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                                     undefined,
                                     undefined
                                 )
+                            ),
+                            ts.createIf(
+                                errorIdentifier,
+                                ts.createReturn(errorIdentifier)
                             )
                         ]);
                     }),
