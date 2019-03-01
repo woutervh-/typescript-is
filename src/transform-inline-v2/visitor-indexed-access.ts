@@ -5,6 +5,7 @@ import * as VisitorUtils from './visitor-utils';
 import * as VisitorIsNumber from './visitor-is-number';
 import * as VisitorIsString from './visitor-is-string';
 import * as VisitorTypeCheck from './visitor-type-check';
+import { sliceSet } from './utils';
 
 function visitRegularObjectType(type: ts.ObjectType, indexType: ts.Type, visitorContext: VisitorContext) {
     const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'indexed-access', indexType });
@@ -22,7 +23,7 @@ function visitRegularObjectType(type: ts.ObjectType, indexType: ts.Type, visitor
                 VisitorUtils.createDisjunctionFunction(functionDeclarations, name)
             );
         } else {
-            const strings = [...stringType];
+            const strings = sliceSet(stringType);
             if (strings.some((value) => propertiesInfo.every((propertyInfo) => propertyInfo.name !== value))) {
                 throw new Error('Indexed access on object type with an index that does not exist.');
             }
@@ -54,7 +55,7 @@ function visitTupleObjectType(type: ts.TupleType, indexType: ts.Type, visitorCon
                 VisitorUtils.createDisjunctionFunction(functionDeclarations, name)
             );
         } else {
-            const numbers = [...numberType];
+            const numbers = sliceSet(numberType);
             if (numbers.some((value) => value >= type.typeArguments!.length)) {
                 throw new Error('Indexed access on tuple type exceeds length of tuple.');
             }

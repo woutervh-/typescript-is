@@ -6,18 +6,36 @@ const objectIdentifier = ts.createIdentifier('object');
 const pathIdentifier = ts.createIdentifier('path');
 
 export function getPropertyInfo(symbol: ts.Symbol, visitorContext: VisitorContext) {
-    if (!ts.isPropertySignature(symbol.valueDeclaration)) {
-        throw new Error('Unsupported declaration kind: ' + symbol.valueDeclaration.kind);
+    const name: string | undefined = symbol.name;
+    if (name === undefined) {
+        throw new Error('Missing name in property symbol.');
     }
-    if (symbol.valueDeclaration.type === undefined) {
-        throw new Error('Found property without type.');
+    if ('valueDeclaration' in symbol) {
+        if (!ts.isPropertySignature(symbol.valueDeclaration)) {
+            throw new Error('Unsupported declaration kind: ' + symbol.valueDeclaration.kind);
+        }
+        if (symbol.valueDeclaration.type === undefined) {
+            throw new Error('Found property without type.');
+        }
+        const propertyType = visitorContext.checker.getTypeFromTypeNode(symbol.valueDeclaration.type);
+        return {
+            name,
+            type: propertyType,
+            optional: !!symbol.valueDeclaration.questionToken
+        };
+    } else {
+        const propertyType = (symbol as { type?: ts.Type }).type;
+        const optional = ((symbol as ts.Symbol).flags & ts.SymbolFlags.Optional) !== 0;
+        if (propertyType !== undefined) {
+            return {
+                name,
+                type: propertyType,
+                optional
+            };
+        } else {
+            throw new Error('Expected a valueDeclaration or a property type.');
+        }
     }
-    const propertyType = visitorContext.checker.getTypeFromTypeNode(symbol.valueDeclaration.type);
-    return {
-        name: symbol.name,
-        type: propertyType,
-        optional: !!symbol.valueDeclaration.questionToken
-    };
 }
 
 export function getTypeReferenceMapping(type: ts.TypeReference, visitorContext: VisitorContext) {
@@ -237,8 +255,12 @@ export function getAnyFunction(visitorContext: VisitorContext) {
     return visitorContext.functionMap.get(name)!;
 }
 
-export function createBinaries(expressions: ts.Expression[], operator: ts.BinaryOperator) {
-    return expressions.reduce((previous, expression) => ts.createBinary(previous, operator, expression));
+export function createBinaries(expressions: ts.Expression[], operator: ts.BinaryOperator, baseExpression?: ts.Expression) {
+    if (expressions.length >= 1 || baseExpression === undefined) {
+        return expressions.reduce((previous, expression) => ts.createBinary(previous, operator, expression));
+    } else {
+        return baseExpression;
+    }
 }
 
 export function createAcceptingFunction(functionName: string) {

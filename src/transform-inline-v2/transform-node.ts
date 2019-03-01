@@ -2,6 +2,7 @@ import * as path from 'path';
 import * as ts from 'typescript';
 import { VisitorContext, PartialVisitorContext } from './visitor-context';
 import { visitType, visitUndefinedOrType } from './visitor-type-check';
+import { sliceMapValues } from './utils';
 
 const objectIdentifier = ts.createIdentifier('object');
 const pathIdentifier = ts.createIdentifier('path');
@@ -13,12 +14,7 @@ function createArrowFunction(type: ts.Type, optional: boolean, visitorContext: P
         : visitType(type, { ...visitorContext, functionMap });
 
     const errorIdentifier = ts.createIdentifier('error');
-
-    // Why I can't use [...functionMap.values()] ??? I have no idea... weird as fuck bug.
-    const declarations: ts.FunctionDeclaration[] = [];
-    functionMap.forEach((declaration) => {
-        declarations.push(declaration);
-    });
+    const declarations = sliceMapValues(functionMap);
 
     return ts.createArrowFunction(
         undefined,

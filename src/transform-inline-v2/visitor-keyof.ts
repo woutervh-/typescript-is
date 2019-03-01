@@ -63,7 +63,8 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
             const names = properties.map((property) => property.name);
             const condition = VisitorUtils.createBinaries(
                 names.map((name) => ts.createStrictEquality(objectIdentifier, ts.createStringLiteral(name))),
-                ts.SyntaxKind.BarBarToken
+                ts.SyntaxKind.BarBarToken,
+                ts.createFalse()
             );
             visitorContext.functionMap.set(
                 name,

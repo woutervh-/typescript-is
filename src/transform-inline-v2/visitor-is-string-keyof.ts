@@ -2,10 +2,16 @@ import * as ts from 'typescript';
 import * as tsutils from 'tsutils';
 import { VisitorContext } from './visitor-context';
 import * as VisitorUtils from './visitor-utils';
-import * as VisitorIsStringKeyof from './visitor-is-string-keyof';
 
-function visitRegularObjectType() {
-    return false;
+function visitRegularObjectType(type: ts.Type, visitorContext: VisitorContext) {
+    const stringIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.String);
+    if (stringIndexType) {
+        return true;
+    }
+    const properties = visitorContext.checker.getPropertiesOfType(type);
+    const propertiesInfo = properties.map((property) => VisitorUtils.getPropertyInfo(property, visitorContext));
+    const propertiesName = propertiesInfo.map((propertyInfo) => propertyInfo.name);
+    return new Set(propertiesName);
 }
 
 function visitTupleObjectType() {
@@ -25,7 +31,7 @@ function visitObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
         return visitArrayObjectType();
     } else {
         // Index type is string -> regular object type.
-        return visitRegularObjectType();
+        return visitRegularObjectType(type, visitorContext);
     }
 }
 
@@ -68,12 +74,9 @@ function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorC
     }
 }
 
-function visitIndexType(type: ts.Type, visitorContext: VisitorContext) {
-    const indexedType = (type as { type?: ts.Type }).type;
-    if (indexedType === undefined) {
-        throw new Error('Could not get indexed type of index type.');
-    }
-    return VisitorIsStringKeyof.visitType(indexedType, visitorContext);
+function visitIndexType(): boolean {
+    // TODO: implement a visitor that checks if the index type is an object, then this can be a string.
+    throw new Error('Not yet implemented.');
 }
 
 function visitNonPrimitiveType() {
@@ -82,7 +85,7 @@ function visitNonPrimitiveType() {
 
 function visitLiteralType(type: ts.LiteralType) {
     if (typeof type.value === 'string') {
-        return new Set([type.value]);
+        return false;
     } else if (typeof type.value === 'number') {
         return false;
     } else {
@@ -114,38 +117,47 @@ function visitBigInt() {
 }
 
 function visitBoolean() {
+    // keyof boolean
     return false;
 }
 
 function visitString() {
-    return true;
+    // keyof string
+    return false;
 }
 
 function visitBooleanLiteral() {
+    // keyof true/keyof false
     return false;
 }
 
 function visitNumber() {
+    // keyof number
     return false;
 }
 
 function visitUndefined() {
+    // keyof undefined
     return false;
 }
 
 function visitNull() {
+    // keyof null
     return false;
 }
 
 function visitNever() {
+    // keyof never
     return false;
 }
 
 function visitUnknown() {
+    // key unknown
     return false;
 }
 
 function visitAny() {
+    // keyof any
     return true;
 }
 
@@ -204,7 +216,7 @@ export function visitType(type: ts.Type, visitorContext: VisitorContext): Set<st
         return visitNonPrimitiveType();
     } else if ((ts.TypeFlags.Index & type.flags) !== 0) {
         // Index type: keyof T
-        return visitIndexType(type, visitorContext);
+        return visitIndexType();
     } else if (tsutils.isIndexedAccessType(type)) {
         // Indexed access type: T[U]
         // return visitIndexedAccessType(type, visitorContext);
