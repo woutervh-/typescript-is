@@ -2,23 +2,87 @@ import * as ts from 'typescript';
 import * as tsutils from 'tsutils';
 import { VisitorContext } from './visitor-context';
 import * as VisitorUtils from './visitor-utils';
+import * as VisitorIsNumber from './visitor-is-number';
+import * as VisitorIsString from './visitor-is-string';
+import * as VisitorTypeCheck from './visitor-type-check';
 
 function visitRegularObjectType(type: ts.ObjectType, indexType: ts.Type, visitorContext: VisitorContext) {
-    // TODO: { ... }[I]
-    throw new Error('Not yet implemented.');
+    const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'indexed-access', indexType });
+    if (!visitorContext.functionMap.has(name)) {
+        const properties = visitorContext.checker.getPropertiesOfType(type);
+        const propertiesInfo = properties.map((property) => VisitorUtils.getPropertyInfo(property, visitorContext));
+        const stringType = VisitorIsString.visitType(indexType, visitorContext);
+        if (typeof stringType === 'boolean') {
+            if (!stringType) {
+                throw new Error('A non-string type was used to index an object type.');
+            }
+            const functionDeclarations = propertiesInfo.map((propertyInfo) => VisitorTypeCheck.visitType(propertyInfo.type, visitorContext));
+            visitorContext.functionMap.set(
+                name,
+                VisitorUtils.createDisjunctionFunction(functionDeclarations, name)
+            );
+        } else {
+            const strings = [...stringType];
+            if (strings.some((value) => propertiesInfo.every((propertyInfo) => propertyInfo.name !== value))) {
+                throw new Error('Indexed access on object type with an index that does not exist.');
+            }
+            const stringPropertiesInfo = strings.map((value) => propertiesInfo.find((propertyInfo) => propertyInfo.name === value)!);
+            const functionDeclarations = stringPropertiesInfo.map((propertyInfo) => VisitorTypeCheck.visitType(propertyInfo.type, visitorContext));
+            visitorContext.functionMap.set(
+                name,
+                VisitorUtils.createDisjunctionFunction(functionDeclarations, name)
+            );
+        }
+    }
+    return visitorContext.functionMap.get(name)!;
 }
 
-function visitTupleObjectType(type: ts.ObjectType, indexType: ts.Type, visitorContext: VisitorContext) {
-    // TODO: [T, U][I]
-    type Foo = [number, string];
-    type Bar = Foo[2];
-    type Baz = Foo[any];
-    return VisitorUtils.getNumberFunction(visitorContext);
+function visitTupleObjectType(type: ts.TupleType, indexType: ts.Type, visitorContext: VisitorContext) {
+    if (type.typeArguments === undefined) {
+        throw new Error('Expected tuple type to have type arguments.');
+    }
+    const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'indexed-access', indexType });
+    if (!visitorContext.functionMap.has(name)) {
+        const numberType = VisitorIsNumber.visitType(indexType, visitorContext);
+        if (typeof numberType === 'boolean') {
+            if (!numberType) {
+                throw new Error('A non-number type was used to index a tuple type.');
+            }
+            const functionDeclarations = type.typeArguments.map((type) => VisitorTypeCheck.visitType(type, visitorContext));
+            visitorContext.functionMap.set(
+                name,
+                VisitorUtils.createDisjunctionFunction(functionDeclarations, name)
+            );
+        } else {
+            const numbers = [...numberType];
+            if (numbers.some((value) => value >= type.typeArguments!.length)) {
+                throw new Error('Indexed access on tuple type exceeds length of tuple.');
+            }
+            const functionDeclarations = numbers.map((value) => VisitorTypeCheck.visitType(type.typeArguments![value], visitorContext));
+            visitorContext.functionMap.set(
+                name,
+                VisitorUtils.createDisjunctionFunction(functionDeclarations, name)
+            );
+        }
+    }
+    return visitorContext.functionMap.get(name)!;
 }
 
 function visitArrayObjectType(type: ts.ObjectType, indexType: ts.Type, visitorContext: VisitorContext) {
-    // TODO: Array<T>[I]
-    return VisitorUtils.getNumberFunction(visitorContext);
+    const numberIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.Number);
+    if (numberIndexType === undefined) {
+        throw new Error('Expected array ObjectType to have a number index type.');
+    }
+    const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'indexed-access', indexType });
+    if (!visitorContext.functionMap.has(name)) {
+        const numberType = VisitorIsNumber.visitType(indexType, visitorContext);
+        if (numberType !== false) {
+            return VisitorTypeCheck.visitType(numberIndexType, visitorContext);
+        } else {
+            throw new Error('A non-number type was used to index an array type.');
+        }
+    }
+    return visitorContext.functionMap.get(name)!;
 }
 
 function visitObjectType(type: ts.ObjectType, indexType: ts.Type, visitorContext: VisitorContext) {
@@ -35,7 +99,7 @@ function visitObjectType(type: ts.ObjectType, indexType: ts.Type, visitorContext
 }
 
 function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, indexType: ts.Type, visitorContext: VisitorContext) {
-    const name = VisitorUtils.getFullTypeName(type, visitorContext, 'keyof');
+    const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'indexed-access', indexType });
     if (!visitorContext.functionMap.has(name)) {
         const functionDeclarations = type.types.map((type) => visitType(type, indexType, visitorContext));
 

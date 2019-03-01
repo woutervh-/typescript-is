@@ -5,6 +5,21 @@ import { VisitorContext } from './visitor-context';
 const objectIdentifier = ts.createIdentifier('object');
 const pathIdentifier = ts.createIdentifier('path');
 
+export function getPropertyInfo(symbol: ts.Symbol, visitorContext: VisitorContext) {
+    if (!ts.isPropertySignature(symbol.valueDeclaration)) {
+        throw new Error('Unsupported declaration kind: ' + symbol.valueDeclaration.kind);
+    }
+    if (symbol.valueDeclaration.type === undefined) {
+        throw new Error('Found property without type.');
+    }
+    const propertyType = visitorContext.checker.getTypeFromTypeNode(symbol.valueDeclaration.type);
+    return {
+        name: symbol.name,
+        type: propertyType,
+        optional: !!symbol.valueDeclaration.questionToken
+    };
+}
+
 export function getTypeReferenceMapping(type: ts.TypeReference, visitorContext: VisitorContext) {
     const mapping: Map<ts.Type, ts.Type> = new Map();
     (function checkBaseTypes(type: ts.TypeReference) {
@@ -48,11 +63,30 @@ export function getResolvedTypeParameter(type: ts.Type, visitorContext: VisitorC
     return mappedType;
 }
 
-export function getFullTypeName(type: ts.Type, visitorContext: VisitorContext, mode: 'type-check' | 'keyof') {
+interface TypeCheckNameMode {
+    type: 'type-check';
+}
+
+interface KeyofNameMode {
+    type: 'keyof';
+}
+
+interface IndexedAccessNameMode {
+    type: 'indexed-access';
+    indexType: ts.Type;
+}
+
+type NameMode = TypeCheckNameMode | KeyofNameMode | IndexedAccessNameMode;
+
+export function getFullTypeName(type: ts.Type, visitorContext: VisitorContext, mode: NameMode) {
     // Internal TypeScript API:
     let name = `_${(type as unknown as { id: string }).id}`;
-    if (mode === 'keyof') {
+    if (mode.type === 'keyof') {
         name += '_keyof';
+    }
+    if (mode.type === 'indexed-access') {
+        const indexTypeName = getFullTypeName(mode.indexType, visitorContext, { type: 'type-check' });
+        name += `_ia__${indexTypeName}`;
     }
     for (const mapping of visitorContext.typeMapperStack) {
         mapping.forEach((typeArgument) => {

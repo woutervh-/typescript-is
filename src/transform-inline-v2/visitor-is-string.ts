@@ -29,38 +29,38 @@ function visitObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
 }
 
 function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorContext: VisitorContext) {
-    const numberTypes = type.types.map((type) => visitType(type, visitorContext));
+    const stringTypes = type.types.map((type) => visitType(type, visitorContext));
 
     if (tsutils.isUnionType(type)) {
-        if (numberTypes.some((numberType) => numberType === false)) {
+        if (stringTypes.some((stringType) => stringType === false)) {
             return false;
         }
-        if (numberTypes.some((numberType) => numberType === true)) {
+        if (stringTypes.some((stringType) => stringType === true)) {
             return true;
         }
-        const numbers: Set<number> = new Set();
-        for (const numberType of numberTypes) {
-            for (const value of numberType as Set<number>) {
-                numbers.add(value);
+        const strings: Set<string> = new Set();
+        for (const stringType of stringTypes) {
+            for (const value of stringType as Set<string>) {
+                strings.add(value);
             }
         }
-        return numbers;
+        return strings;
     } else {
-        const numbers: Set<number> = new Set();
-        for (const numberType of numberTypes) {
-            if (typeof numberType !== 'boolean') {
-                for (const value of numberType) {
-                    numbers.add(value);
+        const strings: Set<string> = new Set();
+        for (const stringType of stringTypes) {
+            if (typeof stringType !== 'boolean') {
+                for (const value of stringType) {
+                    strings.add(value);
                 }
             }
         }
-        if (numbers.size === 1) {
-            return numbers;
+        if (strings.size === 1) {
+            return strings;
         }
-        if (numbers.size > 1) {
+        if (strings.size > 1) {
             return false;
         }
-        if (numberTypes.some((numberType) => numberType === true)) {
+        if (stringTypes.some((stringType) => stringType === true)) {
             return true;
         }
         return false;
@@ -68,7 +68,7 @@ function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorC
 }
 
 function visitIndexType(): boolean {
-    // TODO: implement a visitor that checks if the index type is an array/tuple, then this can be a number.
+    // TODO: implement a visitor that checks if the index type is an object, then this can be a string.
     throw new Error('Not yet implemented.');
 }
 
@@ -78,9 +78,9 @@ function visitNonPrimitiveType() {
 
 function visitLiteralType(type: ts.LiteralType) {
     if (typeof type.value === 'string') {
-        return false;
-    } else if (typeof type.value === 'number') {
         return new Set([type.value]);
+    } else if (typeof type.value === 'number') {
+        return false;
     } else {
         throw new Error('Type value is expected to be a string or number.');
     }
@@ -114,7 +114,7 @@ function visitBoolean() {
 }
 
 function visitString() {
-    return false;
+    return true;
 }
 
 function visitBooleanLiteral() {
@@ -122,7 +122,7 @@ function visitBooleanLiteral() {
 }
 
 function visitNumber() {
-    return true;
+    return false;
 }
 
 function visitUndefined() {
@@ -145,7 +145,7 @@ function visitAny() {
     return true;
 }
 
-export function visitType(type: ts.Type, visitorContext: VisitorContext): Set<number> | boolean {
+export function visitType(type: ts.Type, visitorContext: VisitorContext): Set<string> | boolean {
     if ((ts.TypeFlags.Any & type.flags) !== 0) {
         // Any
         return visitAny();

@@ -6,7 +6,7 @@ import * as VisitorUtils from './visitor-utils';
 const objectIdentifier = ts.createIdentifier('object');
 
 function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorContext: VisitorContext) {
-    const name = VisitorUtils.getFullTypeName(type, visitorContext, 'keyof');
+    const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'keyof' });
     if (!visitorContext.functionMap.has(name)) {
         const functionDeclarations = type.types.map((type) => visitType(type, visitorContext));
 
@@ -49,7 +49,7 @@ function visitLiteralType(visitorContext: VisitorContext) {
 }
 
 function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
-    const name = VisitorUtils.getFullTypeName(type, visitorContext, 'keyof');
+    const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'keyof' });
     if (!visitorContext.functionMap.has(name)) {
         const stringIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.String);
         if (stringIndexType) {

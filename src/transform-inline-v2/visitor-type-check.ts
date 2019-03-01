@@ -8,23 +8,8 @@ import * as VisitorIndexedAccess from './visitor-indexed-access';
 const objectIdentifier = ts.createIdentifier('object');
 const pathIdentifier = ts.createIdentifier('path');
 
-function getPropertyInfo(symbol: ts.Symbol, visitorContext: VisitorContext) {
-    if (!ts.isPropertySignature(symbol.valueDeclaration)) {
-        throw new Error('Unsupported declaration kind: ' + symbol.valueDeclaration.kind);
-    }
-    if (symbol.valueDeclaration.type === undefined) {
-        throw new Error('Found property without type.');
-    }
-    const propertyType = visitorContext.checker.getTypeFromTypeNode(symbol.valueDeclaration.type);
-    return {
-        name: symbol.name,
-        type: propertyType,
-        optional: !!symbol.valueDeclaration.questionToken
-    };
-}
-
 function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext) {
-    const name = VisitorUtils.getFullTypeName(type, visitorContext, 'type-check');
+    const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'type-check' });
     if (!visitorContext.functionMap.has(name)) {
         if (type.typeArguments === undefined) {
             throw new Error('Expected tuple type to have type arguments.');
@@ -127,7 +112,7 @@ function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext
 }
 
 function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
-    const name = VisitorUtils.getFullTypeName(type, visitorContext, 'type-check');
+    const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'type-check' });
     if (!visitorContext.functionMap.has(name)) {
         const numberIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.Number);
         if (numberIndexType === undefined) {
@@ -239,7 +224,7 @@ function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContex
 }
 
 function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
-    const name = VisitorUtils.getFullTypeName(type, visitorContext, 'type-check');
+    const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'type-check' });
     if (!visitorContext.functionMap.has(name)) {
         const properties = visitorContext.checker.getPropertiesOfType(type);
         // const keyIdentifier = ts.createIdentifier('key');
@@ -296,7 +281,7 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                         )
                     ),
                     ...properties.map((property) => {
-                        const propertyInfo = getPropertyInfo(property, visitorContext);
+                        const propertyInfo = VisitorUtils.getPropertyInfo(property, visitorContext);
                         const functionDeclaration = propertyInfo.optional
                             ? visitUndefinedOrType(propertyInfo.type, visitorContext)
                             : visitType(propertyInfo.type, visitorContext);
@@ -395,7 +380,7 @@ function visitObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
 
 function visitLiteralType(type: ts.LiteralType, visitorContext: VisitorContext) {
     if (typeof type.value === 'string') {
-        const name = VisitorUtils.getFullTypeName(type, visitorContext, 'type-check');
+        const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'type-check' });
         if (!visitorContext.functionMap.has(name)) {
             visitorContext.functionMap.set(
                 name,
@@ -411,7 +396,7 @@ function visitLiteralType(type: ts.LiteralType, visitorContext: VisitorContext) 
         }
         return visitorContext.functionMap.get(name)!;
     } else if (typeof type.value === 'number') {
-        const name = VisitorUtils.getFullTypeName(type, visitorContext, 'type-check');
+        const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'type-check' });
         if (!visitorContext.functionMap.has(name)) {
             visitorContext.functionMap.set(
                 name,
@@ -432,7 +417,7 @@ function visitLiteralType(type: ts.LiteralType, visitorContext: VisitorContext) 
 }
 
 function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorContext: VisitorContext) {
-    const name = VisitorUtils.getFullTypeName(type, visitorContext, 'type-check');
+    const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'type-check' });
     if (!visitorContext.functionMap.has(name)) {
         const functionDeclarations = type.types.map((type) => visitType(type, visitorContext));
 
