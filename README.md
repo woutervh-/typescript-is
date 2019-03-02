@@ -234,6 +234,7 @@ Features that are planned:
 Give the reason why the assertion failed to the user as part of the error.~~
 [issue 2](https://github.com/woutervh-/typescript-is/issues/2)
 Done as of version `0.10.0`.
+* Support detailed error message when using the decorators `@ValidateClass` and `@AssertType`.
 * Detect additional keys. [issue 11](https://github.com/woutervh-/typescript-is/issues/11)
 * Promise support. Something like `assertOrReject<Type>(object)` will either `resolve(object)` or `reject(error)`.
 * Optimize the generated conditions. Things like `false || "key" === "key"` can be simplified. Might be more interesting to publish a different library that can transform a TypeScript AST, and then use it here, or use an existing one. Might be out of scope, as there are plenty of minifiers/uglifiers/manglers out there already.
