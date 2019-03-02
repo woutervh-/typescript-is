@@ -72,6 +72,7 @@ function visitArrayObjectType(type: ts.ObjectType, indexType: ts.Type, visitorCo
 }
 
 function visitObjectType(type: ts.ObjectType, indexType: ts.Type, visitorContext: VisitorContext) {
+    VisitorUtils.throwErrorIfClass(type);
     if (tsutils.isTupleType(type)) {
         // Tuple with finite length.
         return visitTupleObjectType(type, indexType, visitorContext);
@@ -221,11 +222,7 @@ export function visitType(type: ts.Type, indexType: ts.Type, visitorContext: Vis
         return visitTypeParameter(type, indexType, visitorContext);
     } else if (tsutils.isObjectType(type)) {
         // Object type (including interfaces, arrays, tuples)
-        if ((ts.ObjectFlags.Class & type.objectFlags) !== 0) {
-            throw new Error('Classes cannot be validated. Please check the README.');
-        } else {
-            return visitObjectType(type, indexType, visitorContext);
-        }
+        return visitObjectType(type, indexType, visitorContext);
     } else if (tsutils.isLiteralType(type)) {
         // Literal string/number types ('foo')
         return visitLiteralType();

@@ -5,6 +5,12 @@ import { VisitorContext } from './visitor-context';
 const objectIdentifier = ts.createIdentifier('object');
 const pathIdentifier = ts.createIdentifier('path');
 
+export function throwErrorIfClass(type: ts.ObjectType) {
+    if ((ts.ObjectFlags.Class & type.objectFlags) !== 0) {
+        throw new Error('Classes cannot be validated. https://github.com/woutervh-/typescript-is/issues/3');
+    }
+}
+
 export function setFunctionIfNotExists(name: string, visitorContext: VisitorContext, factory: () => ts.FunctionDeclaration) {
     if (!visitorContext.functionNames.has(name)) {
         visitorContext.functionNames.add(name);
@@ -19,6 +25,9 @@ export function getPropertyInfo(symbol: ts.Symbol, visitorContext: VisitorContex
         throw new Error('Missing name in property symbol.');
     }
     if ('valueDeclaration' in symbol) {
+        if ((symbol.valueDeclaration.kind & ts.SyntaxKind.MethodSignature) !== 0) {
+            throw new Error('Encountered a method declaration, but methods are not supported. Issue: https://github.com/woutervh-/typescript-is/issues/5');
+        }
         if (!ts.isPropertySignature(symbol.valueDeclaration)) {
             throw new Error('Unsupported declaration kind: ' + symbol.valueDeclaration.kind);
         }
