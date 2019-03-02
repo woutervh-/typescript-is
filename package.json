@@ -43,11 +43,11 @@
     "typescript": ">=2.9.1"
   },
   "devDependencies": {
-    "@types/mocha": "^5.2.5",
+    "@types/mocha": "^5.2.6",
     "@types/nested-error-stacks": "^2.1.0",
     "@types/node": "*",
     "copy": "^0.3.2",
-    "mocha": "^5.2.0",
+    "mocha": "^6.0.2",
     "reflect-metadata": "^0.1.12",
     "rimraf": "^2.6.2",
     "ts-node": "^8.0.1",
