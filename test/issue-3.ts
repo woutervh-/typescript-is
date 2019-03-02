@@ -37,7 +37,7 @@ function visitNodeAndChildren(node: ts.Node) {
 
 describe('visitor', () => {
     describe('visitor test-fixtures/issue-3.ts', () => {
-        const expectedMessageRegExp = /Classes cannot be validated. Please check the README.$/;
+        const expectedMessageRegExp = /Classes cannot be validated\. https:\/\/github\.com\/woutervh-\/typescript-is\/issues\/3$/;
 
         it('should throw an error for classes', () => {
             assert.throws(() => {
