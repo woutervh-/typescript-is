@@ -3,6 +3,7 @@ import * as tsutils from 'tsutils';
 import { VisitorContext } from './visitor-context';
 import * as VisitorUtils from './visitor-utils';
 import * as VisitorIsStringKeyof from './visitor-is-string-keyof';
+import { setUnion, setIntersection } from './utils';
 
 function visitRegularObjectType() {
     return false;
@@ -33,38 +34,39 @@ function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorC
     const stringTypes = type.types.map((type) => visitType(type, visitorContext));
 
     if (tsutils.isUnionType(type)) {
-        if (stringTypes.some((stringType) => stringType === false)) {
-            return false;
-        }
         if (stringTypes.some((stringType) => stringType === true)) {
+            // If T or U is the string type, then T | U is assignable to the string type.
             return true;
         }
-        const strings: Set<string> = new Set();
-        for (const stringType of stringTypes) {
-            for (const value of stringType as Set<string>) {
-                strings.add(value);
+        if (stringTypes.some((stringType) => stringType !== false)) {
+            // Some T or U is a union of specific string literals.
+            const stringSets = stringTypes.filter((stringType) => stringType !== false) as Set<string>[];
+            let strings = stringSets[0];
+            for (let i = 1; i < stringSets.length; i++) {
+                strings = setUnion(strings, stringSets[i]);
             }
-        }
-        return strings;
-    } else {
-        const strings: Set<string> = new Set();
-        for (const stringType of stringTypes) {
-            if (typeof stringType !== 'boolean') {
-                for (const value of stringType) {
-                    strings.add(value);
-                }
-            }
-        }
-        if (strings.size === 1) {
             return strings;
-        }
-        if (strings.size > 1) {
+        } else {
+            // Both T and U are not assignable to string.
             return false;
         }
-        if (stringTypes.some((stringType) => stringType === true)) {
+    } else {
+        if (stringTypes.some((stringType) => stringType === false)) {
+            // If T or U is not assignable to stirng, then T & U is not assignable to string.
+            return false;
+        }
+        if (stringTypes.some((stringType) => stringType !== true)) {
+            // Some T or U is a union of specific string literals.
+            const stringSets = stringTypes.filter((stringType) => stringType !== true) as Set<string>[];
+            let strings = stringSets[0];
+            for (let i = 1; i < stringSets.length; i++) {
+                strings = setIntersection(strings, stringSets[i]);
+            }
+            return strings;
+        } else {
+            // Both T and U are assignable to string.
             return true;
         }
-        return false;
     }
 }
 

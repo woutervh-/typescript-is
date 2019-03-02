@@ -8,7 +8,7 @@ import { transformNode } from '../src/transform-inline-v2/transform-node';
 import { PartialVisitorContext } from '../src/transform-inline-v2/visitor-context';
 
 const configFilename = path.resolve('tsconfig.json');
-const inFile = path.resolve('test', 'case-1.ts');
+const inFile = path.resolve('test', 'case-13.ts');
 const content = ts.sys.readFile(configFilename);
 if (content === undefined) {
     throw new Error('Could not read config file.');

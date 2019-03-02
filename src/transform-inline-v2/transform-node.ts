@@ -10,7 +10,7 @@ const pathIdentifier = ts.createIdentifier('path');
 function createArrowFunction(type: ts.Type, optional: boolean, visitorContext: PartialVisitorContext, isAssert: boolean) {
     const functionMap: VisitorContext['functionMap'] = new Map();
     const functionNames: VisitorContext['functionNames'] = new Set();
-    const functionIdentifier = optional
+    const functionName = optional
         ? visitUndefinedOrType(type, { ...visitorContext, functionNames, functionMap })
         : visitType(type, { ...visitorContext, functionNames, functionMap });
 
@@ -40,15 +40,15 @@ function createArrowFunction(type: ts.Type, optional: boolean, visitorContext: P
             ...declarations,
             ts.createVariableStatement(
                 [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
-                [ts.createVariableDeclaration(errorIdentifier, undefined, ts.createCall(functionIdentifier, undefined, [objectIdentifier]))]
+                [ts.createVariableDeclaration(errorIdentifier, undefined, ts.createCall(ts.createIdentifier(functionName), undefined, [objectIdentifier]))]
             ),
             isAssert
                 ? ts.createIf(
                     errorIdentifier,
-                    ts.createThrow(ts.createNew(ts.createLiteral('Error'), undefined, [errorIdentifier])),
+                    ts.createThrow(ts.createNew(ts.createIdentifier('Error'), undefined, [errorIdentifier])),
                     ts.createReturn(objectIdentifier)
                 )
-                : ts.createReturn(ts.createStrictInequality(errorIdentifier, ts.createNull()))
+                : ts.createReturn(ts.createStrictEquality(errorIdentifier, ts.createNull()))
         ])
     );
 }

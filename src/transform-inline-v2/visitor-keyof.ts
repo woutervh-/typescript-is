@@ -7,24 +7,16 @@ const objectIdentifier = ts.createIdentifier('object');
 
 function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorContext: VisitorContext) {
     const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'keyof' });
-    if (!visitorContext.functionMap.has(name)) {
-        const functionDeclarations = type.types.map((type) => visitType(type, visitorContext));
-
+    return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
+        const functionNames = type.types.map((type) => visitType(type, visitorContext));
         if (tsutils.isUnionType(type)) {
             // keyof (T | U) = (keyof T) & (keyof U)
-            visitorContext.functionMap.set(
-                name,
-                VisitorUtils.createConjunctionFunction(functionDeclarations, name)
-            );
+            return VisitorUtils.createConjunctionFunction(functionNames, name);
         } else {
             // keyof (T & U) = (keyof T) | (keyof U)
-            visitorContext.functionMap.set(
-                name,
-                VisitorUtils.createDisjunctionFunction(functionDeclarations, name)
-            );
+            return VisitorUtils.createDisjunctionFunction(functionNames, name);
         }
-    }
-    return visitorContext.functionMap.get(name)!;
+    });
 }
 
 function visitIndexType(visitorContext: VisitorContext) {
@@ -49,34 +41,30 @@ function visitLiteralType(visitorContext: VisitorContext) {
 }
 
 function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
-    const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'keyof' });
-    if (!visitorContext.functionMap.has(name)) {
-        const stringIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.String);
-        if (stringIndexType) {
-            // There is a string index type { [Key: string]: T }.
-            // keyof { [Key: string]: U } = string
-            return VisitorUtils.getStringFunction(visitorContext);
-        } else {
+    const stringIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.String);
+    if (stringIndexType) {
+        // There is a string index type { [Key: string]: T }.
+        // keyof { [Key: string]: U } = string
+        return VisitorUtils.getStringFunction(visitorContext);
+    } else {
+        const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'keyof' });
+        return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
             // In keyof mode we check if the object is equal to one of the property names.
             // keyof { x: T } = x
             const properties = visitorContext.checker.getPropertiesOfType(type);
             const names = properties.map((property) => property.name);
             const condition = VisitorUtils.createBinaries(
-                names.map((name) => ts.createStrictEquality(objectIdentifier, ts.createStringLiteral(name))),
-                ts.SyntaxKind.BarBarToken,
-                ts.createFalse()
+                names.map((name) => ts.createStrictInequality(objectIdentifier, ts.createStringLiteral(name))),
+                ts.SyntaxKind.AmpersandAmpersandToken,
+                ts.createTrue()
             );
-            visitorContext.functionMap.set(
-                name,
-                VisitorUtils.createAssertionFunction(
-                    ts.createLogicalNot(condition),
-                    `expected ${names.map((name) => `'${name}'`).join('|')}`,
-                    name
-                )
+            return VisitorUtils.createAssertionFunction(
+                condition,
+                `expected ${names.map((name) => `'${name}'`).join('|')}`,
+                name
             );
-        }
+        });
     }
-    return visitorContext.functionMap.get(name)!;
 }
 
 function visitTupleObjectType(visitorContext: VisitorContext) {

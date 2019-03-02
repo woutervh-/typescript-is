@@ -2,6 +2,7 @@ import * as ts from 'typescript';
 import * as tsutils from 'tsutils';
 import { VisitorContext } from './visitor-context';
 import * as VisitorUtils from './visitor-utils';
+import { setIntersection, setUnion } from './utils';
 
 function visitRegularObjectType(type: ts.Type, visitorContext: VisitorContext) {
     const stringIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.String);
@@ -39,38 +40,40 @@ function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorC
     const stringTypes = type.types.map((type) => visitType(type, visitorContext));
 
     if (tsutils.isUnionType(type)) {
+        // keyof (T | U) = (keyof T) & (keyof U)
         if (stringTypes.some((stringType) => stringType === false)) {
+            // If keyof T or keyof U is not assignable to string then keyof T & keyof U is not assignable to string.
             return false;
         }
-        if (stringTypes.some((stringType) => stringType === true)) {
-            return true;
-        }
-        const strings: Set<string> = new Set();
-        for (const stringType of stringTypes) {
-            for (const value of stringType as Set<string>) {
-                strings.add(value);
+        if (stringTypes.some((stringType) => stringType !== true)) {
+            // Some keyof T or keyof U is a union of specific string literals.
+            const stringSets = stringTypes.filter((stringType) => stringType !== true) as Set<string>[];
+            let strings = stringSets[0];
+            for (let i = 1; i < stringSets.length; i++) {
+                strings = setIntersection(strings, stringSets[i]);
             }
-        }
-        return strings;
-    } else {
-        const strings: Set<string> = new Set();
-        for (const stringType of stringTypes) {
-            if (typeof stringType !== 'boolean') {
-                for (const value of stringType) {
-                    strings.add(value);
-                }
-            }
-        }
-        if (strings.size === 1) {
             return strings;
-        }
-        if (strings.size > 1) {
-            return false;
-        }
-        if (stringTypes.some((stringType) => stringType === true)) {
+        } else {
+            // Both keyof T and keyof U are the string type.
             return true;
         }
-        return false;
+    } else {
+        // keyof (T & U) = (keyof T) | (keyof U)
+        if (stringTypes.some((stringType) => stringType === true)) {
+            // If keyof T or keyof U is the string type then keyof T | keyof U is assignable to the string type.
+            return true;
+        }
+        if (stringTypes.some((stringType) => stringType !== false)) {
+            const stringSets = stringTypes.filter((stringType) => stringType !== false) as Set<string>[];
+            let strings = stringSets[0];
+            for (let i = 1; i < stringSets.length; i++) {
+                strings = setUnion(strings, stringSets[i]);
+            }
+            return strings;
+        } else {
+            // Both keyof T and keyof U are not assignable to the string type.
+            return false;
+        }
     }
 }
 

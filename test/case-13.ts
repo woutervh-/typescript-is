@@ -2,25 +2,42 @@ import * as assert from 'assert';
 import { is } from '../index';
 
 describe('is', () => {
-    describe('is<keyof { foo: any, bar: never }>', () => {
-        it('should return true for \'foo\' and \'bar\'', () => {
-            assert.strictEqual(is<keyof { foo: any, bar: never }>('foo'), true);
-            assert.strictEqual(is<keyof { foo: any, bar: never }>('bar'), true);
+    describe('is<Extractor<any | Item>>', () => {
+        interface Item {
+            foo: 'bar';
+        }
+
+        interface Extractor<T> {
+            key: keyof T;
+            value: T[keyof T];
+        }
+
+        it('should return true for an object with key equal to any string and value equal to any', () => {
+            type Foo = {
+                key: keyof (any | Item);
+                value: (any | Item)[keyof (any | Item)];
+            };
+            assert.strictEqual(is<Extractor<any | Item>>({ key: '', value: 'bar' }), true);
+            assert.strictEqual(is<Extractor<any | Item>>({ key: 'foo', value: 'bar' }), true);
+            assert.strictEqual(is<Extractor<any | Item>>({ key: 'foo', value: '' }), true);
+            assert.strictEqual(is<Extractor<any | Item>>({ key: 'foo', value: null }), true);
+            assert.strictEqual(is<Extractor<any | Item>>({ key: 'foo', value: false }), true);
+            assert.strictEqual(is<Extractor<any | Item>>({ key: 'foo', value: Number.NaN }), true);
         });
 
-        it('should return false for other strings', () => {
-            assert.strictEqual(is<keyof { foo: any, bar: never }>(''), false);
-            assert.strictEqual(is<keyof { foo: any, bar: never }>('foobar'), false);
+        it('should return false for objects missing either key or value', () => {
+            assert.strictEqual(is<Extractor<any | Item>>({}), false);
+            assert.strictEqual(is<Extractor<any | Item>>({ key: 'foo' }), false);
+            assert.strictEqual(is<Extractor<any | Item>>({ value: 'bar' }), false);
+            assert.strictEqual(is<Extractor<any | Item>>({ wrong: 'wrong' }), false);
         });
 
-        it('should return false for other non-strings', () => {
-            assert.strictEqual(is<keyof { foo: any, bar: never }>(0), false);
-            assert.strictEqual(is<keyof { foo: any, bar: never }>(Number.NaN), false);
-            assert.strictEqual(is<keyof { foo: any, bar: never }>(true), false);
-            assert.strictEqual(is<keyof { foo: any, bar: never }>(null), false);
-            assert.strictEqual(is<keyof { foo: any, bar: never }>(undefined), false);
-            assert.strictEqual(is<keyof { foo: any, bar: never }>({}), false);
-            assert.strictEqual(is<keyof { foo: any, bar: never }>([]), false);
+        it('should return false for other non-objects', () => {
+            assert.strictEqual(is<Extractor<any | Item>>(null), false);
+            assert.strictEqual(is<Extractor<any | Item>>(undefined), false);
+            assert.strictEqual(is<Extractor<any | Item>>([]), false);
+            assert.strictEqual(is<Extractor<any | Item>>(true), false);
+            assert.strictEqual(is<Extractor<any | Item>>(0), false);
         });
     });
 
@@ -102,6 +119,28 @@ describe('is', () => {
         });
     });
 
+    describe('is<keyof { foo: any, bar: never }>', () => {
+        it('should return true for \'foo\' and \'bar\'', () => {
+            assert.strictEqual(is<keyof { foo: any, bar: never }>('foo'), true);
+            assert.strictEqual(is<keyof { foo: any, bar: never }>('bar'), true);
+        });
+
+        it('should return false for other strings', () => {
+            assert.strictEqual(is<keyof { foo: any, bar: never }>(''), false);
+            assert.strictEqual(is<keyof { foo: any, bar: never }>('foobar'), false);
+        });
+
+        it('should return false for other non-strings', () => {
+            assert.strictEqual(is<keyof { foo: any, bar: never }>(0), false);
+            assert.strictEqual(is<keyof { foo: any, bar: never }>(Number.NaN), false);
+            assert.strictEqual(is<keyof { foo: any, bar: never }>(true), false);
+            assert.strictEqual(is<keyof { foo: any, bar: never }>(null), false);
+            assert.strictEqual(is<keyof { foo: any, bar: never }>(undefined), false);
+            assert.strictEqual(is<keyof { foo: any, bar: never }>({}), false);
+            assert.strictEqual(is<keyof { foo: any, bar: never }>([]), false);
+        });
+    });
+
     describe('is<Extractor<{} | Item>>', () => {
         interface Item {
             foo: 'bar';
@@ -124,41 +163,6 @@ describe('is', () => {
             assert.strictEqual(is<Extractor<{} | Item>>([]), false);
             assert.strictEqual(is<Extractor<{} | Item>>(null), false);
             assert.strictEqual(is<Extractor<{} | Item>>(undefined), false);
-        });
-    });
-
-    describe('is<Extractor<any | Item>>', () => {
-        interface Item {
-            foo: 'bar';
-        }
-
-        interface Extractor<T> {
-            key: keyof T;
-            value: T[keyof T];
-        }
-
-        it('should return true for an object with key equal to any string and value equal to any', () => {
-            assert.strictEqual(is<Extractor<any | Item>>({ key: '', value: 'bar' }), true);
-            assert.strictEqual(is<Extractor<any | Item>>({ key: 'foo', value: 'bar' }), true);
-            assert.strictEqual(is<Extractor<any | Item>>({ key: 'foo', value: '' }), true);
-            assert.strictEqual(is<Extractor<any | Item>>({ key: 'foo', value: null }), true);
-            assert.strictEqual(is<Extractor<any | Item>>({ key: 'foo', value: false }), true);
-            assert.strictEqual(is<Extractor<any | Item>>({ key: 'foo', value: Number.NaN }), true);
-        });
-
-        it('should return false for objects missing either key or value', () => {
-            assert.strictEqual(is<Extractor<any | Item>>({}), false);
-            assert.strictEqual(is<Extractor<any | Item>>({ key: 'foo' }), false);
-            assert.strictEqual(is<Extractor<any | Item>>({ value: 'bar' }), false);
-            assert.strictEqual(is<Extractor<any | Item>>({ wrong: 'wrong' }), false);
-        });
-
-        it('should return false for other non-objects', () => {
-            assert.strictEqual(is<Extractor<any | Item>>(null), false);
-            assert.strictEqual(is<Extractor<any | Item>>(undefined), false);
-            assert.strictEqual(is<Extractor<any | Item>>([]), false);
-            assert.strictEqual(is<Extractor<any | Item>>(true), false);
-            assert.strictEqual(is<Extractor<any | Item>>(0), false);
         });
     });
 

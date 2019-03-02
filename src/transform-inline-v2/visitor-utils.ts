@@ -114,10 +114,11 @@ export function getFullTypeName(type: ts.Type, visitorContext: VisitorContext, m
         const indexTypeName = getFullTypeName(mode.indexType, visitorContext, { type: 'type-check' });
         name += `_ia__${indexTypeName}`;
     }
-    for (const mapping of visitorContext.typeMapperStack) {
-        mapping.forEach((typeArgument) => {
-            name += `_${(typeArgument as unknown as { id: string }).id}`;
-        });
+    if (tsutils.isTypeReference(type) && type.typeArguments !== undefined) {
+        for (const typeArgument of type.typeArguments) {
+            const resolvedType = getResolvedTypeParameter(typeArgument, visitorContext);
+            name += `_${(resolvedType as unknown as { id: string }).id}`;
+        }
     }
     return name;
 }
