@@ -49,4 +49,30 @@ describe('is', () => {
             assert.throws(() => assertType<ConfigInit>({ folder: '.', children: [{ folder: './foo', children: null }] }), expectedMessageRegExp6);
         });
     });
+
+    // Note: checking this at runtime would require unbounded recursion.
+    interface DirectlyRecursive {
+        child: DirectlyRecursive;
+    }
+
+    describe('is<DirectlyRecursive>', () => {
+        it('should throw for valid objects due maximum call stack size being exceeded', () => {
+            const object = {} as DirectlyRecursive;
+            object.child = object;
+            const expectedMessageRegExp1 = /Maximum call stack size exceeded$/;
+            assert.throws(() => is<DirectlyRecursive>(object), expectedMessageRegExp1);
+        });
+
+        it('should return false for invalid objects', () => {
+            assert.strictEqual(is<DirectlyRecursive>(true), false);
+            assert.strictEqual(is<DirectlyRecursive>([]), false);
+            assert.strictEqual(is<DirectlyRecursive>({}), false);
+            assert.strictEqual(is<DirectlyRecursive>({ child: true }), false);
+            assert.strictEqual(is<DirectlyRecursive>({ child: [] }), false);
+            assert.strictEqual(is<DirectlyRecursive>({ child: {} }), false);
+            assert.strictEqual(is<DirectlyRecursive>({ child: { child: true } }), false);
+            assert.strictEqual(is<DirectlyRecursive>({ child: { child: [] } }), false);
+            assert.strictEqual(is<DirectlyRecursive>({ child: { child: {} } }), false);
+        });
+    });
 });
