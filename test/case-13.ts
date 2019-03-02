@@ -13,10 +13,6 @@ describe('is', () => {
         }
 
         it('should return true for an object with key equal to any string and value equal to any', () => {
-            type Foo = {
-                key: keyof (any | Item);
-                value: (any | Item)[keyof (any | Item)];
-            };
             assert.strictEqual(is<Extractor<any | Item>>({ key: '', value: 'bar' }), true);
             assert.strictEqual(is<Extractor<any | Item>>({ key: 'foo', value: 'bar' }), true);
             assert.strictEqual(is<Extractor<any | Item>>({ key: 'foo', value: '' }), true);

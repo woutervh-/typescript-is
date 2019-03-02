@@ -82,7 +82,7 @@ function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext
                                     ts.createCall(
                                         ts.createIdentifier(functionName),
                                         undefined,
-                                        [objectIdentifier]
+                                        [ts.createElementAccess(objectIdentifier, index)]
                                     )
                                 )
                             ]
@@ -190,7 +190,7 @@ function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContex
                                     ts.createCall(
                                         ts.createIdentifier(functionName),
                                         undefined,
-                                        [objectIdentifier]
+                                        [ts.createElementAccess(objectIdentifier, indexIdentifier)]
                                     )
                                 )
                             ]
@@ -218,7 +218,9 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
     const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'type-check' });
     return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
         const properties = visitorContext.checker.getPropertiesOfType(type);
-        // const keyIdentifier = ts.createIdentifier('key');
+        const stringIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.String);
+        const stringIndexFunctionName = stringIndexType ? visitType(stringIndexType, visitorContext) : undefined;
+        const keyIdentifier = ts.createIdentifier('key');
         const errorIdentifier = ts.createIdentifier('error');
         return ts.createFunctionDeclaration(
             undefined,
@@ -270,9 +272,7 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                 ),
                 ...properties.map((property) => {
                     const propertyInfo = VisitorUtils.getPropertyInfo(property, visitorContext);
-                    const functionName = propertyInfo.optional
-                        ? visitUndefinedOrType(propertyInfo.type, visitorContext)
-                        : visitType(propertyInfo.type, visitorContext);
+                    const functionName = visitType(propertyInfo.type, visitorContext);
                     return ts.createBlock([
                         ts.createExpressionStatement(
                             ts.createCall(
@@ -287,10 +287,34 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                                 ts.createVariableDeclaration(
                                     errorIdentifier,
                                     undefined,
-                                    ts.createCall(
-                                        ts.createIdentifier(functionName),
-                                        undefined,
-                                        [ts.createElementAccess(objectIdentifier, ts.createStringLiteral(propertyInfo.name))]
+                                    ts.createConditional(
+                                        ts.createBinary(
+                                            ts.createStringLiteral(propertyInfo.name),
+                                            ts.SyntaxKind.InKeyword,
+                                            objectIdentifier
+                                        ),
+                                        ts.createCall(
+                                            ts.createIdentifier(functionName),
+                                            undefined,
+                                            [ts.createElementAccess(objectIdentifier, ts.createStringLiteral(propertyInfo.name))]
+                                        ),
+                                        propertyInfo.optional
+                                            ? ts.createNull()
+                                            : VisitorUtils.createBinaries(
+                                                [
+                                                    ts.createStringLiteral('validation failed at '),
+                                                    ts.createCall(
+                                                        ts.createPropertyAccess(
+                                                            pathIdentifier,
+                                                            'join'
+                                                        ),
+                                                        undefined,
+                                                        [ts.createStringLiteral('.')]
+                                                    ),
+                                                    ts.createStringLiteral(`: expected '${propertyInfo.name}' in object`)
+                                                ],
+                                                ts.SyntaxKind.PlusToken
+                                            )
                                     )
                                 )
                             ]
@@ -308,28 +332,54 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                         )
                     ]);
                 }),
-                // TODO: check property index
-                // const stringIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.String);
-                // if (stringIndexType) { }
-                // There is a string index type { [Key: string]: T }.
-
-                // ts.createForOf(
-                //     undefined,
-                //     ts.createVariableDeclarationList(
-                //         [ts.createVariableDeclaration(keyIdentifier, undefined, undefined)],
-                //         ts.NodeFlags.Const
-                //     ),
-                //     ts.createCall(ts.createPropertyAccess(ts.createIdentifier('Object'), 'keys'), undefined, [objectIdentifier]),
-                //     ts.createBlock([
-                //         ts.createExpressionStatement(
-                //             ts.createCall(
-                //                 ts.createPropertyAccess(pathIdentifier, 'push'),
-                //                 undefined,
-                //                 []
-                //             )
-                //         ),
-                //     ])
-                // ),
+                ...(
+                    stringIndexFunctionName
+                        ? [
+                            ts.createForOf(
+                                undefined,
+                                ts.createVariableDeclarationList(
+                                    [ts.createVariableDeclaration(keyIdentifier, undefined, undefined)],
+                                    ts.NodeFlags.Const
+                                ),
+                                ts.createCall(ts.createPropertyAccess(ts.createIdentifier('Object'), 'keys'), undefined, [objectIdentifier]),
+                                ts.createBlock([
+                                    ts.createExpressionStatement(
+                                        ts.createCall(
+                                            ts.createPropertyAccess(pathIdentifier, 'push'),
+                                            undefined,
+                                            [ts.createStringLiteral('[string]')]
+                                        )
+                                    ),
+                                    ts.createVariableStatement(
+                                        [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
+                                        [
+                                            ts.createVariableDeclaration(
+                                                errorIdentifier,
+                                                undefined,
+                                                ts.createCall(
+                                                    ts.createIdentifier(stringIndexFunctionName),
+                                                    undefined,
+                                                    [ts.createElementAccess(objectIdentifier, keyIdentifier)]
+                                                )
+                                            )
+                                        ]
+                                    ),
+                                    ts.createExpressionStatement(
+                                        ts.createCall(
+                                            ts.createPropertyAccess(pathIdentifier, 'pop'),
+                                            undefined,
+                                            undefined
+                                        )
+                                    ),
+                                    ts.createIf(
+                                        errorIdentifier,
+                                        ts.createReturn(errorIdentifier)
+                                    )
+                                ])
+                            )
+                        ]
+                        : []
+                ),
                 ts.createReturn(ts.createNull())
             ])
         );
