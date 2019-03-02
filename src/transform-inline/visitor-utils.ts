@@ -25,7 +25,7 @@ export function getPropertyInfo(symbol: ts.Symbol, visitorContext: VisitorContex
         throw new Error('Missing name in property symbol.');
     }
     if ('valueDeclaration' in symbol) {
-        if ((symbol.valueDeclaration.kind & ts.SyntaxKind.MethodSignature) !== 0) {
+        if (ts.isMethodSignature(symbol.valueDeclaration)) {
             throw new Error('Encountered a method declaration, but methods are not supported. Issue: https://github.com/woutervh-/typescript-is/issues/5');
         }
         if (!ts.isPropertySignature(symbol.valueDeclaration)) {
