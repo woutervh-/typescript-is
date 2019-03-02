@@ -3,7 +3,7 @@ import { assertType } from '../index';
 
 describe('assertType', () => {
     describe('assertType<number>', () => {
-        const expectedMessageRegExp = /at \$: expected number$/;
+        const expectedMessageRegExp = /validation failed at \$: expected a number$/;
 
         it('should return the numbers passed to it', () => {
             assert.strictEqual(assertType<number>(-1), -1);

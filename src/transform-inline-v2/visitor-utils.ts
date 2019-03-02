@@ -426,7 +426,7 @@ export function createDisjunctionFunction(functionNames: string[], functionName:
                             undefined,
                             [ts.createStringLiteral('.')]
                         ),
-                        ts.createStringLiteral(`: there are no valid alternatives.`)
+                        ts.createStringLiteral(`: there are no valid alternatives`)
                     ],
                     ts.SyntaxKind.PlusToken
                 )

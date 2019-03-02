@@ -274,6 +274,34 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                     const propertyInfo = VisitorUtils.getPropertyInfo(property, visitorContext);
                     const functionName = visitType(propertyInfo.type, visitorContext);
                     return ts.createBlock([
+                        ts.createIf(
+                            ts.createLogicalNot(
+                                ts.createBinary(
+                                    ts.createStringLiteral(propertyInfo.name),
+                                    ts.SyntaxKind.InKeyword,
+                                    objectIdentifier
+                                )
+                            ),
+                            ts.createReturn(
+                                propertyInfo.optional
+                                    ? ts.createNull()
+                                    : VisitorUtils.createBinaries(
+                                        [
+                                            ts.createStringLiteral('validation failed at '),
+                                            ts.createCall(
+                                                ts.createPropertyAccess(
+                                                    pathIdentifier,
+                                                    'join'
+                                                ),
+                                                undefined,
+                                                [ts.createStringLiteral('.')]
+                                            ),
+                                            ts.createStringLiteral(`: expected '${propertyInfo.name}' in object`)
+                                        ],
+                                        ts.SyntaxKind.PlusToken
+                                    )
+                            )
+                        ),
                         ts.createExpressionStatement(
                             ts.createCall(
                                 ts.createPropertyAccess(pathIdentifier, 'push'),
@@ -287,34 +315,10 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                                 ts.createVariableDeclaration(
                                     errorIdentifier,
                                     undefined,
-                                    ts.createConditional(
-                                        ts.createBinary(
-                                            ts.createStringLiteral(propertyInfo.name),
-                                            ts.SyntaxKind.InKeyword,
-                                            objectIdentifier
-                                        ),
-                                        ts.createCall(
-                                            ts.createIdentifier(functionName),
-                                            undefined,
-                                            [ts.createElementAccess(objectIdentifier, ts.createStringLiteral(propertyInfo.name))]
-                                        ),
-                                        propertyInfo.optional
-                                            ? ts.createNull()
-                                            : VisitorUtils.createBinaries(
-                                                [
-                                                    ts.createStringLiteral('validation failed at '),
-                                                    ts.createCall(
-                                                        ts.createPropertyAccess(
-                                                            pathIdentifier,
-                                                            'join'
-                                                        ),
-                                                        undefined,
-                                                        [ts.createStringLiteral('.')]
-                                                    ),
-                                                    ts.createStringLiteral(`: expected '${propertyInfo.name}' in object`)
-                                                ],
-                                                ts.SyntaxKind.PlusToken
-                                            )
+                                    ts.createCall(
+                                        ts.createIdentifier(functionName),
+                                        undefined,
+                                        [ts.createElementAccess(objectIdentifier, ts.createStringLiteral(propertyInfo.name))]
                                     )
                                 )
                             ]
@@ -347,7 +351,7 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                                         ts.createCall(
                                             ts.createPropertyAccess(pathIdentifier, 'push'),
                                             undefined,
-                                            [ts.createStringLiteral('[string]')]
+                                            [keyIdentifier]
                                         )
                                     ),
                                     ts.createVariableStatement(
