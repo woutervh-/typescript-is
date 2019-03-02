@@ -4,8 +4,8 @@
 
 import * as path from 'path';
 import * as ts from 'typescript';
-import { transformNode } from '../src/transform-inline-v2/transform-node';
-import { PartialVisitorContext } from '../src/transform-inline-v2/visitor-context';
+import { transformNode } from '../src/transform-inline/transform-node';
+import { PartialVisitorContext } from '../src/transform-inline/visitor-context';
 
 const configFilename = path.resolve('tsconfig.json');
 const inFile = path.resolve('test', 'case-13.ts');

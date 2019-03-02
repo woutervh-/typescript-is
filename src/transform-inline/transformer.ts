@@ -1,6 +1,6 @@
 import * as ts from 'typescript';
 import NestedError = require('nested-error-stacks');
-import { VisitorContext } from './visitor-context';
+import { PartialVisitorContext } from './visitor-context';
 import { transformNode } from './transform-node';
 
 export default function transformer(program: ts.Program, options?: { [Key: string]: unknown }): ts.TransformerFactory<ts.SourceFile> {
@@ -8,21 +8,18 @@ export default function transformer(program: ts.Program, options?: { [Key: strin
         console.log(`typescript-is: transforming program with ${program.getSourceFiles().length} source files; using TypeScript ${ts.version}.`);
     }
 
-    const visitorContext: VisitorContext = {
+    const visitorContext: PartialVisitorContext = {
         program,
         checker: program.getTypeChecker(),
         typeMapperStack: [],
-        mode: {
-            type: 'type-check'
-        },
-        pathStack: ['$']
+        previousTypeReference: null
     };
     return (context: ts.TransformationContext) => (file: ts.SourceFile) => transformNodeAndChildren(file, program, context, visitorContext);
 }
 
-function transformNodeAndChildren(node: ts.SourceFile, program: ts.Program, context: ts.TransformationContext, visitorContext: VisitorContext): ts.SourceFile;
-function transformNodeAndChildren(node: ts.Node, program: ts.Program, context: ts.TransformationContext, visitorContext: VisitorContext): ts.Node;
-function transformNodeAndChildren(node: ts.Node, program: ts.Program, context: ts.TransformationContext, visitorContext: VisitorContext): ts.Node {
+function transformNodeAndChildren(node: ts.SourceFile, program: ts.Program, context: ts.TransformationContext, visitorContext: PartialVisitorContext): ts.SourceFile;
+function transformNodeAndChildren(node: ts.Node, program: ts.Program, context: ts.TransformationContext, visitorContext: PartialVisitorContext): ts.Node;
+function transformNodeAndChildren(node: ts.Node, program: ts.Program, context: ts.TransformationContext, visitorContext: PartialVisitorContext): ts.Node {
     let transformedNode: ts.Node;
     try {
         transformedNode = transformNode(node, visitorContext);

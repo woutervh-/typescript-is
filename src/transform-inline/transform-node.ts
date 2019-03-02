@@ -1,16 +1,21 @@
 import * as path from 'path';
 import * as ts from 'typescript';
-import { VisitorContext } from './visitor-context';
-import { visitType, visitUndefinedOrType } from './visitor';
-import { createExpression } from './validation-report-solver';
+import { VisitorContext, PartialVisitorContext } from './visitor-context';
+import { visitType, visitUndefinedOrType } from './visitor-type-check';
+import { sliceMapValues } from './utils';
 
-function createArrowFunction(accessor: ts.Identifier, type: ts.Type, optional: boolean, visitorContext: VisitorContext, isAssert: boolean) {
-    const validationReport = optional
-        ? visitUndefinedOrType(type, accessor, { ...visitorContext })
-        : visitType(type, accessor, { ...visitorContext });
+const objectIdentifier = ts.createIdentifier('object');
+const pathIdentifier = ts.createIdentifier('path');
 
-    const expression = createExpression(validationReport, isAssert);
+function createArrowFunction(type: ts.Type, optional: boolean, visitorContext: PartialVisitorContext, isAssert: boolean) {
+    const functionMap: VisitorContext['functionMap'] = new Map();
+    const functionNames: VisitorContext['functionNames'] = new Set();
+    const functionName = optional
+        ? visitUndefinedOrType(type, { ...visitorContext, functionNames, functionMap })
+        : visitType(type, { ...visitorContext, functionNames, functionMap });
+
     const errorIdentifier = ts.createIdentifier('error');
+    const declarations = sliceMapValues(functionMap);
 
     return ts.createArrowFunction(
         undefined,
@@ -20,32 +25,35 @@ function createArrowFunction(accessor: ts.Identifier, type: ts.Type, optional: b
                 undefined,
                 undefined,
                 undefined,
-                accessor,
+                objectIdentifier,
                 undefined,
                 ts.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)
             )
         ],
         undefined,
         undefined,
-        ts.createBlock(
+        ts.createBlock([
+            ts.createVariableStatement(
+                [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
+                [ts.createVariableDeclaration(pathIdentifier, undefined, ts.createArrayLiteral([ts.createStringLiteral('$')]))]
+            ),
+            ...declarations,
+            ts.createVariableStatement(
+                [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
+                [ts.createVariableDeclaration(errorIdentifier, undefined, ts.createCall(ts.createIdentifier(functionName), undefined, [objectIdentifier]))]
+            ),
             isAssert
-                ? [
-                    ts.createVariableStatement(
-                        [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
-                        [ts.createVariableDeclaration(errorIdentifier, undefined, ts.createCall(expression, undefined, undefined))]
-                    ),
-                    ts.createIf(
-                        ts.createStrictEquality(errorIdentifier, ts.createNull()),
-                        ts.createReturn(accessor),
-                        ts.createThrow(ts.createNew(ts.createIdentifier('Error'), undefined, [errorIdentifier]))
-                    )
-                ]
-                : [ts.createReturn(expression)]
-        )
+                ? ts.createIf(
+                    errorIdentifier,
+                    ts.createThrow(ts.createNew(ts.createIdentifier('Error'), undefined, [errorIdentifier])),
+                    ts.createReturn(objectIdentifier)
+                )
+                : ts.createReturn(ts.createStrictEquality(errorIdentifier, ts.createNull()))
+        ])
     );
 }
 
-function transformDecorator(node: ts.Decorator, parameterType: ts.Type, optional: boolean, visitorContext: VisitorContext): ts.Decorator {
+function transformDecorator(node: ts.Decorator, parameterType: ts.Type, optional: boolean, visitorContext: PartialVisitorContext): ts.Decorator {
     if (ts.isCallExpression(node.expression)) {
         const signature = visitorContext.checker.getResolvedSignature(node.expression);
         if (
@@ -54,8 +62,7 @@ function transformDecorator(node: ts.Decorator, parameterType: ts.Type, optional
             && path.resolve(signature.declaration.getSourceFile().fileName) === path.resolve(path.join(__dirname, '..', '..', 'index.d.ts'))
             && node.expression.arguments.length <= 1
         ) {
-            const accessor = ts.createIdentifier('object');
-            const arrowFunction: ts.Expression = createArrowFunction(accessor, parameterType, optional, visitorContext, false);
+            const arrowFunction: ts.Expression = createArrowFunction(parameterType, optional, visitorContext, false);
             const expression = ts.updateCall(
                 node.expression,
                 node.expression.expression,
@@ -71,7 +78,7 @@ function transformDecorator(node: ts.Decorator, parameterType: ts.Type, optional
     return node;
 }
 
-export function transformNode(node: ts.Node, visitorContext: VisitorContext): ts.Node {
+export function transformNode(node: ts.Node, visitorContext: PartialVisitorContext): ts.Node {
     if (ts.isParameter(node) && node.type !== undefined && node.decorators !== undefined) {
         const type = visitorContext.checker.getTypeFromTypeNode(node.type);
         const required = !node.initializer && !node.questionToken;
@@ -100,13 +107,12 @@ export function transformNode(node: ts.Node, visitorContext: VisitorContext): ts
             const isAssert = name === 'assertType' || name === 'createAssertType';
             const typeArgument = node.typeArguments[0];
             const type = visitorContext.checker.getTypeFromTypeNode(typeArgument);
-            const accessor = ts.createIdentifier('object');
 
             if (!(isCreate && node.arguments.length === 0) && !(!isCreate && node.arguments.length === 1)) {
                 throw new Error('Calls to `is` and `assertType` should have one argument, calls to `createIs` and `createAssertType` should have no arguments.');
             }
 
-            const arrowFunction = createArrowFunction(accessor, type, false, visitorContext, isAssert);
+            const arrowFunction = createArrowFunction(type, false, visitorContext, isAssert);
 
             if (isCreate) {
                 return arrowFunction;

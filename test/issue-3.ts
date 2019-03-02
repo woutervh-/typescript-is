@@ -6,7 +6,7 @@ import * as assert from 'assert';
 import * as path from 'path';
 import * as ts from 'typescript';
 import { transformNode } from '../lib/transform-inline/transform-node';
-import { VisitorContext } from '../lib/transform-inline/visitor-context';
+import { PartialVisitorContext } from '../lib/transform-inline/visitor-context';
 
 const configFilename = path.resolve('tsconfig.json');
 const inFile = path.resolve(__dirname, '..', 'test-fixtures', 'issue-3.ts');
@@ -24,12 +24,11 @@ delete configParseResult.options.declaration;
 const program = ts.createProgram([inFile], configParseResult.options);
 ts.createProgram([inFile], configParseResult.options);
 
-const visitorContext: VisitorContext = {
+const visitorContext: PartialVisitorContext = {
     checker: program.getTypeChecker(),
     program,
     typeMapperStack: [],
-    mode: { type: 'type-check' },
-    pathStack: ['$']
+    previousTypeReference: null
 };
 
 function visitNodeAndChildren(node: ts.Node) {
