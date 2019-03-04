@@ -75,7 +75,7 @@ describe('is', () => {
             assert.strictEqual(is<DirectlyRecursive>({ child: { child: {} } }), false);
         });
     });
-    
+
     interface OptionalFieldsRecursive {
         folder?: string;
         children: OptionalFieldsRecursive[];
@@ -84,6 +84,6 @@ describe('is', () => {
         it('should return false for invalid recursive ConfigInit objects', () => {
             assert.strictEqual(is<OptionalFieldsRecursive>({ children: [] }), true);
             assert.strictEqual(is<OptionalFieldsRecursive>({}), false);
-        })
-    })
+        });
+    });
 });
