@@ -275,17 +275,49 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                     const functionName = visitType(propertyInfo.type, visitorContext);
                     return ts.createBlock([
                         ts.createIf(
-                            ts.createLogicalNot(
-                                ts.createBinary(
-                                    ts.createStringLiteral(propertyInfo.name),
-                                    ts.SyntaxKind.InKeyword,
-                                    objectIdentifier
-                                )
+                            ts.createBinary(
+                                ts.createStringLiteral(propertyInfo.name),
+                                ts.SyntaxKind.InKeyword,
+                                objectIdentifier
                             ),
-                            ts.createReturn(
-                                propertyInfo.optional
-                                    ? ts.createNull()
-                                    : VisitorUtils.createBinaries(
+                            ts.createBlock([
+                                ts.createExpressionStatement(
+                                    ts.createCall(
+                                        ts.createPropertyAccess(pathIdentifier, 'push'),
+                                        undefined,
+                                        [ts.createStringLiteral(propertyInfo.name)]
+                                    )
+                                ),
+                                ts.createVariableStatement(
+                                    [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
+                                    [
+                                        ts.createVariableDeclaration(
+                                            errorIdentifier,
+                                            undefined,
+                                            ts.createCall(
+                                                ts.createIdentifier(functionName),
+                                                undefined,
+                                                [ts.createElementAccess(objectIdentifier, ts.createStringLiteral(propertyInfo.name))]
+                                            )
+                                        )
+                                    ]
+                                ),
+                                ts.createExpressionStatement(
+                                    ts.createCall(
+                                        ts.createPropertyAccess(pathIdentifier, 'pop'),
+                                        undefined,
+                                        undefined
+                                    )
+                                ),
+                                ts.createIf(
+                                    errorIdentifier,
+                                    ts.createReturn(errorIdentifier)
+                                )
+                            ]),
+                            propertyInfo.optional
+                                ? undefined
+                                : ts.createReturn(
+                                    VisitorUtils.createBinaries(
                                         [
                                             ts.createStringLiteral('validation failed at '),
                                             ts.createCall(
@@ -300,39 +332,7 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                                         ],
                                         ts.SyntaxKind.PlusToken
                                     )
-                            )
-                        ),
-                        ts.createExpressionStatement(
-                            ts.createCall(
-                                ts.createPropertyAccess(pathIdentifier, 'push'),
-                                undefined,
-                                [ts.createStringLiteral(propertyInfo.name)]
-                            )
-                        ),
-                        ts.createVariableStatement(
-                            [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
-                            [
-                                ts.createVariableDeclaration(
-                                    errorIdentifier,
-                                    undefined,
-                                    ts.createCall(
-                                        ts.createIdentifier(functionName),
-                                        undefined,
-                                        [ts.createElementAccess(objectIdentifier, ts.createStringLiteral(propertyInfo.name))]
-                                    )
                                 )
-                            ]
-                        ),
-                        ts.createExpressionStatement(
-                            ts.createCall(
-                                ts.createPropertyAccess(pathIdentifier, 'pop'),
-                                undefined,
-                                undefined
-                            )
-                        ),
-                        ts.createIf(
-                            errorIdentifier,
-                            ts.createReturn(errorIdentifier)
                         )
                     ]);
                 }),

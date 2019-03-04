@@ -80,9 +80,13 @@ describe('is', () => {
         folder?: string;
         children: OptionalFieldsRecursive[];
     }
+
     describe('is<OptionalFieldsRecursive>', () => {
-        it('should return false for invalid recursive ConfigInit objects', () => {
+        it('should return true for valid recursive OptionalFieldsRecursive objects', () => {
             assert.strictEqual(is<OptionalFieldsRecursive>({ children: [] }), true);
+        });
+
+        it('should return false for invalid recursive OptionalFieldsRecursive objects', () => {
             assert.strictEqual(is<OptionalFieldsRecursive>({}), false);
         });
     });
