@@ -1,18 +1,22 @@
 import * as path from 'path';
 import * as ts from 'typescript';
 import { VisitorContext, PartialVisitorContext } from './visitor-context';
-import { visitType, visitUndefinedOrType } from './visitor-type-check';
+import { visitType, visitUndefinedOrType, visitShortCircuit } from './visitor-type-check';
 import { sliceMapValues } from './utils';
 
 const objectIdentifier = ts.createIdentifier('object');
 const pathIdentifier = ts.createIdentifier('path');
 
-function createArrowFunction(type: ts.Type, optional: boolean, visitorContext: PartialVisitorContext, isAssert: boolean) {
+function createArrowFunction(type: ts.Type, optional: boolean, partialVisitorContext: PartialVisitorContext, isAssert: boolean) {
     const functionMap: VisitorContext['functionMap'] = new Map();
     const functionNames: VisitorContext['functionNames'] = new Set();
-    const functionName = optional
-        ? visitUndefinedOrType(type, { ...visitorContext, functionNames, functionMap })
-        : visitType(type, { ...visitorContext, functionNames, functionMap });
+    const visitorContext = { ...partialVisitorContext, functionNames, functionMap };
+    const functionName = partialVisitorContext.options.shortCircuit
+        ? visitShortCircuit(visitorContext)
+        : (optional
+            ? visitUndefinedOrType(type, visitorContext)
+            : visitType(type, visitorContext)
+        );
 
     const errorIdentifier = ts.createIdentifier('error');
     const declarations = sliceMapValues(functionMap);

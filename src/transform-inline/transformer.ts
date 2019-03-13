@@ -4,13 +4,14 @@ import { PartialVisitorContext } from './visitor-context';
 import { transformNode } from './transform-node';
 
 export default function transformer(program: ts.Program, options?: { [Key: string]: unknown }): ts.TransformerFactory<ts.SourceFile> {
-    if (options && typeof options === 'object' && options !== null && options.verbose) {
+    if (options && options.verbose) {
         console.log(`typescript-is: transforming program with ${program.getSourceFiles().length} source files; using TypeScript ${ts.version}.`);
     }
 
     const visitorContext: PartialVisitorContext = {
         program,
         checker: program.getTypeChecker(),
+        options: options || {},
         typeMapperStack: [],
         previousTypeReference: null
     };

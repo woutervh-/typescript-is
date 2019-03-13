@@ -8,6 +8,7 @@ export interface VisitorContext extends PartialVisitorContext {
 export interface PartialVisitorContext {
     program: ts.Program;
     checker: ts.TypeChecker;
+    options: { [Key: string]: unknown };
     typeMapperStack: Map<ts.Type, ts.Type>[];
     previousTypeReference: ts.Type | null;
 }

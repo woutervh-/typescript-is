@@ -701,3 +701,9 @@ export function visitUndefinedOrType(type: ts.Type, visitorContext: VisitorConte
         );
     });
 }
+
+export function visitShortCircuit(visitorContext: VisitorContext) {
+    return VisitorUtils.setFunctionIfNotExists('shortCircuit', visitorContext, () => {
+        return VisitorUtils.createAcceptingFunction('shortCircuit');
+    });
+}

@@ -27,6 +27,7 @@ ts.createProgram([inFile], configParseResult.options);
 const visitorContext: PartialVisitorContext = {
     checker: program.getTypeChecker(),
     program,
+    options: {},
     typeMapperStack: [],
     previousTypeReference: null
 };
