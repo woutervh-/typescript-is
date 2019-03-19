@@ -272,7 +272,9 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                 ),
                 ...properties.map((property) => {
                     const propertyInfo = VisitorUtils.getPropertyInfo(property, visitorContext);
-                    const functionName = visitType(propertyInfo.type, visitorContext);
+                    const functionName = propertyInfo.isMethod
+                        ? VisitorUtils.getIgnoredTypeFunction(visitorContext)
+                        : visitType(propertyInfo.type!, visitorContext);
                     return ts.createBlock([
                         ts.createIf(
                             ts.createBinary(
@@ -410,7 +412,9 @@ function visitTypeParameter(type: ts.Type, visitorContext: VisitorContext) {
 }
 
 function visitObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
-    VisitorUtils.throwErrorIfClass(type);
+    if (VisitorUtils.checkIsClass(type, visitorContext)) {
+        return VisitorUtils.getIgnoredTypeFunction(visitorContext);
+    }
     if (tsutils.isTupleType(type)) {
         // Tuple with finite length.
         return visitTupleObjectType(type, visitorContext);

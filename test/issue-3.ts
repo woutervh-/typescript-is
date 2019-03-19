@@ -9,7 +9,6 @@ import { transformNode } from '../lib/transform-inline/transform-node';
 import { PartialVisitorContext } from '../lib/transform-inline/visitor-context';
 
 const configFilename = path.resolve('tsconfig.json');
-const inFile = path.resolve(__dirname, '..', 'test-fixtures', 'issue-3.ts');
 const content = ts.sys.readFile(configFilename);
 if (content === undefined) {
     throw new Error('Could not read config file.');
@@ -21,23 +20,28 @@ delete configParseResult.options.out;
 delete configParseResult.options.outDir;
 delete configParseResult.options.outFile;
 delete configParseResult.options.declaration;
-const program = ts.createProgram([inFile], configParseResult.options);
-ts.createProgram([inFile], configParseResult.options);
-
-const visitorContext: PartialVisitorContext = {
-    checker: program.getTypeChecker(),
-    program,
-    options: {},
-    typeMapperStack: [],
-    previousTypeReference: null
-};
-
-function visitNodeAndChildren(node: ts.Node) {
-    ts.forEachChild(transformNode(node, visitorContext), visitNodeAndChildren);
-}
 
 describe('visitor', () => {
     describe('visitor test-fixtures/issue-3.ts', () => {
+        const inFile = path.resolve(__dirname, '..', 'test-fixtures', 'issue-3.ts');
+        const program = ts.createProgram([inFile], configParseResult.options);
+
+        const visitorContext: PartialVisitorContext = {
+            checker: program.getTypeChecker(),
+            program,
+            options: {
+                ignoreClasses: false,
+                ignoreMethods: false,
+                shortCircuit: false
+            },
+            typeMapperStack: [],
+            previousTypeReference: null
+        };
+
+        function visitNodeAndChildren(node: ts.Node) {
+            ts.forEachChild(transformNode(node, visitorContext), visitNodeAndChildren);
+        }
+
         const expectedMessageRegExp = /Classes cannot be validated\. https:\/\/github\.com\/woutervh-\/typescript-is\/issues\/3$/;
 
         it('should throw an error for classes', () => {

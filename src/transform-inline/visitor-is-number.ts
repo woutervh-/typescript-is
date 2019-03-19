@@ -16,7 +16,6 @@ function visitArrayObjectType() {
 }
 
 function visitObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
-    VisitorUtils.throwErrorIfClass(type);
     if (tsutils.isTupleType(type)) {
         // Tuple with finite length.
         return visitTupleObjectType();

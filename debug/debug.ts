@@ -25,7 +25,9 @@ const program = ts.createProgram([inFile], configParseResult.options);
 const visitorContext: PartialVisitorContext = {
     checker: program.getTypeChecker(),
     program,
-    options: {},
+    options: {
+        shortCircuit: false
+    },
     typeMapperStack: [],
     // mode: { type: 'type-check' },
     // pathStack: ['$'],

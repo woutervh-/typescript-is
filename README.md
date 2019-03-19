@@ -86,6 +86,33 @@ npx ttsc
 
 Please check the README of [ttypescript](https://github.com/cevek/ttypescript/blob/master/README.md) for information on how to use it in combination with `ts-node`, `webpack`, and `Rollup`.
 
+## Options
+
+There are some options to configure the transformer.
+
+| Property | Description |
+|--|--|
+| `shortCircuit` | Boolean (default `false`). If `true`, all type guards will return `true`, i.e. no validation takes place. Can be used for example in production deployments where doing a lot of validation can cost too much CPU. |
+| `ignoreClasses` | Boolean (default: `false`). If `true`, when the transformer encounters a class, it will ignore it and simply return `true`. If `false`, an error is generated at compile time. |
+| `ignoreMethods` | Boolean (default: `false`). If `true`, when the transformer encounters a method, it will ignore it and simply return `true`. If `false`, an error is generated at compile time. |
+
+If you are using `ttypescript`, you can include the options in your `tsconfig.json`:
+
+```json
+{
+    "compilerOptions": {
+        "plugins": [
+            {
+                "transform": "typescript-is/lib/transform-inline/transformer",
+                "shortCircuit": true,
+                "ignoreClasses": true,
+                "ignoreMethods": true
+            }
+        ]
+    }
+}
+```
+
 # ⭐ How to use
 
 *Before using, please make sure you've completed [configuring](#%EF%B8%8F-configuration) the transformer.*

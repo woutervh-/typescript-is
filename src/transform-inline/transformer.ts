@@ -11,7 +11,11 @@ export default function transformer(program: ts.Program, options?: { [Key: strin
     const visitorContext: PartialVisitorContext = {
         program,
         checker: program.getTypeChecker(),
-        options: options || {},
+        options: {
+            shortCircuit: !!(options && options.shortCircuit),
+            ignoreClasses: !!(options && options.ignoreClasses),
+            ignoreMethods: !!(options && options.ignoreMethods)
+        },
         typeMapperStack: [],
         previousTypeReference: null
     };

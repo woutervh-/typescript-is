@@ -20,7 +20,11 @@ function visitRegularObjectType(type: ts.ObjectType, indexType: ts.Type, visitor
             if (!stringType) {
                 throw new Error('A non-string type was used to index an object type.');
             }
-            const functionNames = propertiesInfo.map((propertyInfo) => VisitorTypeCheck.visitType(propertyInfo.type, visitorContext));
+            const functionNames = propertiesInfo.map((propertyInfo) =>
+                propertyInfo.isMethod
+                    ? VisitorUtils.getIgnoredTypeFunction(visitorContext)
+                    : VisitorTypeCheck.visitType(propertyInfo.type!, visitorContext)
+            );
             return VisitorUtils.createDisjunctionFunction(functionNames, name);
         } else {
             const strings = sliceSet(stringType);
@@ -28,7 +32,11 @@ function visitRegularObjectType(type: ts.ObjectType, indexType: ts.Type, visitor
                 throw new Error('Indexed access on object type with an index that does not exist.');
             }
             const stringPropertiesInfo = strings.map((value) => propertiesInfo.find((propertyInfo) => propertyInfo.name === value)!);
-            const functionNames = stringPropertiesInfo.map((propertyInfo) => VisitorTypeCheck.visitType(propertyInfo.type, visitorContext));
+            const functionNames = stringPropertiesInfo.map((propertyInfo) =>
+                propertyInfo.isMethod
+                    ? VisitorUtils.getIgnoredTypeFunction(visitorContext)
+                    : VisitorTypeCheck.visitType(propertyInfo.type!, visitorContext)
+            );
             return VisitorUtils.createDisjunctionFunction(functionNames, name);
         }
     });
@@ -72,7 +80,6 @@ function visitArrayObjectType(type: ts.ObjectType, indexType: ts.Type, visitorCo
 }
 
 function visitObjectType(type: ts.ObjectType, indexType: ts.Type, visitorContext: VisitorContext) {
-    VisitorUtils.throwErrorIfClass(type);
     if (tsutils.isTupleType(type)) {
         // Tuple with finite length.
         return visitTupleObjectType(type, indexType, visitorContext);

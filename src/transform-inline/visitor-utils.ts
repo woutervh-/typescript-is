@@ -5,9 +5,15 @@ import { VisitorContext } from './visitor-context';
 const objectIdentifier = ts.createIdentifier('object');
 const pathIdentifier = ts.createIdentifier('path');
 
-export function throwErrorIfClass(type: ts.ObjectType) {
+export function checkIsClass(type: ts.ObjectType, visitorContext: VisitorContext) {
     if ((ts.ObjectFlags.Class & type.objectFlags) !== 0) {
-        throw new Error('Classes cannot be validated. https://github.com/woutervh-/typescript-is/issues/3');
+        if (visitorContext.options.ignoreClasses) {
+            return true;
+        } else {
+            throw new Error('Classes cannot be validated. https://github.com/woutervh-/typescript-is/issues/3');
+        }
+    } else {
+        return false;
     }
 }
 
@@ -25,19 +31,25 @@ export function getPropertyInfo(symbol: ts.Symbol, visitorContext: VisitorContex
         throw new Error('Missing name in property symbol.');
     }
     if ('valueDeclaration' in symbol) {
-        if (ts.isMethodSignature(symbol.valueDeclaration)) {
-            throw new Error('Encountered a method declaration, but methods are not supported. Issue: https://github.com/woutervh-/typescript-is/issues/5');
-        }
-        if (!ts.isPropertySignature(symbol.valueDeclaration)) {
+        if (!ts.isPropertySignature(symbol.valueDeclaration) && !ts.isMethodSignature(symbol.valueDeclaration)) {
             throw new Error('Unsupported declaration kind: ' + symbol.valueDeclaration.kind);
         }
-        if (symbol.valueDeclaration.type === undefined) {
-            throw new Error('Found property without type.');
+        const isMethod = ts.isMethodSignature(symbol.valueDeclaration);
+        if (isMethod && !visitorContext.options.ignoreMethods) {
+            throw new Error('Encountered a method declaration, but methods are not supported. Issue: https://github.com/woutervh-/typescript-is/issues/5');
         }
-        const propertyType = visitorContext.checker.getTypeFromTypeNode(symbol.valueDeclaration.type);
+        let propertyType: ts.Type | undefined = undefined;
+        if (!isMethod) {
+            if (symbol.valueDeclaration.type === undefined) {
+                throw new Error('Found property without type.');
+            } else {
+                propertyType = visitorContext.checker.getTypeFromTypeNode(symbol.valueDeclaration.type);
+            }
+        }
         return {
             name,
             type: propertyType,
+            isMethod,
             optional: !!symbol.valueDeclaration.questionToken
         };
     } else {
@@ -47,6 +59,7 @@ export function getPropertyInfo(symbol: ts.Symbol, visitorContext: VisitorContex
             return {
                 name,
                 type: propertyType,
+                isMethod: false,
                 optional
             };
         } else {
@@ -232,6 +245,13 @@ export function getUnknownFunction(visitorContext: VisitorContext) {
 
 export function getAnyFunction(visitorContext: VisitorContext) {
     const name = '_any';
+    return setFunctionIfNotExists(name, visitorContext, () => {
+        return createAcceptingFunction(name);
+    });
+}
+
+export function getIgnoredTypeFunction(visitorContext: VisitorContext) {
+    const name = '_ignore';
     return setFunctionIfNotExists(name, visitorContext, () => {
         return createAcceptingFunction(name);
     });
