@@ -147,7 +147,7 @@ function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContex
                                     undefined,
                                     [ts.createStringLiteral('.')]
                                 ),
-                                ts.createStringLiteral(`: expected an array`)
+                                ts.createStringLiteral(': expected an array')
                             ],
                             ts.SyntaxKind.PlusToken
                         )
@@ -264,7 +264,7 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                                     undefined,
                                     [ts.createStringLiteral('.')]
                                 ),
-                                ts.createStringLiteral(`: expected an object`)
+                                ts.createStringLiteral(': expected an object')
                             ],
                             ts.SyntaxKind.PlusToken
                         )
@@ -272,6 +272,9 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                 ),
                 ...properties.map((property) => {
                     const propertyInfo = VisitorUtils.getPropertyInfo(property, visitorContext);
+                    if (propertyInfo.isSymbol) {
+                        return ts.createEmptyStatement();
+                    }
                     const functionName = propertyInfo.isMethod
                         ? VisitorUtils.getIgnoredTypeFunction(visitorContext)
                         : visitType(propertyInfo.type!, visitorContext);

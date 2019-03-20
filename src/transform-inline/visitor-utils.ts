@@ -39,17 +39,18 @@ export function getPropertyInfo(symbol: ts.Symbol, visitorContext: VisitorContex
             throw new Error('Encountered a method declaration, but methods are not supported. Issue: https://github.com/woutervh-/typescript-is/issues/5');
         }
         let propertyType: ts.Type | undefined = undefined;
-        if (!isMethod) {
-            if (symbol.valueDeclaration.type === undefined) {
+        if (symbol.valueDeclaration.type === undefined) {
+            if (!isMethod) {
                 throw new Error('Found property without type.');
-            } else {
-                propertyType = visitorContext.checker.getTypeFromTypeNode(symbol.valueDeclaration.type);
             }
+        } else {
+            propertyType = visitorContext.checker.getTypeFromTypeNode(symbol.valueDeclaration.type);
         }
         return {
             name,
             type: propertyType,
             isMethod,
+            isSymbol: name.startsWith('__@'),
             optional: !!symbol.valueDeclaration.questionToken
         };
     } else {
@@ -60,6 +61,7 @@ export function getPropertyInfo(symbol: ts.Symbol, visitorContext: VisitorContex
                 name,
                 type: propertyType,
                 isMethod: false,
+                isSymbol: name.startsWith('__@'),
                 optional
             };
         } else {
