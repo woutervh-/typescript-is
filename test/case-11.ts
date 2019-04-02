@@ -5,15 +5,12 @@ import { AssertType, ValidateClass } from '../index';
 
 describe('@ValidateClass, @AssertType', () => {
     describe('@ValidateClass(), @AssertType() parameter: number', () => {
-        const expectedMessageRegExp = /Type assertion failed.$/;
-
         @ValidateClass()
         class TestClass {
             testMethod(@AssertType() parameter: number) {
                 return parameter;
             }
         }
-
         const instance = new TestClass();
 
         it('should pass validation for numbers', () => {
@@ -27,6 +24,7 @@ describe('@ValidateClass, @AssertType', () => {
         });
 
         it('should throw an error for non-numbers', () => {
+            const expectedMessageRegExp = /validation failed at \$: expected a number$/;
             assert.throws(() => instance.testMethod('' as any), expectedMessageRegExp);
             assert.throws(() => instance.testMethod('0' as any), expectedMessageRegExp);
             assert.throws(() => instance.testMethod('1' as any), expectedMessageRegExp);
@@ -38,15 +36,12 @@ describe('@ValidateClass, @AssertType', () => {
     });
 
     describe('@ValidateClass(), @AssertType() parameter: string', () => {
-        const expectedMessageRegExp = /Type assertion failed.$/;
-
         @ValidateClass()
         class TestClass {
             testMethod(@AssertType() parameter: string) {
                 return parameter;
             }
         }
-
         const instance = new TestClass();
 
         it('should pass validation for strings', () => {
@@ -57,6 +52,7 @@ describe('@ValidateClass, @AssertType', () => {
         });
 
         it('should throw an error for non-strings', () => {
+            const expectedMessageRegExp = /validation failed at \$: expected a string$/;
             assert.throws(() => instance.testMethod(0 as any), expectedMessageRegExp);
             assert.throws(() => instance.testMethod(1 as any), expectedMessageRegExp);
             assert.throws(() => instance.testMethod(true as any), expectedMessageRegExp);

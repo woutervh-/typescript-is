@@ -22,8 +22,9 @@ function ValidateClass(errorConstructor = Error) {
                 const originalMethod = target.prototype[propertyKey];
                 target.prototype[propertyKey] = function (...args) {
                     for (let i = 0; i < assertions.length; i++) {
-                        if (!assertions[i].assertion(args[i])) {
-                            throw new errorConstructor(assertions[i].options.message || 'Type assertion failed.');
+                        const error = assertions[i].assertion(args[i]);
+                        if (error !== null) {
+                            throw new errorConstructor(assertions[i].options.message || error);
                         }
                     }
                     return originalMethod.apply(this, args);

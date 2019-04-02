@@ -4,10 +4,12 @@ import { VisitorContext, PartialVisitorContext } from './visitor-context';
 import { visitType, visitUndefinedOrType, visitShortCircuit } from './visitor-type-check';
 import { sliceMapValues } from './utils';
 
+type AssertMode = 'assert' | 'decorator' | 'boolean';
+
 const objectIdentifier = ts.createIdentifier('object');
 const pathIdentifier = ts.createIdentifier('path');
 
-function createArrowFunction(type: ts.Type, optional: boolean, partialVisitorContext: PartialVisitorContext, isAssert: boolean) {
+function createArrowFunction(type: ts.Type, optional: boolean, partialVisitorContext: PartialVisitorContext, assertMode: AssertMode) {
     const functionMap: VisitorContext['functionMap'] = new Map();
     const functionNames: VisitorContext['functionNames'] = new Set();
     const visitorContext = { ...partialVisitorContext, functionNames, functionMap };
@@ -20,6 +22,19 @@ function createArrowFunction(type: ts.Type, optional: boolean, partialVisitorCon
 
     const errorIdentifier = ts.createIdentifier('error');
     const declarations = sliceMapValues(functionMap);
+
+    let finalStatement: ts.Statement;
+    if (assertMode === 'assert') {
+        finalStatement = ts.createIf(
+            errorIdentifier,
+            ts.createThrow(ts.createNew(ts.createIdentifier('Error'), undefined, [errorIdentifier])),
+            ts.createReturn(objectIdentifier)
+        );
+    } else if (assertMode === 'boolean') {
+        finalStatement = ts.createReturn(ts.createStrictEquality(errorIdentifier, ts.createNull()));
+    } else {
+        finalStatement = ts.createReturn(errorIdentifier);
+    }
 
     return ts.createArrowFunction(
         undefined,
@@ -46,13 +61,7 @@ function createArrowFunction(type: ts.Type, optional: boolean, partialVisitorCon
                 [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
                 [ts.createVariableDeclaration(errorIdentifier, undefined, ts.createCall(ts.createIdentifier(functionName), undefined, [objectIdentifier]))]
             ),
-            isAssert
-                ? ts.createIf(
-                    errorIdentifier,
-                    ts.createThrow(ts.createNew(ts.createIdentifier('Error'), undefined, [errorIdentifier])),
-                    ts.createReturn(objectIdentifier)
-                )
-                : ts.createReturn(ts.createStrictEquality(errorIdentifier, ts.createNull()))
+            finalStatement
         ])
     );
 }
@@ -66,7 +75,7 @@ function transformDecorator(node: ts.Decorator, parameterType: ts.Type, optional
             && path.resolve(signature.declaration.getSourceFile().fileName) === path.resolve(path.join(__dirname, '..', '..', 'index.d.ts'))
             && node.expression.arguments.length <= 1
         ) {
-            const arrowFunction: ts.Expression = createArrowFunction(parameterType, optional, visitorContext, false);
+            const arrowFunction: ts.Expression = createArrowFunction(parameterType, optional, visitorContext, 'decorator');
             const expression = ts.updateCall(
                 node.expression,
                 node.expression.expression,
@@ -116,7 +125,7 @@ export function transformNode(node: ts.Node, visitorContext: PartialVisitorConte
                 throw new Error('Calls to `is` and `assertType` should have one argument, calls to `createIs` and `createAssertType` should have no arguments.');
             }
 
-            const arrowFunction = createArrowFunction(type, false, visitorContext, isAssert);
+            const arrowFunction = createArrowFunction(type, false, visitorContext, isAssert ? 'assert' : 'boolean');
 
             if (isCreate) {
                 return arrowFunction;
