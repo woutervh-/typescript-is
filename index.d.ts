@@ -94,3 +94,27 @@ export function AssertType(options?: AssertTypeOptions): (target: object, proper
    ```
  */
 export function ValidateClass(errorConstructor?: { new(): Error }): <TFunction extends Function>(target: TFunction) => void;
+
+/**
+ * Class which helps catch errors specifically from this library.
+ * When `assertType` or `createAssertType` throw an error, it uses this class to create an instance.
+ * By default, a class decorated with `@ValidateClass` will also throw errors of this class, unless it's overriden using the options.
+ * 
+ * @example
+ * ```
+   // Somewhere in the code:
+   {
+     assertType<MyType>(obj);
+   }
+   
+   // Somewhere higher up the call stack:
+   try {
+     ...
+   } catch (error) {
+     if (error instanceof TypeGuardError) {
+       // An error from this library occurred.
+     }
+   }
+   ```
+ */
+export class TypeGuardError extends Error { }
