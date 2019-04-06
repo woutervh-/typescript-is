@@ -16,6 +16,9 @@ describe('is', () => {
                 if (!(error instanceof TypeGuardError)) {
                     throw new Error('Expected error of class TypeGuardError.');
                 }
+                if (error.name !== 'TypeGuardError') {
+                    throw new Error('Expected error to have name TypeGuardError.');
+                }
             }
         });
     });

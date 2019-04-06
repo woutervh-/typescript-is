@@ -6,7 +6,12 @@ function checkGetErrorMessage(getErrorMessage) {
 
 const assertionsMetadataKey = Symbol('assertions');
 
-class TypeGuardError extends Error { }
+class TypeGuardError extends Error {
+    constructor(...args) {
+        super(...args);
+        this.name = 'TypeGuardError';
+    }
+}
 
 function AssertType(assertion, options = {}) {
     require('reflect-metadata');
