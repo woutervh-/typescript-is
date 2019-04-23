@@ -107,7 +107,8 @@ If you are using `ttypescript`, you can include the options in your `tsconfig.js
                 "transform": "typescript-is/lib/transform-inline/transformer",
                 "shortCircuit": true,
                 "ignoreClasses": true,
-                "ignoreMethods": true
+                "ignoreMethods": true,
+                "disallowSuperfluousObjectProperties": true
             }
         ]
     }
