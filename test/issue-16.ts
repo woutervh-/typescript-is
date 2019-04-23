@@ -31,7 +31,8 @@ describe('visitor', () => {
             options: {
                 ignoreClasses: true,
                 ignoreMethods: false,
-                shortCircuit: false
+                shortCircuit: false,
+                disallowSuperfluousObjectProperties: false
             },
             typeMapperStack: [],
             previousTypeReference: null
@@ -56,7 +57,8 @@ describe('visitor', () => {
             options: {
                 ignoreClasses: false,
                 ignoreMethods: true,
-                shortCircuit: false
+                shortCircuit: false,
+                disallowSuperfluousObjectProperties: false
             },
             typeMapperStack: [],
             previousTypeReference: null
@@ -81,7 +83,8 @@ describe('visitor', () => {
             options: {
                 ignoreClasses: true,
                 ignoreMethods: true,
-                shortCircuit: false
+                shortCircuit: false,
+                disallowSuperfluousObjectProperties: false
             },
             typeMapperStack: [],
             previousTypeReference: null
@@ -106,7 +109,8 @@ describe('visitor', () => {
             options: {
                 ignoreClasses: true,
                 ignoreMethods: true,
-                shortCircuit: false
+                shortCircuit: false,
+                disallowSuperfluousObjectProperties: false
             },
             typeMapperStack: [],
             previousTypeReference: null

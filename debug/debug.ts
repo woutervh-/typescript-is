@@ -28,7 +28,8 @@ const visitorContext: PartialVisitorContext = {
     options: {
         shortCircuit: false,
         ignoreClasses: false,
-        ignoreMethods: true
+        ignoreMethods: true,
+        disallowSuperfluousObjectProperties: true
     },
     typeMapperStack: [],
     // mode: { type: 'type-check' },

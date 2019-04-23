@@ -217,7 +217,7 @@ function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContex
 function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
     const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'type-check' });
     return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
-        const properties = visitorContext.checker.getPropertiesOfType(type);
+        const propertyInfos = visitorContext.checker.getPropertiesOfType(type).map((property) => VisitorUtils.getPropertyInfo(property, visitorContext));
         const stringIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.String);
         const stringIndexFunctionName = stringIndexType ? visitType(stringIndexType, visitorContext) : undefined;
         const keyIdentifier = ts.createIdentifier('key');
@@ -270,8 +270,7 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                         )
                     )
                 ),
-                ...properties.map((property) => {
-                    const propertyInfo = VisitorUtils.getPropertyInfo(property, visitorContext);
+                ...propertyInfos.map((propertyInfo) => {
                     if (propertyInfo.isSymbol) {
                         return ts.createEmptyStatement();
                     }
@@ -341,6 +340,48 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                         )
                     ]);
                 }),
+                ...(
+                    visitorContext.options.disallowSuperfluousObjectProperties && stringIndexFunctionName === undefined
+                        ? [
+                            ts.createForOf(
+                                undefined,
+                                ts.createVariableDeclarationList(
+                                    [ts.createVariableDeclaration(keyIdentifier, undefined, undefined)],
+                                    ts.NodeFlags.Const
+                                ),
+                                ts.createCall(ts.createPropertyAccess(ts.createIdentifier('Object'), 'keys'), undefined, [objectIdentifier]),
+                                ts.createBlock([
+                                    ts.createIf(
+                                        VisitorUtils.createBinaries(
+                                            propertyInfos.map((propertyInfo) => ts.createStrictInequality(keyIdentifier, ts.createStringLiteral(propertyInfo.name))),
+                                            ts.SyntaxKind.AmpersandAmpersandToken,
+                                            ts.createTrue()
+                                        ),
+                                        ts.createReturn(
+                                            VisitorUtils.createBinaries(
+                                                [
+                                                    ts.createStringLiteral('validation failed at '),
+                                                    ts.createCall(
+                                                        ts.createPropertyAccess(
+                                                            pathIdentifier,
+                                                            'join'
+                                                        ),
+                                                        undefined,
+                                                        [ts.createStringLiteral('.')]
+                                                    ),
+                                                    ts.createStringLiteral(`: superfluous property '`),
+                                                    keyIdentifier,
+                                                    ts.createStringLiteral(`' in object`)
+                                                ],
+                                                ts.SyntaxKind.PlusToken
+                                            )
+                                        )
+                                    )
+                                ])
+                            )
+                        ]
+                        : []
+                ),
                 ...(
                     stringIndexFunctionName
                         ? [
@@ -533,13 +574,7 @@ function visitNonPrimitiveType(type: ts.Type, visitorContext: VisitorContext) {
                     ts.createIdentifier('undefined')
                 )
             ];
-            const condition = conditions.reduce((condition, expression) =>
-                ts.createBinary(
-                    condition,
-                    ts.SyntaxKind.AmpersandAmpersandToken,
-                    expression
-                )
-            );
+            const condition = VisitorUtils.createBinaries(conditions, ts.SyntaxKind.AmpersandAmpersandToken);
             return VisitorUtils.createAssertionFunction(
                 ts.createLogicalNot(condition),
                 `expected a non-primitive`,

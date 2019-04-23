@@ -95,6 +95,7 @@ There are some options to configure the transformer.
 | `shortCircuit` | Boolean (default `false`). If `true`, all type guards will return `true`, i.e. no validation takes place. Can be used for example in production deployments where doing a lot of validation can cost too much CPU. |
 | `ignoreClasses` | Boolean (default: `false`). If `true`, when the transformer encounters a class, it will ignore it and simply return `true`. If `false`, an error is generated at compile time. |
 | `ignoreMethods` | Boolean (default: `false`). If `true`, when the transformer encounters a method, it will ignore it and simply return `true`. If `false`, an error is generated at compile time. |
+| `disallowSuperfluousObjectProperties` | Boolean (default: `false`). If `true`, objects are checked for having superfluous properties and will cause the validation to fail if they do. If `false`, no check for superfluous properties is made. |
 
 If you are using `ttypescript`, you can include the options in your `tsconfig.json`:
 

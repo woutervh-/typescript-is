@@ -32,7 +32,8 @@ describe('visitor', () => {
             options: {
                 ignoreClasses: false,
                 ignoreMethods: false,
-                shortCircuit: false
+                shortCircuit: false,
+                disallowSuperfluousObjectProperties: false
             },
             typeMapperStack: [],
             previousTypeReference: null

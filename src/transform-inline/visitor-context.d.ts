@@ -4,6 +4,7 @@ interface Options {
     shortCircuit: boolean;
     ignoreClasses: boolean;
     ignoreMethods: boolean;
+    disallowSuperfluousObjectProperties: boolean;
 }
 
 export interface VisitorContext extends PartialVisitorContext {
