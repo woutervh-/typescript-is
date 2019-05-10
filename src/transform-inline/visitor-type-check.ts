@@ -5,6 +5,7 @@ import * as VisitorUtils from './visitor-utils';
 import * as VisitorKeyof from './visitor-keyof';
 import * as VisitorIndexedAccess from './visitor-indexed-access';
 import * as VisitorIsStringKeyof from './visitor-is-string-keyof';
+import { sliceSet } from './utils';
 
 function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext) {
     const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'type-check' });
@@ -213,7 +214,7 @@ function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContex
 }
 
 function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
-    const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'type-check' });
+    const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'type-check', superfluousPropertyCheck: visitorContext.options.disallowSuperfluousObjectProperties });
     return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
         const propertyInfos = visitorContext.checker.getPropertiesOfType(type).map((property) => VisitorUtils.getPropertyInfo(property, visitorContext));
         const stringIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.String);
@@ -464,27 +465,31 @@ function visitLiteralType(type: ts.LiteralType, visitorContext: VisitorContext) 
 }
 
 function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorContext: VisitorContext) {
-    const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'type-check' });
-    return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
-        const typeUnion = type;
-        if (tsutils.isUnionType(typeUnion)) {
-            const functionNames = typeUnion.types.map((type) => visitType(type, visitorContext));
+    const typeUnion = type;
+    if (tsutils.isUnionType(typeUnion)) {
+        const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'type-check' });
+        const functionNames = typeUnion.types.map((type) => visitType(type, visitorContext));
+        return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
             return VisitorUtils.createDisjunctionFunction(functionNames, name);
-        }
-        const intersectionType = type;
-        if (tsutils.isIntersectionType(intersectionType)) {
+        });
+    }
+    const intersectionType = type;
+    if (tsutils.isIntersectionType(intersectionType)) {
+        const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'type-check', superfluousPropertyCheck: visitorContext.options.disallowSuperfluousObjectProperties });
+        return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
             const functionNames = intersectionType.types.map((type) => visitType(type, { ...visitorContext, options: { ...visitorContext.options, disallowSuperfluousObjectProperties: false } }));
             if (visitorContext.options.disallowSuperfluousObjectProperties) {
                 // Check object keys at intersection type level. https://github.com/woutervh-/typescript-is/issues/21
                 const keys = VisitorIsStringKeyof.visitType(type, visitorContext);
                 if (keys instanceof Set) {
-                    const loop = VisitorUtils.createSuperfluousPropertiesLoop([...keys]);
+                    const loop = VisitorUtils.createSuperfluousPropertiesLoop(sliceSet(keys));
+                    return VisitorUtils.createConjunctionFunction(functionNames, name, [loop]);
                 }
             }
             return VisitorUtils.createConjunctionFunction(functionNames, name);
-        }
-        throw new Error('UnionOrIntersectionType type was neither a union nor an intersection.');
-    });
+        });
+    }
+    throw new Error('UnionOrIntersectionType type was neither a union nor an intersection.');
 }
 
 function visitBooleanLiteral(type: ts.Type, visitorContext: VisitorContext) {

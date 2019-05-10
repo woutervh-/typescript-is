@@ -115,6 +115,7 @@ export function getResolvedTypeParameter(type: ts.Type, visitorContext: VisitorC
 
 interface TypeCheckNameMode {
     type: 'type-check';
+    superfluousPropertyCheck?: boolean;
 }
 
 interface KeyofNameMode {
@@ -138,7 +139,7 @@ export function getFullTypeName(type: ts.Type, visitorContext: VisitorContext, m
         const indexTypeName = getFullTypeName(mode.indexType, visitorContext, { type: 'type-check' });
         name += `_ia__${indexTypeName}`;
     }
-    if (mode.type === 'type-check' && !!visitorContext.options.disallowSuperfluousObjectProperties) {
+    if (mode.type === 'type-check' && !!mode.superfluousPropertyCheck) {
         name += '_s';
     }
     if (tsutils.isTypeReference(type) && type.typeArguments !== undefined) {
@@ -316,7 +317,7 @@ export function createRejectingFunction(reason: string, functionName: string) {
     );
 }
 
-export function createConjunctionFunction(functionNames: string[], functionName: string) {
+export function createConjunctionFunction(functionNames: string[], functionName: string, extraStatements?: ts.Statement[]) {
     const conditionsIdentifier = ts.createIdentifier('conditions');
     const conditionIdentifier = ts.createIdentifier('condition');
     const errorIdentifier = ts.createIdentifier('error');
@@ -371,6 +372,7 @@ export function createConjunctionFunction(functionNames: string[], functionName:
                     )
                 ])
             ),
+            ...(extraStatements || []),
             ts.createReturn(ts.createNull())
         ])
     );
