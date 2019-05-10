@@ -6,9 +6,6 @@ import * as VisitorKeyof from './visitor-keyof';
 import * as VisitorIndexedAccess from './visitor-indexed-access';
 import * as VisitorIsStringKeyof from './visitor-is-string-keyof';
 
-const objectIdentifier = ts.createIdentifier('object');
-const pathIdentifier = ts.createIdentifier('path');
-
 function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext) {
     const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'type-check' });
     return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
@@ -25,7 +22,7 @@ function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext
             name,
             undefined,
             [
-                ts.createParameter(undefined, undefined, undefined, objectIdentifier, undefined, undefined, undefined)
+                ts.createParameter(undefined, undefined, undefined, VisitorUtils.objectIdentifier, undefined, undefined, undefined)
             ],
             undefined,
             ts.createBlock([
@@ -35,13 +32,13 @@ function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext
                             ts.createCall(
                                 ts.createPropertyAccess(ts.createIdentifier('Array'), 'isArray'),
                                 undefined,
-                                [objectIdentifier]
+                                [VisitorUtils.objectIdentifier]
                             )
                         ),
                         ts.SyntaxKind.BarBarToken,
                         ts.createStrictInequality(
                             ts.createPropertyAccess(
-                                objectIdentifier,
+                                VisitorUtils.objectIdentifier,
                                 'length'
                             ),
                             ts.createNumericLiteral(type.typeArguments.length.toString())
@@ -53,7 +50,7 @@ function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext
                                 ts.createStringLiteral('validation failed at '),
                                 ts.createCall(
                                     ts.createPropertyAccess(
-                                        pathIdentifier,
+                                        VisitorUtils.pathIdentifier,
                                         'join'
                                     ),
                                     undefined,
@@ -69,7 +66,7 @@ function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext
                     ts.createBlock([
                         ts.createExpressionStatement(
                             ts.createCall(
-                                ts.createPropertyAccess(pathIdentifier, 'push'),
+                                ts.createPropertyAccess(VisitorUtils.pathIdentifier, 'push'),
                                 undefined,
                                 [ts.createStringLiteral(`[${index}]`)]
                             )
@@ -83,14 +80,14 @@ function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext
                                     ts.createCall(
                                         ts.createIdentifier(functionName),
                                         undefined,
-                                        [ts.createElementAccess(objectIdentifier, index)]
+                                        [ts.createElementAccess(VisitorUtils.objectIdentifier, index)]
                                     )
                                 )
                             ]
                         ),
                         ts.createExpressionStatement(
                             ts.createCall(
-                                ts.createPropertyAccess(pathIdentifier, 'pop'),
+                                ts.createPropertyAccess(VisitorUtils.pathIdentifier, 'pop'),
                                 undefined,
                                 undefined
                             )
@@ -124,7 +121,7 @@ function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContex
             name,
             undefined,
             [
-                ts.createParameter(undefined, undefined, undefined, objectIdentifier, undefined, undefined, undefined)
+                ts.createParameter(undefined, undefined, undefined, VisitorUtils.objectIdentifier, undefined, undefined, undefined)
             ],
             undefined,
             ts.createBlock([
@@ -133,7 +130,7 @@ function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContex
                         ts.createCall(
                             ts.createPropertyAccess(ts.createIdentifier('Array'), 'isArray'),
                             undefined,
-                            [objectIdentifier]
+                            [VisitorUtils.objectIdentifier]
                         )
                     ),
                     ts.createReturn(
@@ -142,7 +139,7 @@ function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContex
                                 ts.createStringLiteral('validation failed at '),
                                 ts.createCall(
                                     ts.createPropertyAccess(
-                                        pathIdentifier,
+                                        VisitorUtils.pathIdentifier,
                                         'join'
                                     ),
                                     undefined,
@@ -162,13 +159,13 @@ function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContex
                     ts.createBinary(
                         indexIdentifier,
                         ts.SyntaxKind.LessThanToken,
-                        ts.createPropertyAccess(objectIdentifier, 'length')
+                        ts.createPropertyAccess(VisitorUtils.objectIdentifier, 'length')
                     ),
                     ts.createPostfixIncrement(indexIdentifier),
                     ts.createBlock([
                         ts.createExpressionStatement(
                             ts.createCall(
-                                ts.createPropertyAccess(pathIdentifier, 'push'),
+                                ts.createPropertyAccess(VisitorUtils.pathIdentifier, 'push'),
                                 undefined,
                                 [
                                     VisitorUtils.createBinaries(
@@ -191,14 +188,14 @@ function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContex
                                     ts.createCall(
                                         ts.createIdentifier(functionName),
                                         undefined,
-                                        [ts.createElementAccess(objectIdentifier, indexIdentifier)]
+                                        [ts.createElementAccess(VisitorUtils.objectIdentifier, indexIdentifier)]
                                     )
                                 )
                             ]
                         ),
                         ts.createExpressionStatement(
                             ts.createCall(
-                                ts.createPropertyAccess(pathIdentifier, 'pop'),
+                                ts.createPropertyAccess(VisitorUtils.pathIdentifier, 'pop'),
                                 undefined,
                                 undefined
                             )
@@ -230,7 +227,7 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
             name,
             undefined,
             [
-                ts.createParameter(undefined, undefined, undefined, objectIdentifier, undefined, undefined, undefined)
+                ts.createParameter(undefined, undefined, undefined, VisitorUtils.objectIdentifier, undefined, undefined, undefined)
             ],
             undefined,
             ts.createBlock([
@@ -238,17 +235,17 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                     VisitorUtils.createBinaries(
                         [
                             ts.createStrictInequality(
-                                ts.createTypeOf(objectIdentifier),
+                                ts.createTypeOf(VisitorUtils.objectIdentifier),
                                 ts.createStringLiteral('object')
                             ),
                             ts.createStrictEquality(
-                                objectIdentifier,
+                                VisitorUtils.objectIdentifier,
                                 ts.createNull()
                             ),
                             ts.createCall(
                                 ts.createPropertyAccess(ts.createIdentifier('Array'), 'isArray'),
                                 undefined,
-                                [objectIdentifier]
+                                [VisitorUtils.objectIdentifier]
                             )
                         ],
                         ts.SyntaxKind.BarBarToken
@@ -259,7 +256,7 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                                 ts.createStringLiteral('validation failed at '),
                                 ts.createCall(
                                     ts.createPropertyAccess(
-                                        pathIdentifier,
+                                        VisitorUtils.pathIdentifier,
                                         'join'
                                     ),
                                     undefined,
@@ -283,12 +280,12 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                             ts.createBinary(
                                 ts.createStringLiteral(propertyInfo.name),
                                 ts.SyntaxKind.InKeyword,
-                                objectIdentifier
+                                VisitorUtils.objectIdentifier
                             ),
                             ts.createBlock([
                                 ts.createExpressionStatement(
                                     ts.createCall(
-                                        ts.createPropertyAccess(pathIdentifier, 'push'),
+                                        ts.createPropertyAccess(VisitorUtils.pathIdentifier, 'push'),
                                         undefined,
                                         [ts.createStringLiteral(propertyInfo.name)]
                                     )
@@ -302,14 +299,14 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                                             ts.createCall(
                                                 ts.createIdentifier(functionName),
                                                 undefined,
-                                                [ts.createElementAccess(objectIdentifier, ts.createStringLiteral(propertyInfo.name))]
+                                                [ts.createElementAccess(VisitorUtils.objectIdentifier, ts.createStringLiteral(propertyInfo.name))]
                                             )
                                         )
                                     ]
                                 ),
                                 ts.createExpressionStatement(
                                     ts.createCall(
-                                        ts.createPropertyAccess(pathIdentifier, 'pop'),
+                                        ts.createPropertyAccess(VisitorUtils.pathIdentifier, 'pop'),
                                         undefined,
                                         undefined
                                     )
@@ -327,7 +324,7 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                                             ts.createStringLiteral('validation failed at '),
                                             ts.createCall(
                                                 ts.createPropertyAccess(
-                                                    pathIdentifier,
+                                                    VisitorUtils.pathIdentifier,
                                                     'join'
                                                 ),
                                                 undefined,
@@ -343,44 +340,7 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                 }),
                 ...(
                     visitorContext.options.disallowSuperfluousObjectProperties && stringIndexFunctionName === undefined
-                        ? [
-                            ts.createForOf(
-                                undefined,
-                                ts.createVariableDeclarationList(
-                                    [ts.createVariableDeclaration(keyIdentifier, undefined, undefined)],
-                                    ts.NodeFlags.Const
-                                ),
-                                ts.createCall(ts.createPropertyAccess(ts.createIdentifier('Object'), 'keys'), undefined, [objectIdentifier]),
-                                ts.createBlock([
-                                    ts.createIf(
-                                        VisitorUtils.createBinaries(
-                                            propertyInfos.map((propertyInfo) => ts.createStrictInequality(keyIdentifier, ts.createStringLiteral(propertyInfo.name))),
-                                            ts.SyntaxKind.AmpersandAmpersandToken,
-                                            ts.createTrue()
-                                        ),
-                                        ts.createReturn(
-                                            VisitorUtils.createBinaries(
-                                                [
-                                                    ts.createStringLiteral('validation failed at '),
-                                                    ts.createCall(
-                                                        ts.createPropertyAccess(
-                                                            pathIdentifier,
-                                                            'join'
-                                                        ),
-                                                        undefined,
-                                                        [ts.createStringLiteral('.')]
-                                                    ),
-                                                    ts.createStringLiteral(`: superfluous property '`),
-                                                    keyIdentifier,
-                                                    ts.createStringLiteral(`' in object`)
-                                                ],
-                                                ts.SyntaxKind.PlusToken
-                                            )
-                                        )
-                                    )
-                                ])
-                            )
-                        ]
+                        ? [VisitorUtils.createSuperfluousPropertiesLoop(propertyInfos.map((propertyInfo) => propertyInfo.name))]
                         : []
                 ),
                 ...(
@@ -392,11 +352,11 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                                     [ts.createVariableDeclaration(keyIdentifier, undefined, undefined)],
                                     ts.NodeFlags.Const
                                 ),
-                                ts.createCall(ts.createPropertyAccess(ts.createIdentifier('Object'), 'keys'), undefined, [objectIdentifier]),
+                                ts.createCall(ts.createPropertyAccess(ts.createIdentifier('Object'), 'keys'), undefined, [VisitorUtils.objectIdentifier]),
                                 ts.createBlock([
                                     ts.createExpressionStatement(
                                         ts.createCall(
-                                            ts.createPropertyAccess(pathIdentifier, 'push'),
+                                            ts.createPropertyAccess(VisitorUtils.pathIdentifier, 'push'),
                                             undefined,
                                             [keyIdentifier]
                                         )
@@ -410,14 +370,14 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                                                 ts.createCall(
                                                     ts.createIdentifier(stringIndexFunctionName),
                                                     undefined,
-                                                    [ts.createElementAccess(objectIdentifier, keyIdentifier)]
+                                                    [ts.createElementAccess(VisitorUtils.objectIdentifier, keyIdentifier)]
                                                 )
                                             )
                                         ]
                                     ),
                                     ts.createExpressionStatement(
                                         ts.createCall(
-                                            ts.createPropertyAccess(pathIdentifier, 'pop'),
+                                            ts.createPropertyAccess(VisitorUtils.pathIdentifier, 'pop'),
                                             undefined,
                                             undefined
                                         )
@@ -479,7 +439,7 @@ function visitLiteralType(type: ts.LiteralType, visitorContext: VisitorContext) 
         return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
             return VisitorUtils.createAssertionFunction(
                 ts.createStrictInequality(
-                    objectIdentifier,
+                    VisitorUtils.objectIdentifier,
                     ts.createStringLiteral(value)
                 ),
                 `expected string '${type.value}'`,
@@ -491,7 +451,7 @@ function visitLiteralType(type: ts.LiteralType, visitorContext: VisitorContext) 
         return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
             return VisitorUtils.createAssertionFunction(
                 ts.createStrictInequality(
-                    objectIdentifier,
+                    VisitorUtils.objectIdentifier,
                     ts.createNumericLiteral(type.value.toString())
                 ),
                 `expected number '${type.value}'`,
@@ -504,26 +464,27 @@ function visitLiteralType(type: ts.LiteralType, visitorContext: VisitorContext) 
 }
 
 function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorContext: VisitorContext) {
-    const typeUnion = type;
-    if (tsutils.isUnionType(typeUnion)) {
-        const name = VisitorUtils.getFullTypeName(typeUnion, visitorContext, { type: 'type-check' });
-        return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
+    const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'type-check' });
+    return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
+        const typeUnion = type;
+        if (tsutils.isUnionType(typeUnion)) {
             const functionNames = typeUnion.types.map((type) => visitType(type, visitorContext));
             return VisitorUtils.createDisjunctionFunction(functionNames, name);
-        });
-    }
-    const intersectionType = type;
-    if (tsutils.isIntersectionType(intersectionType)) {
-        const name = VisitorUtils.getFullTypeName(intersectionType, visitorContext, { type: 'type-check', checkSuperfluous: visitorContext.options.disallowSuperfluousObjectProperties });
-        return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
+        }
+        const intersectionType = type;
+        if (tsutils.isIntersectionType(intersectionType)) {
             const functionNames = intersectionType.types.map((type) => visitType(type, { ...visitorContext, options: { ...visitorContext.options, disallowSuperfluousObjectProperties: false } }));
             if (visitorContext.options.disallowSuperfluousObjectProperties) {
                 // Check object keys at intersection type level. https://github.com/woutervh-/typescript-is/issues/21
+                const keys = VisitorIsStringKeyof.visitType(type, visitorContext);
+                if (keys instanceof Set) {
+                    const loop = VisitorUtils.createSuperfluousPropertiesLoop([...keys]);
+                }
             }
             return VisitorUtils.createConjunctionFunction(functionNames, name);
-        });
-    }
-    throw new Error('UnionOrIntersectionType type was neither a union nor an intersection.');
+        }
+        throw new Error('UnionOrIntersectionType type was neither a union nor an intersection.');
+    });
 }
 
 function visitBooleanLiteral(type: ts.Type, visitorContext: VisitorContext) {
@@ -534,7 +495,7 @@ function visitBooleanLiteral(type: ts.Type, visitorContext: VisitorContext) {
         return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
             return VisitorUtils.createAssertionFunction(
                 ts.createStrictInequality(
-                    objectIdentifier,
+                    VisitorUtils.objectIdentifier,
                     ts.createTrue()
                 ),
                 `expected true`,
@@ -546,7 +507,7 @@ function visitBooleanLiteral(type: ts.Type, visitorContext: VisitorContext) {
         return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
             return VisitorUtils.createAssertionFunction(
                 ts.createStrictInequality(
-                    objectIdentifier,
+                    VisitorUtils.objectIdentifier,
                     ts.createFalse()
                 ),
                 `expected false`,
@@ -566,23 +527,23 @@ function visitNonPrimitiveType(type: ts.Type, visitorContext: VisitorContext) {
         return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
             const conditions: ts.Expression[] = [
                 ts.createStrictInequality(
-                    ts.createTypeOf(objectIdentifier),
+                    ts.createTypeOf(VisitorUtils.objectIdentifier),
                     ts.createStringLiteral('boolean')
                 ),
                 ts.createStrictInequality(
-                    ts.createTypeOf(objectIdentifier),
+                    ts.createTypeOf(VisitorUtils.objectIdentifier),
                     ts.createStringLiteral('number')
                 ),
                 ts.createStrictInequality(
-                    ts.createTypeOf(objectIdentifier),
+                    ts.createTypeOf(VisitorUtils.objectIdentifier),
                     ts.createStringLiteral('string')
                 ),
                 ts.createStrictInequality(
-                    objectIdentifier,
+                    VisitorUtils.objectIdentifier,
                     ts.createNull()
                 ),
                 ts.createStrictInequality(
-                    objectIdentifier,
+                    VisitorUtils.objectIdentifier,
                     ts.createIdentifier('undefined')
                 )
             ];
@@ -720,13 +681,13 @@ export function visitUndefinedOrType(type: ts.Type, visitorContext: VisitorConte
             name,
             undefined,
             [
-                ts.createParameter(undefined, undefined, undefined, objectIdentifier, undefined, undefined, undefined)
+                ts.createParameter(undefined, undefined, undefined, VisitorUtils.objectIdentifier, undefined, undefined, undefined)
             ],
             undefined,
             ts.createBlock([
                 ts.createIf(
                     ts.createStrictInequality(
-                        objectIdentifier,
+                        VisitorUtils.objectIdentifier,
                         ts.createIdentifier('undefined')
                     ),
                     ts.createBlock([
@@ -739,7 +700,7 @@ export function visitUndefinedOrType(type: ts.Type, visitorContext: VisitorConte
                                     ts.createCall(
                                         ts.createIdentifier(functionName),
                                         undefined,
-                                        [objectIdentifier]
+                                        [VisitorUtils.objectIdentifier]
                                     )
                                 )
                             ]

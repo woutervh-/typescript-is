@@ -3,8 +3,6 @@ import * as tsutils from 'tsutils';
 import { VisitorContext } from './visitor-context';
 import * as VisitorUtils from './visitor-utils';
 
-const objectIdentifier = ts.createIdentifier('object');
-
 function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorContext: VisitorContext) {
     const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'keyof' });
     return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
@@ -54,7 +52,7 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
             const properties = visitorContext.checker.getPropertiesOfType(type);
             const names = properties.map((property) => property.name);
             const condition = VisitorUtils.createBinaries(
-                names.map((name) => ts.createStrictInequality(objectIdentifier, ts.createStringLiteral(name))),
+                names.map((name) => ts.createStrictInequality(VisitorUtils.objectIdentifier, ts.createStringLiteral(name))),
                 ts.SyntaxKind.AmpersandAmpersandToken,
                 ts.createTrue()
             );

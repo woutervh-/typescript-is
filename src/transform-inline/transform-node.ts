@@ -2,10 +2,8 @@ import * as path from 'path';
 import * as ts from 'typescript';
 import { VisitorContext, PartialVisitorContext } from './visitor-context';
 import { visitType, visitUndefinedOrType, visitShortCircuit } from './visitor-type-check';
+import * as VisitorUtils from './visitor-utils';
 import { sliceMapValues } from './utils';
-
-const objectIdentifier = ts.createIdentifier('object');
-const pathIdentifier = ts.createIdentifier('path');
 
 function createArrowFunction(type: ts.Type, optional: boolean, partialVisitorContext: PartialVisitorContext) {
     const functionMap: VisitorContext['functionMap'] = new Map();
@@ -29,7 +27,7 @@ function createArrowFunction(type: ts.Type, optional: boolean, partialVisitorCon
                 undefined,
                 undefined,
                 undefined,
-                objectIdentifier,
+                VisitorUtils.objectIdentifier,
                 undefined,
                 ts.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)
             )
@@ -39,12 +37,12 @@ function createArrowFunction(type: ts.Type, optional: boolean, partialVisitorCon
         ts.createBlock([
             ts.createVariableStatement(
                 [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
-                [ts.createVariableDeclaration(pathIdentifier, undefined, ts.createArrayLiteral([ts.createStringLiteral('$')]))]
+                [ts.createVariableDeclaration(VisitorUtils.pathIdentifier, undefined, ts.createArrayLiteral([ts.createStringLiteral('$')]))]
             ),
             ...declarations,
             ts.createVariableStatement(
                 [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
-                [ts.createVariableDeclaration(errorIdentifier, undefined, ts.createCall(ts.createIdentifier(functionName), undefined, [objectIdentifier]))]
+                [ts.createVariableDeclaration(errorIdentifier, undefined, ts.createCall(ts.createIdentifier(functionName), undefined, [VisitorUtils.objectIdentifier]))]
             ),
             ts.createReturn(errorIdentifier)
         ])

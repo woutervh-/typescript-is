@@ -2,8 +2,8 @@ import * as ts from 'typescript';
 import * as tsutils from 'tsutils';
 import { VisitorContext } from './visitor-context';
 
-const objectIdentifier = ts.createIdentifier('object');
-const pathIdentifier = ts.createIdentifier('path');
+export const objectIdentifier = ts.createIdentifier('object');
+export const pathIdentifier = ts.createIdentifier('path');
 
 export function checkIsClass(type: ts.ObjectType, visitorContext: VisitorContext) {
     if ((ts.ObjectFlags.Class & type.objectFlags) !== 0) {
@@ -115,7 +115,6 @@ export function getResolvedTypeParameter(type: ts.Type, visitorContext: VisitorC
 
 interface TypeCheckNameMode {
     type: 'type-check';
-    checkSuperfluous?: boolean;
 }
 
 interface KeyofNameMode {
@@ -139,7 +138,7 @@ export function getFullTypeName(type: ts.Type, visitorContext: VisitorContext, m
         const indexTypeName = getFullTypeName(mode.indexType, visitorContext, { type: 'type-check' });
         name += `_ia__${indexTypeName}`;
     }
-    if (mode.type === 'type-check' && !!mode.checkSuperfluous) {
+    if (mode.type === 'type-check' && !!visitorContext.options.disallowSuperfluousObjectProperties) {
         name += '_s';
     }
     if (tsutils.isTypeReference(type) && type.typeArguments !== undefined) {
@@ -368,24 +367,7 @@ export function createConjunctionFunction(functionNames: string[], functionName:
                     ),
                     ts.createIf(
                         errorIdentifier,
-                        ts.createReturn(
-                            createBinaries(
-                                [
-                                    ts.createStringLiteral('validation failed at '),
-                                    ts.createCall(
-                                        ts.createPropertyAccess(
-                                            pathIdentifier,
-                                            'join'
-                                        ),
-                                        undefined,
-                                        [ts.createStringLiteral('.')]
-                                    ),
-                                    ts.createStringLiteral(`: `),
-                                    errorIdentifier
-                                ],
-                                ts.SyntaxKind.PlusToken
-                            )
-                        )
+                        ts.createReturn(errorIdentifier)
                     )
                 ])
             ),
@@ -502,6 +484,46 @@ export function createAssertionFunction(failureCondition: ts.Expression, reason:
                     )
                 ),
                 ts.createReturn(ts.createNull())
+            )
+        ])
+    );
+}
+
+export function createSuperfluousPropertiesLoop(propertyNames: string[]) {
+    const keyIdentifier = ts.createIdentifier('key');
+    return ts.createForOf(
+        undefined,
+        ts.createVariableDeclarationList(
+            [ts.createVariableDeclaration(keyIdentifier, undefined, undefined)],
+            ts.NodeFlags.Const
+        ),
+        ts.createCall(ts.createPropertyAccess(ts.createIdentifier('Object'), 'keys'), undefined, [objectIdentifier]),
+        ts.createBlock([
+            ts.createIf(
+                createBinaries(
+                    propertyNames.map((propertyName) => ts.createStrictInequality(keyIdentifier, ts.createStringLiteral(propertyName))),
+                    ts.SyntaxKind.AmpersandAmpersandToken,
+                    ts.createTrue()
+                ),
+                ts.createReturn(
+                    createBinaries(
+                        [
+                            ts.createStringLiteral('validation failed at '),
+                            ts.createCall(
+                                ts.createPropertyAccess(
+                                    pathIdentifier,
+                                    'join'
+                                ),
+                                undefined,
+                                [ts.createStringLiteral('.')]
+                            ),
+                            ts.createStringLiteral(`: superfluous property '`),
+                            keyIdentifier,
+                            ts.createStringLiteral(`' in object`)
+                        ],
+                        ts.SyntaxKind.PlusToken
+                    )
+                )
             )
         ])
     );
