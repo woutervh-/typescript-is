@@ -115,6 +115,7 @@ export function getResolvedTypeParameter(type: ts.Type, visitorContext: VisitorC
 
 interface TypeCheckNameMode {
     type: 'type-check';
+    checkSuperfluous?: boolean;
 }
 
 interface KeyofNameMode {
@@ -137,6 +138,9 @@ export function getFullTypeName(type: ts.Type, visitorContext: VisitorContext, m
     if (mode.type === 'indexed-access') {
         const indexTypeName = getFullTypeName(mode.indexType, visitorContext, { type: 'type-check' });
         name += `_ia__${indexTypeName}`;
+    }
+    if (mode.type === 'type-check' && !!mode.checkSuperfluous) {
+        name += '_s';
     }
     if (tsutils.isTypeReference(type) && type.typeArguments !== undefined) {
         for (const typeArgument of type.typeArguments) {

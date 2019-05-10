@@ -155,7 +155,7 @@ function visitNever() {
 }
 
 function visitUnknown() {
-    // key unknown
+    // keyof unknown
     return false;
 }
 

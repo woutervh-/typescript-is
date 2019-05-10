@@ -13,7 +13,8 @@
         "declaration": false,
         "plugins": [
             {
-                "transform": "./src/transform-inline/transformer.ts"
+                "transform": "./src/transform-inline/transformer.ts",
+                "disallowSuperfluousObjectProperties": true
             }
         ]
     },

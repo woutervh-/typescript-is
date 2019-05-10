@@ -4,6 +4,7 @@ import { VisitorContext } from './visitor-context';
 import * as VisitorUtils from './visitor-utils';
 import * as VisitorKeyof from './visitor-keyof';
 import * as VisitorIndexedAccess from './visitor-indexed-access';
+import * as VisitorIsStringKeyof from './visitor-is-string-keyof';
 
 const objectIdentifier = ts.createIdentifier('object');
 const pathIdentifier = ts.createIdentifier('path');
@@ -503,15 +504,26 @@ function visitLiteralType(type: ts.LiteralType, visitorContext: VisitorContext) 
 }
 
 function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorContext: VisitorContext) {
-    const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'type-check' });
-    return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
-        const functionNames = type.types.map((type) => visitType(type, visitorContext));
-        if (tsutils.isUnionType(type)) {
+    const typeUnion = type;
+    if (tsutils.isUnionType(typeUnion)) {
+        const name = VisitorUtils.getFullTypeName(typeUnion, visitorContext, { type: 'type-check' });
+        return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
+            const functionNames = typeUnion.types.map((type) => visitType(type, visitorContext));
             return VisitorUtils.createDisjunctionFunction(functionNames, name);
-        } else {
+        });
+    }
+    const intersectionType = type;
+    if (tsutils.isIntersectionType(intersectionType)) {
+        const name = VisitorUtils.getFullTypeName(intersectionType, visitorContext, { type: 'type-check', checkSuperfluous: visitorContext.options.disallowSuperfluousObjectProperties });
+        return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
+            const functionNames = intersectionType.types.map((type) => visitType(type, { ...visitorContext, options: { ...visitorContext.options, disallowSuperfluousObjectProperties: false } }));
+            if (visitorContext.options.disallowSuperfluousObjectProperties) {
+                // Check object keys at intersection type level. https://github.com/woutervh-/typescript-is/issues/21
+            }
             return VisitorUtils.createConjunctionFunction(functionNames, name);
-        }
-    });
+        });
+    }
+    throw new Error('UnionOrIntersectionType type was neither a union nor an intersection.');
 }
 
 function visitBooleanLiteral(type: ts.Type, visitorContext: VisitorContext) {
