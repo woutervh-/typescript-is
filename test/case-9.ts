@@ -6,11 +6,11 @@ describe('assertType', () => {
         const expectedMessageRegExp = /validation failed at \$: expected a number$/;
 
         it('should return the numbers passed to it', () => {
-            assert.strictEqual(assertType<number>(-1), -1);
-            assert.strictEqual(assertType<number>(0), 0);
-            assert.strictEqual(assertType<number>(1), 1);
-            assert.strictEqual(Number.isNaN(assertType<number>(Number.NaN)), true);
-            assert.strictEqual(assertType<number>(Number.POSITIVE_INFINITY), Number.POSITIVE_INFINITY);
+            assert.deepStrictEqual(assertType<number>(-1), -1);
+            assert.deepStrictEqual(assertType<number>(0), 0);
+            assert.deepStrictEqual(assertType<number>(1), 1);
+            assert.deepStrictEqual(Number.isNaN(assertType<number>(Number.NaN)), true);
+            assert.deepStrictEqual(assertType<number>(Number.POSITIVE_INFINITY), Number.POSITIVE_INFINITY);
         });
 
         it('should throw an error if non-numbers are passed to it', () => {

@@ -14,13 +14,13 @@ describe('@ValidateClass, @AssertType', () => {
         const instance = new TestClass();
 
         it('should pass validation for numbers', () => {
-            assert.strictEqual(instance.testMethod(0), 0);
-            assert.strictEqual(instance.testMethod(1), 1);
-            assert.strictEqual(instance.testMethod(-1), -1);
-            assert.strictEqual(instance.testMethod(42), 42);
-            assert.strictEqual(instance.testMethod(Number.POSITIVE_INFINITY), Number.POSITIVE_INFINITY);
-            assert.strictEqual(instance.testMethod(Number.NEGATIVE_INFINITY), Number.NEGATIVE_INFINITY);
-            assert.strictEqual(Number.isNaN(instance.testMethod(Number.NaN)), true);
+            assert.deepStrictEqual(instance.testMethod(0), 0);
+            assert.deepStrictEqual(instance.testMethod(1), 1);
+            assert.deepStrictEqual(instance.testMethod(-1), -1);
+            assert.deepStrictEqual(instance.testMethod(42), 42);
+            assert.deepStrictEqual(instance.testMethod(Number.POSITIVE_INFINITY), Number.POSITIVE_INFINITY);
+            assert.deepStrictEqual(instance.testMethod(Number.NEGATIVE_INFINITY), Number.NEGATIVE_INFINITY);
+            assert.deepStrictEqual(Number.isNaN(instance.testMethod(Number.NaN)), true);
         });
 
         it('should throw an error for non-numbers', () => {
@@ -45,10 +45,10 @@ describe('@ValidateClass, @AssertType', () => {
         const instance = new TestClass();
 
         it('should pass validation for strings', () => {
-            assert.strictEqual(instance.testMethod(''), '');
-            assert.strictEqual(instance.testMethod('42'), '42');
-            assert.strictEqual(instance.testMethod('true'), 'true');
-            assert.strictEqual(instance.testMethod('false'), 'false');
+            assert.deepStrictEqual(instance.testMethod(''), '');
+            assert.deepStrictEqual(instance.testMethod('42'), '42');
+            assert.deepStrictEqual(instance.testMethod('true'), 'true');
+            assert.deepStrictEqual(instance.testMethod('false'), 'false');
         });
 
         it('should throw an error for non-strings', () => {
@@ -81,8 +81,8 @@ describe('@ValidateClass, @AssertType', () => {
         const instance = new TestClass();
 
         it('should pass validation for booleans', () => {
-            assert.strictEqual(instance.testMethod(true), true);
-            assert.strictEqual(instance.testMethod(false), false);
+            assert.deepStrictEqual(instance.testMethod(true), true);
+            assert.deepStrictEqual(instance.testMethod(false), false);
         });
 
         it('should throw an error for non-booleans', () => {
@@ -108,10 +108,10 @@ describe('@ValidateClass, @AssertType', () => {
         const instance = new TestClass();
 
         it('should pass validation for strings', () => {
-            assert.strictEqual(instance.testMethod(''), '');
-            assert.strictEqual(instance.testMethod('0'), '0');
-            assert.strictEqual(instance.testMethod('1'), '1');
-            assert.strictEqual(instance.testMethod('foo'), 'foo');
+            assert.deepStrictEqual(instance.testMethod(''), '');
+            assert.deepStrictEqual(instance.testMethod('0'), '0');
+            assert.deepStrictEqual(instance.testMethod('1'), '1');
+            assert.deepStrictEqual(instance.testMethod('foo'), 'foo');
         });
 
         it('should throw an error for non-strings with the provided custom message', () => {

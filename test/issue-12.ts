@@ -11,25 +11,25 @@ describe('is', () => {
 
     describe('is<ConfigInit>', () => {
         it('should return true for valid recursive ConfigInit objects', () => {
-            assert.strictEqual(is<ConfigInit>({ folder: '.', children: [] }), true);
-            assert.strictEqual(is<ConfigInit>({ folder: '.', children: [{ folder: './foo', children: [] }] }), true);
-            assert.strictEqual(is<ConfigInit>({ folder: '.', children: [{ folder: './foo', children: [{ folder: './foo/bar', children: [] }] }] }), true);
-            assert.strictEqual(is<ConfigInit>({ folder: '.', children: [{ folder: './foo', children: [] }, { folder: './baz', children: [] }] }), true);
+            assert.deepStrictEqual(is<ConfigInit>({ folder: '.', children: [] }), true);
+            assert.deepStrictEqual(is<ConfigInit>({ folder: '.', children: [{ folder: './foo', children: [] }] }), true);
+            assert.deepStrictEqual(is<ConfigInit>({ folder: '.', children: [{ folder: './foo', children: [{ folder: './foo/bar', children: [] }] }] }), true);
+            assert.deepStrictEqual(is<ConfigInit>({ folder: '.', children: [{ folder: './foo', children: [] }, { folder: './baz', children: [] }] }), true);
         });
 
         it('should return false for invalid recursive ConfigInit objects', () => {
-            assert.strictEqual(is<ConfigInit>({ folder: '.' }), false);
-            assert.strictEqual(is<ConfigInit>({ folder: '.', children: [{ folder: './foo' }] }), false);
-            assert.strictEqual(is<ConfigInit>({ folder: '.', children: [{ folder: './foo', children: [{ folder: './foo/bar' }] }] }), false);
-            assert.strictEqual(is<ConfigInit>({ folder: '.', children: [{ folder: './foo', children: {} }] }), false);
-            assert.strictEqual(is<ConfigInit>({ folder: '.', children: [{ folder: './foo', children: '123' }] }), false);
-            assert.strictEqual(is<ConfigInit>({}), false);
-            assert.strictEqual(is<ConfigInit>({ folder: '.' }), false);
-            assert.strictEqual(is<ConfigInit>({ foolder: '.' }), false);
-            assert.strictEqual(is<ConfigInit>({ folder: '.', children: [{ folder: 123, children: [] }] }), false);
-            assert.strictEqual(is<ConfigInit>({ folder: '.', children: [{ foolder: './foo', children: [] }] }), false);
-            assert.strictEqual(is<ConfigInit>({ folder: '.', children: [{ foolder: 123, children: [] }] }), false);
-            assert.strictEqual(is<ConfigInit>({ folder: '.', children: [{ folder: './foo', children: [] }, { folder: './baz', children: {} }] }), false);
+            assert.deepStrictEqual(is<ConfigInit>({ folder: '.' }), false);
+            assert.deepStrictEqual(is<ConfigInit>({ folder: '.', children: [{ folder: './foo' }] }), false);
+            assert.deepStrictEqual(is<ConfigInit>({ folder: '.', children: [{ folder: './foo', children: [{ folder: './foo/bar' }] }] }), false);
+            assert.deepStrictEqual(is<ConfigInit>({ folder: '.', children: [{ folder: './foo', children: {} }] }), false);
+            assert.deepStrictEqual(is<ConfigInit>({ folder: '.', children: [{ folder: './foo', children: '123' }] }), false);
+            assert.deepStrictEqual(is<ConfigInit>({}), false);
+            assert.deepStrictEqual(is<ConfigInit>({ folder: '.' }), false);
+            assert.deepStrictEqual(is<ConfigInit>({ foolder: '.' }), false);
+            assert.deepStrictEqual(is<ConfigInit>({ folder: '.', children: [{ folder: 123, children: [] }] }), false);
+            assert.deepStrictEqual(is<ConfigInit>({ folder: '.', children: [{ foolder: './foo', children: [] }] }), false);
+            assert.deepStrictEqual(is<ConfigInit>({ folder: '.', children: [{ foolder: 123, children: [] }] }), false);
+            assert.deepStrictEqual(is<ConfigInit>({ folder: '.', children: [{ folder: './foo', children: [] }, { folder: './baz', children: {} }] }), false);
         });
     });
 
@@ -64,15 +64,15 @@ describe('is', () => {
         });
 
         it('should return false for invalid objects', () => {
-            assert.strictEqual(is<DirectlyRecursive>(true), false);
-            assert.strictEqual(is<DirectlyRecursive>([]), false);
-            assert.strictEqual(is<DirectlyRecursive>({}), false);
-            assert.strictEqual(is<DirectlyRecursive>({ child: true }), false);
-            assert.strictEqual(is<DirectlyRecursive>({ child: [] }), false);
-            assert.strictEqual(is<DirectlyRecursive>({ child: {} }), false);
-            assert.strictEqual(is<DirectlyRecursive>({ child: { child: true } }), false);
-            assert.strictEqual(is<DirectlyRecursive>({ child: { child: [] } }), false);
-            assert.strictEqual(is<DirectlyRecursive>({ child: { child: {} } }), false);
+            assert.deepStrictEqual(is<DirectlyRecursive>(true), false);
+            assert.deepStrictEqual(is<DirectlyRecursive>([]), false);
+            assert.deepStrictEqual(is<DirectlyRecursive>({}), false);
+            assert.deepStrictEqual(is<DirectlyRecursive>({ child: true }), false);
+            assert.deepStrictEqual(is<DirectlyRecursive>({ child: [] }), false);
+            assert.deepStrictEqual(is<DirectlyRecursive>({ child: {} }), false);
+            assert.deepStrictEqual(is<DirectlyRecursive>({ child: { child: true } }), false);
+            assert.deepStrictEqual(is<DirectlyRecursive>({ child: { child: [] } }), false);
+            assert.deepStrictEqual(is<DirectlyRecursive>({ child: { child: {} } }), false);
         });
     });
 
@@ -83,11 +83,11 @@ describe('is', () => {
 
     describe('is<OptionalFieldsRecursive>', () => {
         it('should return true for valid recursive OptionalFieldsRecursive objects', () => {
-            assert.strictEqual(is<OptionalFieldsRecursive>({ children: [] }), true);
+            assert.deepStrictEqual(is<OptionalFieldsRecursive>({ children: [] }), true);
         });
 
         it('should return false for invalid recursive OptionalFieldsRecursive objects', () => {
-            assert.strictEqual(is<OptionalFieldsRecursive>({}), false);
+            assert.deepStrictEqual(is<OptionalFieldsRecursive>({}), false);
         });
     });
 });

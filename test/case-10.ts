@@ -6,28 +6,28 @@ describe('createIs', () => {
         const isNumber = createIs<number>();
 
         it('should return a function', () => {
-            assert.strictEqual(typeof isNumber, 'function');
+            assert.deepStrictEqual(typeof isNumber, 'function');
         });
 
         it('should return a function that returns true for numbers', () => {
-            assert.strictEqual(isNumber(-1), true);
-            assert.strictEqual(isNumber(0), true);
-            assert.strictEqual(isNumber(1), true);
-            assert.strictEqual(isNumber(Number.NaN), true);
-            assert.strictEqual(isNumber(Number.POSITIVE_INFINITY), true);
-            assert.strictEqual(isNumber(Number.NEGATIVE_INFINITY), true);
-            assert.strictEqual(isNumber(42), true);
+            assert.deepStrictEqual(isNumber(-1), true);
+            assert.deepStrictEqual(isNumber(0), true);
+            assert.deepStrictEqual(isNumber(1), true);
+            assert.deepStrictEqual(isNumber(Number.NaN), true);
+            assert.deepStrictEqual(isNumber(Number.POSITIVE_INFINITY), true);
+            assert.deepStrictEqual(isNumber(Number.NEGATIVE_INFINITY), true);
+            assert.deepStrictEqual(isNumber(42), true);
         });
 
         it('should return a function that returns false for other objects', () => {
-            assert.strictEqual(isNumber(''), false);
-            assert.strictEqual(isNumber('1'), false);
-            assert.strictEqual(isNumber(true), false);
-            assert.strictEqual(isNumber(false), false);
-            assert.strictEqual(isNumber(undefined), false);
-            assert.strictEqual(isNumber(null), false);
-            assert.strictEqual(isNumber({}), false);
-            assert.strictEqual(isNumber([]), false);
+            assert.deepStrictEqual(isNumber(''), false);
+            assert.deepStrictEqual(isNumber('1'), false);
+            assert.deepStrictEqual(isNumber(true), false);
+            assert.deepStrictEqual(isNumber(false), false);
+            assert.deepStrictEqual(isNumber(undefined), false);
+            assert.deepStrictEqual(isNumber(null), false);
+            assert.deepStrictEqual(isNumber({}), false);
+            assert.deepStrictEqual(isNumber([]), false);
         });
     });
 });
@@ -38,15 +38,15 @@ describe('createAssertType', () => {
         const assertNumber = createAssertType<number>();
 
         it('should return a function', () => {
-            assert.strictEqual(typeof assertNumber, 'function');
+            assert.deepStrictEqual(typeof assertNumber, 'function');
         });
 
         it('should return a function that returns the numbers passed to it', () => {
-            assert.strictEqual(assertNumber(-1), -1);
-            assert.strictEqual(assertNumber(0), 0);
-            assert.strictEqual(assertNumber(1), 1);
-            assert.strictEqual(Number.isNaN(assertNumber(Number.NaN)), true);
-            assert.strictEqual(assertNumber(Number.POSITIVE_INFINITY), Number.POSITIVE_INFINITY);
+            assert.deepStrictEqual(assertNumber(-1), -1);
+            assert.deepStrictEqual(assertNumber(0), 0);
+            assert.deepStrictEqual(assertNumber(1), 1);
+            assert.deepStrictEqual(Number.isNaN(assertNumber(Number.NaN)), true);
+            assert.deepStrictEqual(assertNumber(Number.POSITIVE_INFINITY), Number.POSITIVE_INFINITY);
         });
 
         it('should return a function that throws if non-numbers are passed to it', () => {

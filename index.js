@@ -69,4 +69,16 @@ function createAssertType(getErrorMessage) {
     return (obj) => assertType(obj, getErrorMessage);
 }
 
-module.exports = { is, assertType, createIs, createAssertType, AssertType, ValidateClass, TypeGuardError };
+module.exports = {
+    is,
+    assertType,
+    createIs,
+    createAssertType,
+    equals: is,
+    createEquals: createIs,
+    assertEquals: assertType,
+    createAssertEquals: createAssertType,
+    AssertType,
+    ValidateClass,
+    TypeGuardError
+};

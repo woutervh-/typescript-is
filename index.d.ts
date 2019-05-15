@@ -1,8 +1,8 @@
 /**
- * Checks if the given argument matches the given type-argument.
+ * Checks if the given argument is assignable to the given type-argument.
  * 
  * @param object object whose type needs to be checked.
- * @returns `true` if `object` matches `T`, false otherwise.
+ * @returns `true` if `object` is assignable to `T`, false otherwise.
  * @example
    ```
    is<number>(42); // -> true
@@ -26,8 +26,38 @@ export function is<T>(object: any): object is T;
 export function createIs<T>(): (object: any) => object is T;
 
 /**
- * Asserts the given argument to be of the given type-argument.
- * If the given argument does not match the given type-argument, an error will be thrown.
+ * Checks if the given argument is assignable to the given type-argument and vice versa.
+ * Superfluous properties will cause the validation to fail.
+ * 
+ * @param object object whose type needs to be checked.
+ * @returns `true` if `object` is assignable to `T` and if `T` is "assignable" to `object`, false otherwise.
+ * @example
+   ```
+   is<{ foo: string }>({}); // -> false
+   is<{ foo: string }>({ foo: 'bar' }); // -> true
+   is<{ foo: string }>({ foo: 'bar', baz: 'qux' }); // -> false
+   ```
+ */
+export function equals<T>(object: any): object is T;
+
+/**
+ * Creates a function similar to `equals<T>` that can be invoked at a later point.
+ * 
+ * This is useful, for example, if you want to re-use the function multiple times.
+ * 
+ * @example
+   ```
+   const checkObject = createEquals<{ foo: string }>();
+   checkObject({}); // -> false
+   checkObject({ foo: 'bar' }); // -> true
+   checkObject({ foo: 'bar', baz: 'qux' }); // -> false
+   ```
+ */
+export function createEquals<T>(): (object: any) => object is T;
+
+/**
+ * Asserts the given argument to be assignable to the given type-argument.
+ * If the given argument is not assignable to the given type-argument, an error will be thrown.
  * 
  * @param object object whose type will be asserted.
  * @returns the given `object`, or an error is thrown if validation failed.
@@ -52,6 +82,36 @@ export function assertType<T>(object: any): T;
    ```
  */
 export function createAssertType<T>(): (object: any) => T;
+
+/**
+ * Asserts the given argument to be assignable to the given type-argument and vice versa.
+ * If the given argument is not assignable to the given type-argument, an error will be thrown.
+ * If the given type-argument is not assignable to the given argument, an error will be thrown.
+ * Superfluous properties will cause the validation to fail.
+ * 
+ * @param object object whose type will be asserted.
+ * @returns the given `object`, or an error is thrown if validation failed.
+ * @example
+   ```
+   const safeObject = assertEquals<{ foo: string }>({ foo: 'bar' }); // safeObject === { foo: 'bar' }, code continues
+   assertEquals<{ foo: string }>({ foo: 'bar', baz: 'qux' }); // throws an error
+   ```
+ */
+export function assertEquals<T>(object: any): T;
+
+/**
+ * Creates a function similar to `assertEquals<T>` that can be invoked at a later point.
+ * 
+ * This is useful, for example, if you want to re-use the function multiple times.
+ * 
+ * @example
+   ```
+   const assertObject = createAssertEquals<{ foo: string }>();
+   const safeObject = assertObject({ foo: 'bar' }); // safeObject === { foo: 'bar' }, code continues
+   assertObject({ foo: 'bar', baz: 'qux' }); // throws an error
+   ```
+ */
+export function createAssertEquals<T>(): (object: any) => T;
 
 /**
  * Options for the `AssertType` decorator.

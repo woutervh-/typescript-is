@@ -98,9 +98,22 @@ export function transformNode(node: ts.Node, visitorContext: PartialVisitorConte
             && node.typeArguments !== undefined
             && node.typeArguments.length === 1
         ) {
+            const name = visitorContext.checker.getTypeAtLocation(signature.declaration).symbol.name;
+            const isEquals = name === 'equals' || name === 'createEquals' || name === 'assertEquals' || name === 'createAssertEquals';
+
             const typeArgument = node.typeArguments[0];
             const type = visitorContext.checker.getTypeFromTypeNode(typeArgument);
-            const arrowFunction = createArrowFunction(type, false, visitorContext);
+            const arrowFunction = createArrowFunction(
+                type,
+                false,
+                {
+                    ...visitorContext,
+                    options: {
+                        ...visitorContext.options,
+                        disallowSuperfluousObjectProperties: isEquals || visitorContext.options.disallowSuperfluousObjectProperties
+                    }
+                }
+            );
 
             return ts.updateCall(
                 node,

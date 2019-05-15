@@ -14,18 +14,18 @@ describe('@ValidateClass, @AssertType', () => {
         const instance = new TestClass();
 
         it('should pass validation for numbers', () => {
-            assert.strictEqual(instance.testMethod(0), 0);
-            assert.strictEqual(instance.testMethod(1), 1);
-            assert.strictEqual(instance.testMethod(-1), -1);
-            assert.strictEqual(instance.testMethod(42), 42);
-            assert.strictEqual(instance.testMethod(Number.POSITIVE_INFINITY), Number.POSITIVE_INFINITY);
-            assert.strictEqual(instance.testMethod(Number.NEGATIVE_INFINITY), Number.NEGATIVE_INFINITY);
-            assert.strictEqual(Number.isNaN(instance.testMethod(Number.NaN)), true);
+            assert.deepStrictEqual(instance.testMethod(0), 0);
+            assert.deepStrictEqual(instance.testMethod(1), 1);
+            assert.deepStrictEqual(instance.testMethod(-1), -1);
+            assert.deepStrictEqual(instance.testMethod(42), 42);
+            assert.deepStrictEqual(instance.testMethod(Number.POSITIVE_INFINITY), Number.POSITIVE_INFINITY);
+            assert.deepStrictEqual(instance.testMethod(Number.NEGATIVE_INFINITY), Number.NEGATIVE_INFINITY);
+            assert.deepStrictEqual(Number.isNaN(instance.testMethod(Number.NaN)), true);
         });
 
         it('should pass validation when the argument is missing or undefined', () => {
-            assert.strictEqual(instance.testMethod(), 50);
-            assert.strictEqual(instance.testMethod(undefined), 50);
+            assert.deepStrictEqual(instance.testMethod(), 50);
+            assert.deepStrictEqual(instance.testMethod(undefined), 50);
         });
 
         it('should throw an error for non-numbers', () => {
@@ -51,19 +51,19 @@ describe('@ValidateClass, @AssertType', () => {
         const instance = new TestClass();
 
         it('should pass validation for numbers', () => {
-            assert.strictEqual(instance.testMethod(0), 0);
-            assert.strictEqual(instance.testMethod(1), 1);
-            assert.strictEqual(instance.testMethod(-1), -1);
-            assert.strictEqual(instance.testMethod(42), 42);
-            assert.strictEqual(instance.testMethod(Number.POSITIVE_INFINITY), Number.POSITIVE_INFINITY);
-            assert.strictEqual(instance.testMethod(Number.NEGATIVE_INFINITY), Number.NEGATIVE_INFINITY);
+            assert.deepStrictEqual(instance.testMethod(0), 0);
+            assert.deepStrictEqual(instance.testMethod(1), 1);
+            assert.deepStrictEqual(instance.testMethod(-1), -1);
+            assert.deepStrictEqual(instance.testMethod(42), 42);
+            assert.deepStrictEqual(instance.testMethod(Number.POSITIVE_INFINITY), Number.POSITIVE_INFINITY);
+            assert.deepStrictEqual(instance.testMethod(Number.NEGATIVE_INFINITY), Number.NEGATIVE_INFINITY);
             const nanResult = instance.testMethod(Number.NaN);
-            assert.strictEqual(typeof nanResult === 'number' && Number.isNaN(nanResult), true);
+            assert.deepStrictEqual(typeof nanResult === 'number' && Number.isNaN(nanResult), true);
         });
 
         it('should pass validation when the argument is missing or undefined', () => {
-            assert.strictEqual(instance.testMethod(), undefined);
-            assert.strictEqual(instance.testMethod(undefined), undefined);
+            assert.deepStrictEqual(instance.testMethod(), undefined);
+            assert.deepStrictEqual(instance.testMethod(undefined), undefined);
         });
 
         it('should throw an error for non-numbers', () => {

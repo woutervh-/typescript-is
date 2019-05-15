@@ -10,20 +10,20 @@ describe('is', () => {
     if (isBigIntSupported) {
         describe('is<bigint>', () => {
             it('should always return false for non bigint', () => {
-                assert.strictEqual(is<bigint>(0), false);
-                assert.strictEqual(is<bigint>(1), false);
-                assert.strictEqual(is<bigint>(true), false);
-                assert.strictEqual(is<bigint>(false), false);
-                assert.strictEqual(is<bigint>(''), false);
-                assert.strictEqual(is<bigint>('a'), false);
-                assert.strictEqual(is<bigint>({}), false);
-                assert.strictEqual(is<bigint>([]), false);
-                assert.strictEqual(is<bigint>(null), false);
-                assert.strictEqual(is<bigint>(undefined), false);
+                assert.deepStrictEqual(is<bigint>(0), false);
+                assert.deepStrictEqual(is<bigint>(1), false);
+                assert.deepStrictEqual(is<bigint>(true), false);
+                assert.deepStrictEqual(is<bigint>(false), false);
+                assert.deepStrictEqual(is<bigint>(''), false);
+                assert.deepStrictEqual(is<bigint>('a'), false);
+                assert.deepStrictEqual(is<bigint>({}), false);
+                assert.deepStrictEqual(is<bigint>([]), false);
+                assert.deepStrictEqual(is<bigint>(null), false);
+                assert.deepStrictEqual(is<bigint>(undefined), false);
             });
 
             it('should always return true for bigint', () => {
-                assert.strictEqual(is<bigint>(BigInt(1)), true);
+                assert.deepStrictEqual(is<bigint>(BigInt(1)), true);
             });
         });
 
@@ -33,11 +33,11 @@ describe('is', () => {
             }
 
             it('should always return false for non bigint in Bar property', () => {
-                assert.strictEqual(is<Bar<bigint>>({ item: 1 }), false);
+                assert.deepStrictEqual(is<Bar<bigint>>({ item: 1 }), false);
             });
 
             it('should always return true for bigint in Bar property', () => {
-                assert.strictEqual(is<Bar<bigint>>({ item: BigInt(1) }), true);
+                assert.deepStrictEqual(is<Bar<bigint>>({ item: BigInt(1) }), true);
             });
         });
     }
