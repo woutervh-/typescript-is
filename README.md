@@ -216,6 +216,22 @@ new A().method(42) === 42; // true
 new A().method('42' as any); // will throw error
 ```
 
+## Strict equality (`equals`, `createEquals`, `assertEquals`, `createAssertEquals`)
+
+This family of functions check not only whether the passed object is assignable to the specified type, but also checks that the passed object does not contain any more than is necessary. In other words: the type is also "assignable" to the object. This functionality is equivalent to specifying `disallowSuperfluousObjectProperties` in the options, the difference is that this will apply only to the specific function call. For example:
+
+```typescript
+import { equals } from 'typescript-is';
+
+interface X {
+    x: string;
+}
+
+equals<X>({}); // false, because `x` is missing
+equals<X>({ x: 'value' }); // true
+equals<X>({ x: 'value', y: 'another value' }); // false, because `y` is superfluous
+```
+
 To see the declarations of the functions and more examples, please check out [index.d.ts](https://github.com/woutervh-/typescript-is/blob/master/index.d.ts).
 
 For **many more examples**, please check out the files in the [test/](https://github.com/woutervh-/typescript-is/tree/master/test) folder.
