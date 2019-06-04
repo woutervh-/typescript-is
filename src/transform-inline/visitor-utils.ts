@@ -31,27 +31,33 @@ export function getPropertyInfo(symbol: ts.Symbol, visitorContext: VisitorContex
         throw new Error('Missing name in property symbol.');
     }
     if ('valueDeclaration' in symbol) {
-        if (!ts.isPropertySignature(symbol.valueDeclaration) && !ts.isMethodSignature(symbol.valueDeclaration)) {
-            throw new Error('Unsupported declaration kind: ' + symbol.valueDeclaration.kind);
+        const valueDeclaration = symbol.valueDeclaration as ts.PropertyDeclaration;
+        if (!ts.isPropertySignature(valueDeclaration)
+            && !ts.isMethodSignature(valueDeclaration)
+            && valueDeclaration.type !== undefined
+            && valueDeclaration.type.kind !== ts.SyntaxKind.FunctionType
+        ) {
+            throw new Error('Unsupported declaration kind: ' + valueDeclaration.kind);
         }
-        const isMethod = ts.isMethodSignature(symbol.valueDeclaration);
+        const isMethod = ts.isMethodSignature(valueDeclaration)
+            || valueDeclaration.type !== undefined && valueDeclaration.type.kind === ts.SyntaxKind.FunctionType;
         if (isMethod && !visitorContext.options.ignoreMethods) {
             throw new Error('Encountered a method declaration, but methods are not supported. Issue: https://github.com/woutervh-/typescript-is/issues/5');
         }
         let propertyType: ts.Type | undefined = undefined;
-        if (symbol.valueDeclaration.type === undefined) {
+        if (valueDeclaration.type === undefined) {
             if (!isMethod) {
                 throw new Error('Found property without type.');
             }
         } else {
-            propertyType = visitorContext.checker.getTypeFromTypeNode(symbol.valueDeclaration.type);
+            propertyType = visitorContext.checker.getTypeFromTypeNode(valueDeclaration.type);
         }
         return {
             name,
             type: propertyType,
             isMethod,
             isSymbol: name.startsWith('__@'),
-            optional: !!symbol.valueDeclaration.questionToken
+            optional: !!valueDeclaration.questionToken
         };
     } else {
         const propertyType = (symbol as { type?: ts.Type }).type;
