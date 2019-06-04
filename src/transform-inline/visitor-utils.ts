@@ -31,16 +31,12 @@ export function getPropertyInfo(symbol: ts.Symbol, visitorContext: VisitorContex
         throw new Error('Missing name in property symbol.');
     }
     if ('valueDeclaration' in symbol) {
-        const valueDeclaration = symbol.valueDeclaration as ts.PropertyDeclaration;
-        if (!ts.isPropertySignature(valueDeclaration)
-            && !ts.isMethodSignature(valueDeclaration)
-            && valueDeclaration.type !== undefined
-            && valueDeclaration.type.kind !== ts.SyntaxKind.FunctionType
-        ) {
+        const valueDeclaration = symbol.valueDeclaration;
+        if (!ts.isPropertySignature(valueDeclaration) && !ts.isMethodSignature(valueDeclaration)) {
             throw new Error('Unsupported declaration kind: ' + valueDeclaration.kind);
         }
         const isMethod = ts.isMethodSignature(valueDeclaration)
-            || valueDeclaration.type !== undefined && valueDeclaration.type.kind === ts.SyntaxKind.FunctionType;
+            || valueDeclaration.type !== undefined && ts.isFunctionTypeNode(valueDeclaration.type);
         if (isMethod && !visitorContext.options.ignoreMethods) {
             throw new Error('Encountered a method declaration, but methods are not supported. Issue: https://github.com/woutervh-/typescript-is/issues/5');
         }
