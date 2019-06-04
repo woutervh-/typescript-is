@@ -1,7 +1,6 @@
 import * as ts from 'typescript';
 import * as path from 'path';
 import { VisitorContext } from './visitor-context';
-import { visitTypeNode } from './visitor';
 import { compile } from './compiler';
 
 export interface Options {
@@ -66,9 +65,10 @@ function transformNode(node: ts.Node, visitorContext: VisitorContext): ts.Node {
             && node.typeArguments !== undefined
             && node.typeArguments.length === 1
         ) {
-            const typeArgument = node.typeArguments[0];
-            const accessor = node.arguments[0];
-            return visitTypeNode(typeArgument, accessor, { ...visitorContext, typeCheckFunctionAccessorTopLevel: node.expression });
+            // const typeArgument = node.typeArguments[0];
+            // const accessor = node.arguments[0];
+            // return visitTypeNode(typeArgument, accessor, { ...visitorContext, typeCheckFunctionAccessorTopLevel: node.expression });
+            return node;
         }
     }
     return node;

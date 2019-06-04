@@ -34,7 +34,7 @@
   "homepage": "https://github.com/woutervh-/typescript-is#readme",
   "dependencies": {
     "nested-error-stacks": "^2",
-    "tsutils": "^3"
+    "tsutils": "^3.14.0"
   },
   "optionalDependencies": {
     "reflect-metadata": ">=0.1.12"
@@ -53,6 +53,6 @@
     "ts-node": "^8.0.1",
     "tslint": "^5.11.0",
     "ttypescript": "^1.5.5",
-    "typescript": "^3"
+    "typescript": "^3.5.1"
   }
 }
