@@ -115,44 +115,6 @@ export function getResolvedTypeParameter(type: ts.Type, visitorContext: VisitorC
     return mappedType;
 }
 
-interface TypeCheckNameMode {
-    type: 'type-check';
-    superfluousPropertyCheck?: boolean;
-}
-
-interface KeyofNameMode {
-    type: 'keyof';
-}
-
-interface IndexedAccessNameMode {
-    type: 'indexed-access';
-    indexType: ts.Type;
-}
-
-type NameMode = TypeCheckNameMode | KeyofNameMode | IndexedAccessNameMode;
-
-export function getFullTypeName(type: ts.Type, visitorContext: VisitorContext, mode: NameMode) {
-    // Internal TypeScript API:
-    let name = `_${(type as unknown as { id: string }).id}`;
-    if (mode.type === 'keyof') {
-        name += '_keyof';
-    }
-    if (mode.type === 'indexed-access') {
-        const indexTypeName = getFullTypeName(mode.indexType, visitorContext, { type: 'type-check' });
-        name += `_ia__${indexTypeName}`;
-    }
-    if (mode.type === 'type-check' && !!mode.superfluousPropertyCheck) {
-        name += '_s';
-    }
-    if (tsutils.isTypeReference(type) && type.typeArguments !== undefined) {
-        for (const typeArgument of type.typeArguments) {
-            const resolvedType = getResolvedTypeParameter(typeArgument, visitorContext);
-            name += `_${(resolvedType as unknown as { id: string }).id}`;
-        }
-    }
-    return name;
-}
-
 export function getStringFunction(visitorContext: VisitorContext) {
     const name = '_string';
     return setFunctionIfNotExists(name, visitorContext, () => {

@@ -2,9 +2,10 @@ import * as ts from 'typescript';
 import * as tsutils from 'tsutils';
 import { VisitorContext } from './visitor-context';
 import * as VisitorUtils from './visitor-utils';
+import * as VisitorTypeName from './visitor-type-name';
 
 function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorContext: VisitorContext) {
-    const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'keyof' });
+    const name = VisitorTypeName.getFullTypeName(type, visitorContext, { type: 'keyof' });
     return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
         const functionNames = type.types.map((type) => visitType(type, visitorContext));
         if (tsutils.isUnionType(type)) {
@@ -45,7 +46,7 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
         // keyof { [Key: string]: U } = string
         return VisitorUtils.getStringFunction(visitorContext);
     } else {
-        const name = VisitorUtils.getFullTypeName(type, visitorContext, { type: 'keyof' });
+        const name = VisitorTypeName.getFullTypeName(type, visitorContext, { type: 'keyof' });
         return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
             // In keyof mode we check if the object is equal to one of the property names.
             // keyof { x: T } = x
