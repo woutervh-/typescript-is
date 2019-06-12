@@ -1,5 +1,37 @@
 import * as assert from 'assert';
-import { is } from '../index';
+import { is, assertType } from '../index';
+
+describe('assertType', () => {
+    interface Foo<T> {
+        foo: T | null;
+    }
+
+    interface Bar {
+        bar: string;
+    }
+
+    interface Container {
+        fooNumber: Foo<number>;
+        fooBar?: Foo<Bar>;
+    }
+
+    describe('assertType<Container>', () => {
+        it('should not throw an error for valid objects', () => {
+            const data = {
+                fooNumber: {
+                    foo: 43.263532
+                },
+                fooBar: {
+                    foo: {
+                        bar: 'money'
+                    }
+                }
+            };
+
+            assertType<Container>(data);
+        });
+    });
+});
 
 describe('is', () => {
     interface ReusedGeneric<T> {
