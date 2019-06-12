@@ -111,8 +111,7 @@ export function getResolvedTypeParameter(type: ts.Type, visitorContext: VisitorC
             break;
         }
     }
-    mappedType = mappedType || type.getDefault();
-    return mappedType;
+    return mappedType || type.getDefault();
 }
 
 export function getStringFunction(visitorContext: VisitorContext) {

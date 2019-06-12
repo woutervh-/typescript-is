@@ -9,7 +9,7 @@ import * as VisitorTypeName from './visitor-type-name';
 import { sliceSet } from './utils';
 
 function visitRegularObjectType(type: ts.ObjectType, indexType: ts.Type, visitorContext: VisitorContext) {
-    const name = VisitorTypeName.getFullTypeName(type, visitorContext, { type: 'indexed-access', indexType });
+    const name = VisitorTypeName.visitType(type, visitorContext, { type: 'indexed-access', indexType });
     return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
         // TODO: check property index
         // const stringIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.String);
@@ -44,7 +44,7 @@ function visitRegularObjectType(type: ts.ObjectType, indexType: ts.Type, visitor
 }
 
 function visitTupleObjectType(type: ts.TupleType, indexType: ts.Type, visitorContext: VisitorContext) {
-    const name = VisitorTypeName.getFullTypeName(type, visitorContext, { type: 'indexed-access', indexType });
+    const name = VisitorTypeName.visitType(type, visitorContext, { type: 'indexed-access', indexType });
     return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
         if (type.typeArguments === undefined) {
             throw new Error('Expected tuple type to have type arguments.');
@@ -94,7 +94,7 @@ function visitObjectType(type: ts.ObjectType, indexType: ts.Type, visitorContext
 }
 
 function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, indexType: ts.Type, visitorContext: VisitorContext) {
-    const name = VisitorTypeName.getFullTypeName(type, visitorContext, { type: 'indexed-access', indexType });
+    const name = VisitorTypeName.visitType(type, visitorContext, { type: 'indexed-access', indexType });
     return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
         const functionNames = type.types.map((type) => visitType(type, indexType, visitorContext));
         if (tsutils.isUnionType(type)) {

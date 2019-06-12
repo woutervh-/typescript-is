@@ -9,7 +9,7 @@ import * as VisitorTypeName from './visitor-type-name';
 import { sliceSet } from './utils';
 
 function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext) {
-    const name = VisitorTypeName.getFullTypeName(type, visitorContext, { type: 'type-check' });
+    const name = VisitorTypeName.visitType(type, visitorContext, { type: 'type-check' });
     return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
         if (type.typeArguments === undefined) {
             throw new Error('Expected tuple type to have type arguments.');
@@ -107,7 +107,7 @@ function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext
 }
 
 function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
-    const name = VisitorTypeName.getFullTypeName(type, visitorContext, { type: 'type-check' });
+    const name = VisitorTypeName.visitType(type, visitorContext, { type: 'type-check' });
     return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
         const numberIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.Number);
         if (numberIndexType === undefined) {
@@ -215,7 +215,7 @@ function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContex
 }
 
 function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
-    const name = VisitorTypeName.getFullTypeName(type, visitorContext, { type: 'type-check', superfluousPropertyCheck: visitorContext.options.disallowSuperfluousObjectProperties });
+    const name = VisitorTypeName.visitType(type, visitorContext, { type: 'type-check', superfluousPropertyCheck: visitorContext.options.disallowSuperfluousObjectProperties });
     return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
         const propertyInfos = visitorContext.checker.getPropertiesOfType(type).map((property) => VisitorUtils.getPropertyInfo(property, visitorContext));
         const stringIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.String);
@@ -436,7 +436,7 @@ function visitObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
 
 function visitLiteralType(type: ts.LiteralType, visitorContext: VisitorContext) {
     if (typeof type.value === 'string') {
-        const name = VisitorTypeName.getFullTypeName(type, visitorContext, { type: 'type-check' });
+        const name = VisitorTypeName.visitType(type, visitorContext, { type: 'type-check' });
         const value = type.value;
         return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
             return VisitorUtils.createAssertionFunction(
@@ -449,7 +449,7 @@ function visitLiteralType(type: ts.LiteralType, visitorContext: VisitorContext) 
             );
         });
     } else if (typeof type.value === 'number') {
-        const name = VisitorTypeName.getFullTypeName(type, visitorContext, { type: 'type-check' });
+        const name = VisitorTypeName.visitType(type, visitorContext, { type: 'type-check' });
         return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
             return VisitorUtils.createAssertionFunction(
                 ts.createStrictInequality(
@@ -468,7 +468,7 @@ function visitLiteralType(type: ts.LiteralType, visitorContext: VisitorContext) 
 function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorContext: VisitorContext) {
     const typeUnion = type;
     if (tsutils.isUnionType(typeUnion)) {
-        const name = VisitorTypeName.getFullTypeName(type, visitorContext, { type: 'type-check' });
+        const name = VisitorTypeName.visitType(type, visitorContext, { type: 'type-check' });
         const functionNames = typeUnion.types.map((type) => visitType(type, visitorContext));
         return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
             return VisitorUtils.createDisjunctionFunction(functionNames, name);
@@ -476,7 +476,7 @@ function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorC
     }
     const intersectionType = type;
     if (tsutils.isIntersectionType(intersectionType)) {
-        const name = VisitorTypeName.getFullTypeName(type, visitorContext, { type: 'type-check', superfluousPropertyCheck: visitorContext.options.disallowSuperfluousObjectProperties });
+        const name = VisitorTypeName.visitType(type, visitorContext, { type: 'type-check', superfluousPropertyCheck: visitorContext.options.disallowSuperfluousObjectProperties });
         return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
             const functionNames = intersectionType.types.map((type) => visitType(type, { ...visitorContext, options: { ...visitorContext.options, disallowSuperfluousObjectProperties: false } }));
             if (visitorContext.options.disallowSuperfluousObjectProperties) {
