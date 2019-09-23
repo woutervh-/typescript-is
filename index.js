@@ -1,4 +1,4 @@
-let defaultGetErrorMessage = () => null;
+let defaultGetErrorMessage = undefined;
 
 function checkGetErrorMessage(getErrorMessage) {
     if (typeof getErrorMessage !== 'function') {
