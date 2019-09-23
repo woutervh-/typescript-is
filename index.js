@@ -1,3 +1,5 @@
+let defaultGetErrorMessage = () => null;
+
 function checkGetErrorMessage(getErrorMessage) {
     if (typeof getErrorMessage !== 'function') {
         throw new Error('This module should not be used in runtime. Instead, use a transformer during compilation.');
@@ -43,13 +45,13 @@ function ValidateClass(errorConstructor = TypeGuardError) {
     };
 }
 
-function is(obj, getErrorMessage) {
+function is(obj, getErrorMessage = defaultGetErrorMessage) {
     checkGetErrorMessage(getErrorMessage);
     const errorMessage = getErrorMessage(obj);
     return errorMessage === null;
 }
 
-function assertType(obj, getErrorMessage) {
+function assertType(obj, getErrorMessage = defaultGetErrorMessage) {
     checkGetErrorMessage(getErrorMessage);
     const errorMessage = getErrorMessage(obj);
     if (errorMessage === null) {
@@ -59,14 +61,18 @@ function assertType(obj, getErrorMessage) {
     }
 }
 
-function createIs(getErrorMessage) {
+function createIs(getErrorMessage = defaultGetErrorMessage) {
     checkGetErrorMessage(getErrorMessage);
     return (obj) => is(obj, getErrorMessage);
 }
 
-function createAssertType(getErrorMessage) {
+function createAssertType(getErrorMessage = defaultGetErrorMessage) {
     checkGetErrorMessage(getErrorMessage);
     return (obj) => assertType(obj, getErrorMessage);
+}
+
+function setDefaultGetErrorMessage(getErrorMessage) {
+    defaultGetErrorMessage = getErrorMessage;
 }
 
 module.exports = {
@@ -80,5 +86,6 @@ module.exports = {
     createAssertEquals: createAssertType,
     AssertType,
     ValidateClass,
-    TypeGuardError
+    TypeGuardError,
+    setDefaultGetErrorMessage
 };
