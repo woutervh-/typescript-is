@@ -23,7 +23,7 @@ type NameMode = TypeCheckNameMode | KeyofNameMode | IndexedAccessNameMode;
 
 function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext, mode: NameMode) {
     if (type.typeArguments === undefined) {
-        throw new Error('Expected tuple type to have type arguments.');
+        return 'st_et';
     }
     const itemNames = type.typeArguments.map((type) => visitType(type, visitorContext, mode));
     return `st_${itemNames.join('_')}_et`;

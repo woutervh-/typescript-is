@@ -11,10 +11,9 @@ import { sliceSet } from './utils';
 function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext) {
     const name = VisitorTypeName.visitType(type, visitorContext, { type: 'type-check' });
     return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
-        if (type.typeArguments === undefined) {
-            throw new Error('Expected tuple type to have type arguments.');
-        }
-        const functionNames = type.typeArguments.map((type) => visitType(type, visitorContext));
+        const functionNames = type.typeArguments ?
+            type.typeArguments.map((type) => visitType(type, visitorContext))
+            : [];
         const errorIdentifier = ts.createIdentifier('error');
 
         return ts.createFunctionDeclaration(
@@ -43,7 +42,7 @@ function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext
                                 VisitorUtils.objectIdentifier,
                                 'length'
                             ),
-                            ts.createNumericLiteral(type.typeArguments.length.toString())
+                            ts.createNumericLiteral(functionNames.length.toString())
                         )
                     ),
                     ts.createReturn(
@@ -58,7 +57,7 @@ function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext
                                     undefined,
                                     [ts.createStringLiteral('.')]
                                 ),
-                                ts.createStringLiteral(`: expected an array of length ${type.typeArguments.length}`)
+                                ts.createStringLiteral(`: expected an array of length ${functionNames.length}`)
                             ],
                             ts.SyntaxKind.PlusToken
                         )
