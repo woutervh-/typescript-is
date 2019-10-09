@@ -6,19 +6,7 @@ export const objectIdentifier = ts.createIdentifier('object');
 export const pathIdentifier = ts.createIdentifier('path');
 
 export function checkIsClass(type: ts.ObjectType, visitorContext: VisitorContext) {
-    // Hacky: using internal TypeScript API.
-    if ('isArrayType' in visitorContext.checker && (visitorContext.checker as any).isArrayType(type)) {
-        return false;
-    }
-
-    let hasConstructSignatures = false;
-    if (type.symbol !== undefined && type.symbol.valueDeclaration !== undefined && ts.isVariableDeclaration(type.symbol.valueDeclaration) && type.symbol.valueDeclaration.type) {
-        const variableDeclarationType = visitorContext.checker.getTypeAtLocation(type.symbol.valueDeclaration.type);
-        const constructSignatures = variableDeclarationType.getConstructSignatures();
-        hasConstructSignatures = constructSignatures.length >= 1;
-    }
-
-    if ((ts.ObjectFlags.Class & type.objectFlags) !== 0 || hasConstructSignatures) {
+    if (type.isClass()) {
         if (visitorContext.options.ignoreClasses) {
             return true;
         } else {
