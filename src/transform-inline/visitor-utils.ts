@@ -1,5 +1,5 @@
 import * as ts from 'typescript';
-import * as tsutils from 'tsutils';
+import * as tsutils from 'tsutils/typeguard/3.0';
 import { VisitorContext } from './visitor-context';
 
 export const objectIdentifier = ts.createIdentifier('object');
@@ -8,6 +8,9 @@ export const pathIdentifier = ts.createIdentifier('path');
 export function checkIsClass(type: ts.ObjectType, visitorContext: VisitorContext) {
     // Hacky: using internal TypeScript API.
     if ('isArrayType' in visitorContext.checker && (visitorContext.checker as any).isArrayType(type)) {
+        return false;
+    }
+    if ('isArrayLikeType' in visitorContext.checker && (visitorContext.checker as any).isArrayLikeType(type)) {
         return false;
     }
 
@@ -504,4 +507,12 @@ export function createSuperfluousPropertiesLoop(propertyNames: string[]) {
             )
         ])
     );
+}
+
+export function isBigIntType(type: ts.Type) {
+    if ('BigInt' in ts.TypeFlags) {
+        return (ts.TypeFlags as any).BigInt & type.flags;
+    } else {
+        return false;
+    }
 }

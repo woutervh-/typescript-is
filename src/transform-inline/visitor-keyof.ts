@@ -1,5 +1,5 @@
 import * as ts from 'typescript';
-import * as tsutils from 'tsutils';
+import * as tsutils from 'tsutils/typeguard/3.0';
 import { VisitorContext } from './visitor-context';
 import * as VisitorUtils from './visitor-utils';
 import * as VisitorTypeName from './visitor-type-name';
@@ -178,7 +178,7 @@ export function visitType(type: ts.Type, visitorContext: VisitorContext): string
     } else if ((ts.TypeFlags.Number & type.flags) !== 0) {
         // Number
         return visitNumber(visitorContext);
-    } else if ((ts.TypeFlags.BigInt & type.flags) !== 0) {
+    } else if (VisitorUtils.isBigIntType(type)) {
         // BigInt
         return visitBigInt(visitorContext);
     } else if ((ts.TypeFlags.Boolean & type.flags) !== 0) {
