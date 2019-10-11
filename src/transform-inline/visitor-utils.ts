@@ -18,7 +18,7 @@ export function checkIsClass(type: ts.ObjectType, visitorContext: VisitorContext
         hasConstructSignatures = constructSignatures.length >= 1;
     }
 
-    if ((ts.ObjectFlags.Class & type.objectFlags) !== 0 || hasConstructSignatures) {
+    if (type.isClass() || hasConstructSignatures) {
         if (visitorContext.options.ignoreClasses) {
             return true;
         } else {
