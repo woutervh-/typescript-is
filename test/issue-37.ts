@@ -39,17 +39,17 @@ type Markup = [MarkupTag, string[] | undefined];
 
 // Mobiledoc Interface
 export interface Mobiledoc {
-  atoms: Atom[];
-  cards: Card[];
-  markups: Markup[];
-  sections: Section[];
+    atoms: Atom[];
+    cards: Card[];
+    markups: Markup[];
+    sections: Section[];
 }
 
 describe('is', () => {
-  describe('Does not throw on complex types', () => {
-    it.only('Mobiledoc', () => {
-      // really this is just a test that it compiles
-      assert.doesNotThrow(() => is<Mobiledoc>('foo'));
+    describe('Does not throw on complex types', () => {
+        it('Mobiledoc', () => {
+            // really this is just a test that it compiles
+            assert.doesNotThrow(() => is<Mobiledoc>('foo'));
+        });
     });
-  });
 });
