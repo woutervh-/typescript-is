@@ -130,14 +130,14 @@ import { is } from 'typescript-is';
 
 const wildString: any = 'a string, but nobody knows at compile time, because it is cast to `any`';
 
-if (is<string>(wildString)) {
+if (is<string>(wildString)) { // returns true
     // wildString can be used as string!
 } else {
-    // Should never happen...
+    // never gets to this branch
 }
 
-if (is<number>(wildString)) {
-    // Should never happen...
+if (is<number>(wildString)) { // returns false
+    // never gets to this branch
 } else {
     // Now you know that wildString is not a number!
 }
@@ -155,8 +155,7 @@ interface MyInterface {
 
 const foreignObject: any = { someObject: 'obtained from the wild', without: 'type safety' };
 
-if (is<MyInterface>(foreignObject)) {
-    // Call expression returns true
+if (is<MyInterface>(foreignObject)) { // returns true
     const someObject = foreignObject.someObject; // type: string
     const without = foreignObject.without; // type: string
 }
@@ -170,7 +169,7 @@ Or use the `assertType` function to directly use the object:
 import { assertType } from 'typescript-is';
 
 const object: any = 42;
-assertType<number>(object).toFixed(2); // "6.00"
+assertType<number>(object).toFixed(2); // "42.00"
 
 try {
     const asString = assertType<string>(object); // throws error: object is not a string
