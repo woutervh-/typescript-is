@@ -16,6 +16,16 @@ function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext
             : [];
         const errorIdentifier = ts.createIdentifier('error');
 
+        const maxLength = functionNames.length;
+        let minLength = functionNames.length;
+        for (let i = 0; i < functionNames.length; i++) {
+            const property = type.getProperty(i.toString());
+            if (property && (property.flags & ts.SymbolFlags.Optional) !== 0) {
+                minLength = i;
+                break;
+            }
+        }
+
         return ts.createFunctionDeclaration(
             undefined,
             undefined,
@@ -28,22 +38,33 @@ function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext
             undefined,
             ts.createBlock([
                 ts.createIf(
-                    ts.createBinary(
-                        ts.createLogicalNot(
-                            ts.createCall(
-                                ts.createPropertyAccess(ts.createIdentifier('Array'), 'isArray'),
-                                undefined,
-                                [VisitorUtils.objectIdentifier]
-                            )
-                        ),
-                        ts.SyntaxKind.BarBarToken,
-                        ts.createStrictInequality(
-                            ts.createPropertyAccess(
-                                VisitorUtils.objectIdentifier,
-                                'length'
+                    VisitorUtils.createBinaries(
+                        [
+                            ts.createLogicalNot(
+                                ts.createCall(
+                                    ts.createPropertyAccess(ts.createIdentifier('Array'), 'isArray'),
+                                    undefined,
+                                    [VisitorUtils.objectIdentifier]
+                                )
                             ),
-                            ts.createNumericLiteral(functionNames.length.toString())
-                        )
+                            ts.createBinary(
+                                ts.createPropertyAccess(
+                                    VisitorUtils.objectIdentifier,
+                                    'length'
+                                ),
+                                ts.SyntaxKind.LessThanToken,
+                                ts.createNumericLiteral(minLength.toString())
+                            ),
+                            ts.createBinary(
+                                ts.createNumericLiteral(maxLength.toString()),
+                                ts.SyntaxKind.LessThanToken,
+                                ts.createPropertyAccess(
+                                    VisitorUtils.objectIdentifier,
+                                    'length'
+                                )
+                            )
+                        ],
+                        ts.SyntaxKind.BarBarToken
                     ),
                     ts.createReturn(
                         VisitorUtils.createBinaries(
@@ -57,7 +78,7 @@ function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext
                                     undefined,
                                     [ts.createStringLiteral('.')]
                                 ),
-                                ts.createStringLiteral(`: expected an array of length ${functionNames.length}`)
+                                ts.createStringLiteral(`: expected an array with length ${minLength}-${maxLength}`)
                             ],
                             ts.SyntaxKind.PlusToken
                         )
