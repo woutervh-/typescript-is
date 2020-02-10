@@ -117,10 +117,10 @@ export function createAssertEquals<T>(): (object: any) => T;
  * Options for the `AssertType` decorator.
  */
 export interface AssertTypeOptions {
-  /**
-   * Message that will be passed to the error constructor, in case type assertion fails.
-   */
-  message?: string;
+    /**
+     * Message that will be passed to the error constructor, in case type assertion fails.
+     */
+    message?: string;
 }
 
 /**
@@ -177,7 +177,108 @@ export function ValidateClass(errorConstructor?: { new(): Error }): <TFunction e
    }
    ```
  */
-export class TypeGuardError extends Error { }
+export class TypeGuardError extends Error {
+    public readonly path: string;
+    public readonly expected: Expected;
+}
+
+interface ExpectedString {
+    type: 'string';
+}
+
+interface ExpectedNumber {
+    type: 'number';
+}
+
+interface ExpectedBigInt {
+    type: 'big-int';
+}
+
+interface ExpectedBoolean {
+    type: 'boolean';
+}
+
+interface ExpectedStringLiteral {
+    type: 'string-literal';
+    value: string;
+}
+
+interface ExpectedNumberLiteral {
+    type: 'number-literal';
+    value: number;
+}
+
+interface ExpectedBooleanLiteral {
+    type: 'boolean-literal';
+    value: boolean;
+}
+
+interface ExpectedObject {
+    type: 'object';
+}
+
+interface ExpectedNonPrimitive {
+    type: 'non-primitive';
+}
+
+interface MissingObjectProperty {
+    type: 'missing-property';
+    property: string;
+}
+
+interface SuperfluousObjectProperty {
+    type: 'superfluous-property';
+}
+
+interface ExpectedObjectKeyof {
+    type: 'object-keyof';
+    properties: string[];
+}
+
+interface ExpectedArray {
+    type: 'array';
+}
+
+interface ExpectedNever {
+    type: 'never';
+}
+
+interface ExpectedTuple {
+    type: 'tuple';
+    minLength: number;
+    maxLength: number;
+}
+
+interface ExpectedUnion {
+    type: 'union';
+}
+
+interface ExpectedUndefined {
+    type: 'undefined';
+}
+
+interface ExpectedNull {
+    type: 'null';
+}
+
+type Expected = ExpectedString
+    | ExpectedNumber
+    | ExpectedBigInt
+    | ExpectedBoolean
+    | ExpectedObject
+    | ExpectedNonPrimitive
+    | MissingObjectProperty
+    | SuperfluousObjectProperty
+    | ExpectedObjectKeyof
+    | ExpectedArray
+    | ExpectedTuple
+    | ExpectedNever
+    | ExpectedUnion
+    | ExpectedUndefined
+    | ExpectedNull
+    | ExpectedStringLiteral
+    | ExpectedNumberLiteral
+    | ExpectedBooleanLiteral;
 
 /**
  * Set default getErrorMessage function used for transpiled source.

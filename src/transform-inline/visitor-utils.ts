@@ -1,9 +1,11 @@
 import * as ts from 'typescript';
 import * as tsutils from 'tsutils/typeguard/3.0';
 import { VisitorContext } from './visitor-context';
+import { Expected } from '../../index';
 
 export const objectIdentifier = ts.createIdentifier('object');
 export const pathIdentifier = ts.createIdentifier('path');
+const keyIdentifier = ts.createIdentifier('key');
 
 export function checkIsClass(type: ts.ObjectType, visitorContext: VisitorContext) {
     // Hacky: using internal TypeScript API.
@@ -137,7 +139,7 @@ export function getStringFunction(visitorContext: VisitorContext) {
                 ts.createTypeOf(objectIdentifier),
                 ts.createStringLiteral('string')
             ),
-            `expected a string`,
+            { type: 'string' },
             name
         );
     });
@@ -151,13 +153,13 @@ export function getBooleanFunction(visitorContext: VisitorContext) {
                 ts.createTypeOf(objectIdentifier),
                 ts.createStringLiteral('boolean')
             ),
-            'expected a boolean',
+            { type: 'boolean' },
             name
         );
     });
 }
 
-export function getBigintFunction(visitorContext: VisitorContext) {
+export function getBigIntFunction(visitorContext: VisitorContext) {
     const name = '_bigint';
     return setFunctionIfNotExists(name, visitorContext, () => {
         return createAssertionFunction(
@@ -165,7 +167,7 @@ export function getBigintFunction(visitorContext: VisitorContext) {
                 ts.createTypeOf(objectIdentifier),
                 ts.createStringLiteral('bigint')
             ),
-            'expected a bigint',
+            { type: 'big-int' },
             name
         );
     });
@@ -179,7 +181,7 @@ export function getNumberFunction(visitorContext: VisitorContext) {
                 ts.createTypeOf(objectIdentifier),
                 ts.createStringLiteral('number')
             ),
-            'expected a number',
+            { type: 'number' },
             name
         );
     });
@@ -193,7 +195,7 @@ export function getUndefinedFunction(visitorContext: VisitorContext) {
                 objectIdentifier,
                 ts.createIdentifier('undefined')
             ),
-            'expected undefined',
+            { type: 'undefined' },
             name
         );
     });
@@ -207,7 +209,7 @@ export function getNullFunction(visitorContext: VisitorContext) {
                 objectIdentifier,
                 ts.createNull()
             ),
-            'expected null',
+            { type: 'null' },
             name
         );
     });
@@ -216,7 +218,20 @@ export function getNullFunction(visitorContext: VisitorContext) {
 export function getNeverFunction(visitorContext: VisitorContext) {
     const name = '_never';
     return setFunctionIfNotExists(name, visitorContext, () => {
-        return createRejectingFunction('type is never', name);
+        return ts.createFunctionDeclaration(
+            undefined,
+            undefined,
+            undefined,
+            name,
+            undefined,
+            [
+                ts.createParameter(undefined, undefined, undefined, objectIdentifier, undefined, undefined, undefined)
+            ],
+            undefined,
+            ts.createBlock([
+                ts.createReturn(createErrorObject({ type: 'never' }))
+            ])
+        );
     });
 }
 
@@ -259,39 +274,6 @@ export function createAcceptingFunction(functionName: string) {
         [],
         undefined,
         ts.createBlock([ts.createReturn(ts.createNull())])
-    );
-}
-
-export function createRejectingFunction(reason: string, functionName: string) {
-    return ts.createFunctionDeclaration(
-        undefined,
-        undefined,
-        undefined,
-        functionName,
-        undefined,
-        [
-            ts.createParameter(undefined, undefined, undefined, objectIdentifier, undefined, undefined, undefined)
-        ],
-        undefined,
-        ts.createBlock([
-            ts.createReturn(
-                createBinaries(
-                    [
-                        ts.createStringLiteral('validation failed at '),
-                        ts.createCall(
-                            ts.createPropertyAccess(
-                                pathIdentifier,
-                                'join'
-                            ),
-                            undefined,
-                            [ts.createStringLiteral('.')]
-                        ),
-                        ts.createStringLiteral(`: ${reason}`)
-                    ],
-                    ts.SyntaxKind.PlusToken
-                )
-            )
-        ])
     );
 }
 
@@ -411,28 +393,49 @@ export function createDisjunctionFunction(functionNames: string[], functionName:
                     )
                 ])
             ),
-            ts.createReturn(
-                createBinaries(
-                    [
-                        ts.createStringLiteral('validation failed at '),
-                        ts.createCall(
-                            ts.createPropertyAccess(
-                                pathIdentifier,
-                                'join'
-                            ),
-                            undefined,
-                            [ts.createStringLiteral('.')]
-                        ),
-                        ts.createStringLiteral(`: there are no valid alternatives`)
-                    ],
-                    ts.SyntaxKind.PlusToken
-                )
-            )
+            ts.createReturn(createErrorObject({ type: 'union' }))
         ])
     );
 }
 
-export function createAssertionFunction(failureCondition: ts.Expression, reason: string, functionName: string) {
+// export function createAssertionFunction(failureCondition: ts.Expression, reason: string, functionName: string) {
+//     return ts.createFunctionDeclaration(
+//         undefined,
+//         undefined,
+//         undefined,
+//         functionName,
+//         undefined,
+//         [
+//             ts.createParameter(undefined, undefined, undefined, objectIdentifier, undefined, undefined, undefined)
+//         ],
+//         undefined,
+//         ts.createBlock([
+//             ts.createIf(
+//                 failureCondition,
+//                 ts.createReturn(
+//                     createBinaries(
+//                         [
+//                             ts.createStringLiteral('validation failed at '),
+//                             ts.createCall(
+//                                 ts.createPropertyAccess(
+//                                     pathIdentifier,
+//                                     'join'
+//                                 ),
+//                                 undefined,
+//                                 [ts.createStringLiteral('.')]
+//                             ),
+//                             ts.createStringLiteral(`: ${reason}`)
+//                         ],
+//                         ts.SyntaxKind.PlusToken
+//                     )
+//                 ),
+//                 ts.createReturn(ts.createNull())
+//             )
+//         ])
+//     );
+// }
+
+export function createAssertionFunction(failureCondition: ts.Expression, expected: Expected, functionName: string) {
     return ts.createFunctionDeclaration(
         undefined,
         undefined,
@@ -446,23 +449,7 @@ export function createAssertionFunction(failureCondition: ts.Expression, reason:
         ts.createBlock([
             ts.createIf(
                 failureCondition,
-                ts.createReturn(
-                    createBinaries(
-                        [
-                            ts.createStringLiteral('validation failed at '),
-                            ts.createCall(
-                                ts.createPropertyAccess(
-                                    pathIdentifier,
-                                    'join'
-                                ),
-                                undefined,
-                                [ts.createStringLiteral('.')]
-                            ),
-                            ts.createStringLiteral(`: ${reason}`)
-                        ],
-                        ts.SyntaxKind.PlusToken
-                    )
-                ),
+                ts.createReturn(createErrorObject(expected)),
                 ts.createReturn(ts.createNull())
             )
         ])
@@ -470,7 +457,6 @@ export function createAssertionFunction(failureCondition: ts.Expression, reason:
 }
 
 export function createSuperfluousPropertiesLoop(propertyNames: string[]) {
-    const keyIdentifier = ts.createIdentifier('key');
     return ts.createForOf(
         undefined,
         ts.createVariableDeclarationList(
@@ -485,25 +471,7 @@ export function createSuperfluousPropertiesLoop(propertyNames: string[]) {
                     ts.SyntaxKind.AmpersandAmpersandToken,
                     ts.createTrue()
                 ),
-                ts.createReturn(
-                    createBinaries(
-                        [
-                            ts.createStringLiteral('validation failed at '),
-                            ts.createCall(
-                                ts.createPropertyAccess(
-                                    pathIdentifier,
-                                    'join'
-                                ),
-                                undefined,
-                                [ts.createStringLiteral('.')]
-                            ),
-                            ts.createStringLiteral(`: superfluous property '`),
-                            keyIdentifier,
-                            ts.createStringLiteral(`' in object`)
-                        ],
-                        ts.SyntaxKind.PlusToken
-                    )
-                )
+                ts.createReturn(createErrorObject({ type: 'superfluous-property' }))
             )
         ])
     );
@@ -514,5 +482,92 @@ export function isBigIntType(type: ts.Type) {
         return (ts.TypeFlags as any).BigInt & type.flags;
     } else {
         return false;
+    }
+}
+
+function createAssertionString(reason: string | ts.Expression): ts.Expression {
+    if (typeof reason === 'string') {
+        return createBinaries(
+            [
+                ts.createStringLiteral('validation failed at '),
+                ts.createCall(
+                    ts.createPropertyAccess(
+                        pathIdentifier,
+                        'join'
+                    ),
+                    undefined,
+                    [ts.createStringLiteral('.')]
+                ),
+                ts.createStringLiteral(`: ${reason}`)
+            ],
+            ts.SyntaxKind.PlusToken
+        );
+    } else {
+        return createBinaries(
+            [
+                ts.createStringLiteral('validation failed at '),
+                ts.createCall(
+                    ts.createPropertyAccess(
+                        pathIdentifier,
+                        'join'
+                    ),
+                    undefined,
+                    [ts.createStringLiteral('.')]
+                ),
+                ts.createStringLiteral(`: `),
+                reason
+            ],
+            ts.SyntaxKind.PlusToken
+        );
+    }
+}
+
+export function createErrorObject(expected: Expected): ts.Expression {
+    // TODO: make actual object instead of just error message.
+
+    switch (expected.type) {
+        case 'tuple':
+            return createAssertionString(`expected an array with length ${expected.minLength}-${expected.maxLength}`);
+        case 'array':
+            return createAssertionString('expected an array');
+        case 'object':
+            return createAssertionString('expected an object');
+        case 'missing-property':
+            return createAssertionString(`expected '${expected.property}' in object`);
+        case 'superfluous-property':
+            return createAssertionString(createBinaries(
+                [
+                    ts.createStringLiteral(`superfluous property '`),
+                    keyIdentifier,
+                    ts.createStringLiteral(`' in object`)
+                ],
+                ts.SyntaxKind.PlusToken
+            ));
+        case 'never':
+            return createAssertionString('type is never');
+        case 'union':
+            return createAssertionString('there are no valid alternatives');
+        case 'string':
+            return createAssertionString('expected a string');
+        case 'boolean':
+            return createAssertionString('expected a boolean');
+        case 'big-int':
+            return createAssertionString('expected a bigint');
+        case 'number':
+            return createAssertionString('expected a number');
+        case 'undefined':
+            return createAssertionString('expected undefined');
+        case 'null':
+            return createAssertionString('expected null');
+        case 'object-keyof':
+            return createAssertionString(`expected ${expected.properties.map((property) => `'${property}'`).join('|')}`);
+        case 'string-literal':
+            return createAssertionString(`expected string '${expected.value}'`);
+        case 'number-literal':
+            return createAssertionString(`expected number '${expected.value}'`);
+        case 'boolean-literal':
+            return createAssertionString(`expected ${expected.value ? 'true' : 'false'}`);
+        case 'non-primitive':
+            return createAssertionString('expected a non-primitive');
     }
 }

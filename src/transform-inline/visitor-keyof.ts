@@ -59,7 +59,7 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
             );
             return VisitorUtils.createAssertionFunction(
                 condition,
-                `expected ${names.map((name) => `'${name}'`).join('|')}`,
+                { type: 'object-keyof', properties: names },
                 name
             );
         });

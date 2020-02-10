@@ -109,7 +109,7 @@ export function visitType(type: ts.Type, visitorContext: VisitorContext, mode: N
     } else if ((ts.TypeFlags.Number & type.flags) !== 0) {
         name = VisitorUtils.getNumberFunction(visitorContext);
     } else if (VisitorUtils.isBigIntType(type)) {
-        name = VisitorUtils.getBigintFunction(visitorContext);
+        name = VisitorUtils.getBigIntFunction(visitorContext);
     } else if ((ts.TypeFlags.Boolean & type.flags) !== 0) {
         name = VisitorUtils.getBooleanFunction(visitorContext);
     } else if ((ts.TypeFlags.String & type.flags) !== 0) {

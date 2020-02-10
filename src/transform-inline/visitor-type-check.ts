@@ -66,23 +66,7 @@ function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext
                         ],
                         ts.SyntaxKind.BarBarToken
                     ),
-                    ts.createReturn(
-                        VisitorUtils.createBinaries(
-                            [
-                                ts.createStringLiteral('validation failed at '),
-                                ts.createCall(
-                                    ts.createPropertyAccess(
-                                        VisitorUtils.pathIdentifier,
-                                        'join'
-                                    ),
-                                    undefined,
-                                    [ts.createStringLiteral('.')]
-                                ),
-                                ts.createStringLiteral(`: expected an array with length ${minLength}-${maxLength}`)
-                            ],
-                            ts.SyntaxKind.PlusToken
-                        )
-                    )
+                    ts.createReturn(VisitorUtils.createErrorObject({ type: 'tuple', minLength, maxLength }))
                 ),
                 ...functionNames.map((functionName, index) =>
                     ts.createBlock([
@@ -155,23 +139,7 @@ function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContex
                             [VisitorUtils.objectIdentifier]
                         )
                     ),
-                    ts.createReturn(
-                        VisitorUtils.createBinaries(
-                            [
-                                ts.createStringLiteral('validation failed at '),
-                                ts.createCall(
-                                    ts.createPropertyAccess(
-                                        VisitorUtils.pathIdentifier,
-                                        'join'
-                                    ),
-                                    undefined,
-                                    [ts.createStringLiteral('.')]
-                                ),
-                                ts.createStringLiteral(': expected an array')
-                            ],
-                            ts.SyntaxKind.PlusToken
-                        )
-                    )
+                    ts.createReturn(VisitorUtils.createErrorObject({ type: 'array' }))
                 ),
                 ts.createFor(
                     ts.createVariableDeclarationList(
@@ -272,23 +240,7 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                         ],
                         ts.SyntaxKind.BarBarToken
                     ),
-                    ts.createReturn(
-                        VisitorUtils.createBinaries(
-                            [
-                                ts.createStringLiteral('validation failed at '),
-                                ts.createCall(
-                                    ts.createPropertyAccess(
-                                        VisitorUtils.pathIdentifier,
-                                        'join'
-                                    ),
-                                    undefined,
-                                    [ts.createStringLiteral('.')]
-                                ),
-                                ts.createStringLiteral(': expected an object')
-                            ],
-                            ts.SyntaxKind.PlusToken
-                        )
-                    )
+                    ts.createReturn(VisitorUtils.createErrorObject({ type: 'object' }))
                 ),
                 ...propertyInfos.map((propertyInfo) => {
                     if (propertyInfo.isSymbol) {
@@ -340,23 +292,7 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                             ]),
                             propertyInfo.optional
                                 ? undefined
-                                : ts.createReturn(
-                                    VisitorUtils.createBinaries(
-                                        [
-                                            ts.createStringLiteral('validation failed at '),
-                                            ts.createCall(
-                                                ts.createPropertyAccess(
-                                                    VisitorUtils.pathIdentifier,
-                                                    'join'
-                                                ),
-                                                undefined,
-                                                [ts.createStringLiteral('.')]
-                                            ),
-                                            ts.createStringLiteral(`: expected '${propertyInfo.name}' in object`)
-                                        ],
-                                        ts.SyntaxKind.PlusToken
-                                    )
-                                )
+                                : ts.createReturn(VisitorUtils.createErrorObject({ type: 'missing-property', property: propertyInfo.name }))
                         )
                     ]);
                 }),
@@ -464,19 +400,20 @@ function visitLiteralType(type: ts.LiteralType, visitorContext: VisitorContext) 
                     VisitorUtils.objectIdentifier,
                     ts.createStringLiteral(value)
                 ),
-                `expected string '${type.value}'`,
+                { type: 'string-literal', value },
                 name
             );
         });
     } else if (typeof type.value === 'number') {
         const name = VisitorTypeName.visitType(type, visitorContext, { type: 'type-check' });
+        const value = type.value;
         return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
             return VisitorUtils.createAssertionFunction(
                 ts.createStrictInequality(
                     VisitorUtils.objectIdentifier,
-                    ts.createNumericLiteral(type.value.toString())
+                    ts.createNumericLiteral(value.toString())
                 ),
-                `expected number '${type.value}'`,
+                { type: 'number-literal', value },
                 name
             );
         });
@@ -524,7 +461,7 @@ function visitBooleanLiteral(type: ts.Type, visitorContext: VisitorContext) {
                     VisitorUtils.objectIdentifier,
                     ts.createTrue()
                 ),
-                `expected true`,
+                { type: 'boolean-literal', value: true },
                 name
             );
         });
@@ -536,7 +473,7 @@ function visitBooleanLiteral(type: ts.Type, visitorContext: VisitorContext) {
                     VisitorUtils.objectIdentifier,
                     ts.createFalse()
                 ),
-                `expected false`,
+                { type: 'boolean-literal', value: false },
                 name
             );
         });
@@ -576,7 +513,7 @@ function visitNonPrimitiveType(type: ts.Type, visitorContext: VisitorContext) {
             const condition = VisitorUtils.createBinaries(conditions, ts.SyntaxKind.AmpersandAmpersandToken);
             return VisitorUtils.createAssertionFunction(
                 ts.createLogicalNot(condition),
-                `expected a non-primitive`,
+                { type: 'non-primitive' },
                 name
             );
         });
@@ -610,7 +547,7 @@ function visitNumber(visitorContext: VisitorContext) {
 }
 
 function visitBigInt(visitorContext: VisitorContext) {
-    return VisitorUtils.getBigintFunction(visitorContext);
+    return VisitorUtils.getBigIntFunction(visitorContext);
 }
 
 function visitBoolean(visitorContext: VisitorContext) {
