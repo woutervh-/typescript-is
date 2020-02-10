@@ -398,43 +398,6 @@ export function createDisjunctionFunction(functionNames: string[], functionName:
     );
 }
 
-// export function createAssertionFunction(failureCondition: ts.Expression, reason: string, functionName: string) {
-//     return ts.createFunctionDeclaration(
-//         undefined,
-//         undefined,
-//         undefined,
-//         functionName,
-//         undefined,
-//         [
-//             ts.createParameter(undefined, undefined, undefined, objectIdentifier, undefined, undefined, undefined)
-//         ],
-//         undefined,
-//         ts.createBlock([
-//             ts.createIf(
-//                 failureCondition,
-//                 ts.createReturn(
-//                     createBinaries(
-//                         [
-//                             ts.createStringLiteral('validation failed at '),
-//                             ts.createCall(
-//                                 ts.createPropertyAccess(
-//                                     pathIdentifier,
-//                                     'join'
-//                                 ),
-//                                 undefined,
-//                                 [ts.createStringLiteral('.')]
-//                             ),
-//                             ts.createStringLiteral(`: ${reason}`)
-//                         ],
-//                         ts.SyntaxKind.PlusToken
-//                     )
-//                 ),
-//                 ts.createReturn(ts.createNull())
-//             )
-//         ])
-//     );
-// }
-
 export function createAssertionFunction(failureCondition: ts.Expression, expected: Expected, functionName: string) {
     return ts.createFunctionDeclaration(
         undefined,
