@@ -11,7 +11,6 @@
         "strict": true,
         "sourceMap": false,
         "declaration": false,
-        "rootDir": "src",
         "plugins": [
             {
                 "transform": "./src/transform-inline/transformer.ts"
