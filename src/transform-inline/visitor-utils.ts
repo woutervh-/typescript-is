@@ -488,7 +488,7 @@ function createAssertionString(reason: string | ts.Expression): ts.Expression {
 export function createErrorObject(reason: Reason): ts.Expression {
     return ts.createObjectLiteral([
         ts.createPropertyAssignment('message', createErrorMessage(reason)),
-        ts.createPropertyAssignment('path', pathIdentifier),
+        ts.createPropertyAssignment('path', ts.createCall(ts.createPropertyAccess(pathIdentifier, 'slice'), undefined, undefined)),
         ts.createPropertyAssignment('reason', serializeObjectToExpression(reason))
     ]);
 }
