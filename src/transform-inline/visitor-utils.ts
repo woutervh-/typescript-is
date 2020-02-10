@@ -1,7 +1,7 @@
 import * as ts from 'typescript';
 import * as tsutils from 'tsutils/typeguard/3.0';
 import { VisitorContext } from './visitor-context';
-import { Expected } from '../../index';
+import { Reason } from '../../index';
 
 export const objectIdentifier = ts.createIdentifier('object');
 export const pathIdentifier = ts.createIdentifier('path');
@@ -398,7 +398,7 @@ export function createDisjunctionFunction(functionNames: string[], functionName:
     );
 }
 
-export function createAssertionFunction(failureCondition: ts.Expression, expected: Expected, functionName: string) {
+export function createAssertionFunction(failureCondition: ts.Expression, expected: Reason, functionName: string) {
     return ts.createFunctionDeclaration(
         undefined,
         undefined,
@@ -485,18 +485,50 @@ function createAssertionString(reason: string | ts.Expression): ts.Expression {
     }
 }
 
-export function createErrorObject(expected: Expected): ts.Expression {
-    // TODO: make actual object instead of just error message.
+export function createErrorObject(reason: Reason): ts.Expression {
+    return ts.createObjectLiteral([
+        ts.createPropertyAssignment('message', createErrorMessage(reason)),
+        ts.createPropertyAssignment('path', pathIdentifier),
+        ts.createPropertyAssignment('reason', serializeObjectToExpression(reason))
+    ]);
+}
 
-    switch (expected.type) {
+function serializeObjectToExpression(object: unknown): ts.Expression {
+    if (typeof object === 'string') {
+        return ts.createStringLiteral(object);
+    } else if (typeof object === 'number') {
+        return ts.createNumericLiteral(object.toString());
+    } else if (typeof object === 'boolean') {
+        return object ? ts.createTrue() : ts.createFalse();
+    } else if (typeof object === 'bigint') {
+        return ts.createBigIntLiteral(object.toString());
+    } else if (typeof object === 'undefined') {
+        return ts.createIdentifier('undefined');
+    } else if (typeof object === 'object') {
+        if (object === null) {
+            return ts.createNull();
+        } else if (Array.isArray(object)) {
+            return ts.createArrayLiteral(object.map((item) => serializeObjectToExpression(item)));
+        } else {
+            return ts.createObjectLiteral(Object.keys(object).map((key) => {
+                const value = (object as { [Key: string]: unknown })[key];
+                return ts.createPropertyAssignment(key, serializeObjectToExpression(value));
+            }));
+        }
+    }
+    throw new Error('Cannot serialize object to expression.');
+}
+
+function createErrorMessage(reason: Reason): ts.Expression {
+    switch (reason.type) {
         case 'tuple':
-            return createAssertionString(`expected an array with length ${expected.minLength}-${expected.maxLength}`);
+            return createAssertionString(`expected an array with length ${reason.minLength}-${reason.maxLength}`);
         case 'array':
             return createAssertionString('expected an array');
         case 'object':
             return createAssertionString('expected an object');
         case 'missing-property':
-            return createAssertionString(`expected '${expected.property}' in object`);
+            return createAssertionString(`expected '${reason.property}' in object`);
         case 'superfluous-property':
             return createAssertionString(createBinaries(
                 [
@@ -523,13 +555,13 @@ export function createErrorObject(expected: Expected): ts.Expression {
         case 'null':
             return createAssertionString('expected null');
         case 'object-keyof':
-            return createAssertionString(`expected ${expected.properties.map((property) => `'${property}'`).join('|')}`);
+            return createAssertionString(`expected ${reason.properties.map((property) => `'${property}'`).join('|')}`);
         case 'string-literal':
-            return createAssertionString(`expected string '${expected.value}'`);
+            return createAssertionString(`expected string '${reason.value}'`);
         case 'number-literal':
-            return createAssertionString(`expected number '${expected.value}'`);
+            return createAssertionString(`expected number '${reason.value}'`);
         case 'boolean-literal':
-            return createAssertionString(`expected ${expected.value ? 'true' : 'false'}`);
+            return createAssertionString(`expected ${reason.value ? 'true' : 'false'}`);
         case 'non-primitive':
             return createAssertionString('expected a non-primitive');
     }

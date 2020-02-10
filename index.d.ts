@@ -114,21 +114,8 @@ export function assertEquals<T>(object: any): T;
 export function createAssertEquals<T>(): (object: any) => T;
 
 /**
- * Options for the `AssertType` decorator.
- */
-export interface AssertTypeOptions {
-    /**
-     * Message that will be passed to the error constructor, in case type assertion fails.
-     */
-    message?: string;
-}
-
-/**
  * Creates a type assertion and saves it in the reflection metadata of the method's class.
  * Then, when the class is decorated with `ValidateClass`, the method's arguments will be validated.
- *
- * @param options options for the decorator.
- * Check `AssertTypeOptions` documentation for more information.
  *
  * @example
  * ```
@@ -138,7 +125,7 @@ export interface AssertTypeOptions {
    new A().method('0' as any); // will throw an error
    ```
  */
-export function AssertType(options?: AssertTypeOptions): (target: object, propertyKey: string | symbol, parameterIndex: number) => void;
+export function AssertType(): (target: object, propertyKey: string | symbol, parameterIndex: number) => void;
 
 /**
  * Overrides methods in the target class with a proxy that will first validate the argument types.
@@ -179,7 +166,7 @@ export function ValidateClass(errorConstructor?: { new(): Error }): <TFunction e
  */
 export class TypeGuardError extends Error {
     public readonly path: string;
-    public readonly expected: Expected;
+    public readonly reason: Reason;
 }
 
 interface ExpectedString {
@@ -239,7 +226,7 @@ interface ExpectedArray {
     type: 'array';
 }
 
-interface ExpectedNever {
+interface NeverType {
     type: 'never';
 }
 
@@ -249,7 +236,7 @@ interface ExpectedTuple {
     maxLength: number;
 }
 
-interface ExpectedUnion {
+interface NoValidUnionAlternatives {
     type: 'union';
 }
 
@@ -261,7 +248,7 @@ interface ExpectedNull {
     type: 'null';
 }
 
-type Expected = ExpectedString
+type Reason = ExpectedString
     | ExpectedNumber
     | ExpectedBigInt
     | ExpectedBoolean
@@ -272,8 +259,8 @@ type Expected = ExpectedString
     | ExpectedObjectKeyof
     | ExpectedArray
     | ExpectedTuple
-    | ExpectedNever
-    | ExpectedUnion
+    | NeverType
+    | NoValidUnionAlternatives
     | ExpectedUndefined
     | ExpectedNull
     | ExpectedStringLiteral
@@ -281,8 +268,8 @@ type Expected = ExpectedString
     | ExpectedBooleanLiteral;
 
 /**
- * Set default getErrorMessage function used for transpiled source.
+ * Set default getErrorObject function used for transpiled source.
  *
- * @param getErrorMessage
+ * @param getErrorObject
  */
-export function setDefaultGetErrorMessage(getErrorMessage?: () => string | null): void;
+export function setDefaultGetErrorObject(getErrorObject?: () => string | null): void;
