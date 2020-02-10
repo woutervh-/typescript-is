@@ -165,7 +165,7 @@ export function ValidateClass(errorConstructor?: { new(): Error }): <TFunction e
    ```
  */
 export class TypeGuardError extends Error {
-    public readonly path: string;
+    public readonly path: string[];
     public readonly reason: Reason;
 }
 
@@ -272,4 +272,4 @@ type Reason = ExpectedString
  *
  * @param getErrorObject
  */
-export function setDefaultGetErrorObject(getErrorObject?: () => string | null): void;
+export function setDefaultGetErrorObject(getErrorObject?: () => { message: string, path: string[], reason: Reason } | null): void;
