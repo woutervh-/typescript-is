@@ -29,6 +29,7 @@ describe('visitor', () => {
         const visitorContext: PartialVisitorContext = {
             checker: program.getTypeChecker(),
             program,
+            compilerOptions: program.getCompilerOptions(),
             options: {
                 ignoreClasses: false,
                 ignoreMethods: false,

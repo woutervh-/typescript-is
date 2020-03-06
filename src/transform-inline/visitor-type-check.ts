@@ -37,6 +37,7 @@ function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext
             ],
             undefined,
             ts.createBlock([
+                VisitorUtils.createStrictNullCheckStatement(VisitorUtils.objectIdentifier, visitorContext),
                 ts.createIf(
                     VisitorUtils.createBinaries(
                         [
@@ -131,6 +132,7 @@ function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContex
             ],
             undefined,
             ts.createBlock([
+                VisitorUtils.createStrictNullCheckStatement(VisitorUtils.objectIdentifier, visitorContext),
                 ts.createIf(
                     ts.createLogicalNot(
                         ts.createCall(
@@ -221,6 +223,7 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
             ],
             undefined,
             ts.createBlock([
+                VisitorUtils.createStrictNullCheckStatement(VisitorUtils.objectIdentifier, visitorContext),
                 ts.createIf(
                     VisitorUtils.createBinaries(
                         [
@@ -401,7 +404,8 @@ function visitLiteralType(type: ts.LiteralType, visitorContext: VisitorContext) 
                     ts.createStringLiteral(value)
                 ),
                 { type: 'string-literal', value },
-                name
+                name,
+                VisitorUtils.createStrictNullCheckStatement(VisitorUtils.objectIdentifier, visitorContext)
             );
         });
     } else if (typeof type.value === 'number') {
@@ -414,7 +418,8 @@ function visitLiteralType(type: ts.LiteralType, visitorContext: VisitorContext) 
                     ts.createNumericLiteral(value.toString())
                 ),
                 { type: 'number-literal', value },
-                name
+                name,
+                VisitorUtils.createStrictNullCheckStatement(VisitorUtils.objectIdentifier, visitorContext)
             );
         });
     } else {
@@ -462,7 +467,8 @@ function visitBooleanLiteral(type: ts.Type, visitorContext: VisitorContext) {
                     ts.createTrue()
                 ),
                 { type: 'boolean-literal', value: true },
-                name
+                name,
+                VisitorUtils.createStrictNullCheckStatement(VisitorUtils.objectIdentifier, visitorContext)
             );
         });
     } else if (intrinsicName === 'false') {
@@ -474,7 +480,8 @@ function visitBooleanLiteral(type: ts.Type, visitorContext: VisitorContext) {
                     ts.createFalse()
                 ),
                 { type: 'boolean-literal', value: false },
-                name
+                name,
+                VisitorUtils.createStrictNullCheckStatement(VisitorUtils.objectIdentifier, visitorContext)
             );
         });
     } else {
@@ -514,7 +521,8 @@ function visitNonPrimitiveType(type: ts.Type, visitorContext: VisitorContext) {
             return VisitorUtils.createAssertionFunction(
                 ts.createLogicalNot(condition),
                 { type: 'non-primitive' },
-                name
+                name,
+                VisitorUtils.createStrictNullCheckStatement(VisitorUtils.objectIdentifier, visitorContext)
             );
         });
     } else {

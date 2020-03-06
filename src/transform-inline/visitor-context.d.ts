@@ -15,6 +15,7 @@ export interface VisitorContext extends PartialVisitorContext {
 export interface PartialVisitorContext {
     program: ts.Program;
     checker: ts.TypeChecker;
+    compilerOptions: ts.CompilerOptions;
     options: Options;
     typeMapperStack: Map<ts.Type, ts.Type>[];
     previousTypeReference: ts.Type | null;

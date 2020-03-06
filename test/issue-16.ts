@@ -28,6 +28,7 @@ describe('visitor', () => {
         const visitorContext: PartialVisitorContext = {
             checker: program.getTypeChecker(),
             program,
+            compilerOptions: program.getCompilerOptions(),
             options: {
                 ignoreClasses: true,
                 ignoreMethods: false,
@@ -54,6 +55,7 @@ describe('visitor', () => {
         const visitorContext: PartialVisitorContext = {
             checker: program.getTypeChecker(),
             program,
+            compilerOptions: program.getCompilerOptions(),
             options: {
                 ignoreClasses: false,
                 ignoreMethods: true,
@@ -80,6 +82,7 @@ describe('visitor', () => {
         const visitorContext: PartialVisitorContext = {
             checker: program.getTypeChecker(),
             program,
+            compilerOptions: program.getCompilerOptions(),
             options: {
                 ignoreClasses: true,
                 ignoreMethods: true,
@@ -106,6 +109,7 @@ describe('visitor', () => {
         const visitorContext: PartialVisitorContext = {
             checker: program.getTypeChecker(),
             program,
+            compilerOptions: program.getCompilerOptions(),
             options: {
                 ignoreClasses: true,
                 ignoreMethods: true,

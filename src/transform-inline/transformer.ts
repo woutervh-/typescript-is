@@ -11,6 +11,7 @@ export default function transformer(program: ts.Program, options?: { [Key: strin
     const visitorContext: PartialVisitorContext = {
         program,
         checker: program.getTypeChecker(),
+        compilerOptions: program.getCompilerOptions(),
         options: {
             shortCircuit: !!(options && options.shortCircuit),
             ignoreClasses: !!(options && options.ignoreClasses),

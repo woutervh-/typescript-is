@@ -140,7 +140,8 @@ export function getStringFunction(visitorContext: VisitorContext) {
                 ts.createStringLiteral('string')
             ),
             { type: 'string' },
-            name
+            name,
+            createStrictNullCheckStatement(objectIdentifier, visitorContext)
         );
     });
 }
@@ -154,7 +155,8 @@ export function getBooleanFunction(visitorContext: VisitorContext) {
                 ts.createStringLiteral('boolean')
             ),
             { type: 'boolean' },
-            name
+            name,
+            createStrictNullCheckStatement(objectIdentifier, visitorContext)
         );
     });
 }
@@ -168,7 +170,8 @@ export function getBigIntFunction(visitorContext: VisitorContext) {
                 ts.createStringLiteral('bigint')
             ),
             { type: 'big-int' },
-            name
+            name,
+            createStrictNullCheckStatement(objectIdentifier, visitorContext)
         );
     });
 }
@@ -182,7 +185,8 @@ export function getNumberFunction(visitorContext: VisitorContext) {
                 ts.createStringLiteral('number')
             ),
             { type: 'number' },
-            name
+            name,
+            createStrictNullCheckStatement(objectIdentifier, visitorContext)
         );
     });
 }
@@ -196,7 +200,8 @@ export function getUndefinedFunction(visitorContext: VisitorContext) {
                 ts.createIdentifier('undefined')
             ),
             { type: 'undefined' },
-            name
+            name,
+            createStrictNullCheckStatement(objectIdentifier, visitorContext)
         );
     });
 }
@@ -210,7 +215,8 @@ export function getNullFunction(visitorContext: VisitorContext) {
                 ts.createNull()
             ),
             { type: 'null' },
-            name
+            name,
+            createStrictNullCheckStatement(objectIdentifier, visitorContext)
         );
     });
 }
@@ -398,7 +404,22 @@ export function createDisjunctionFunction(functionNames: string[], functionName:
     );
 }
 
-export function createAssertionFunction(failureCondition: ts.Expression, expected: Reason, functionName: string) {
+export function createStrictNullCheckStatement(identifier: ts.Identifier, visitorContext: VisitorContext) {
+    if (visitorContext.compilerOptions.strictNullChecks !== false) {
+        return ts.createEmptyStatement();
+    } else {
+        return ts.createIf(
+            ts.createBinary(
+                ts.createStrictEquality(identifier, ts.createNull()),
+                ts.SyntaxKind.BarBarToken,
+                ts.createStrictEquality(identifier, ts.createIdentifier('undefined'))
+            ),
+            ts.createReturn(ts.createNull())
+        );
+    }
+}
+
+export function createAssertionFunction(failureCondition: ts.Expression, expected: Reason, functionName: string, ...otherStatements: ts.Statement[]) {
     return ts.createFunctionDeclaration(
         undefined,
         undefined,
@@ -410,6 +431,7 @@ export function createAssertionFunction(failureCondition: ts.Expression, expecte
         ],
         undefined,
         ts.createBlock([
+            ...otherStatements,
             ts.createIf(
                 failureCondition,
                 ts.createReturn(createErrorObject(expected)),
