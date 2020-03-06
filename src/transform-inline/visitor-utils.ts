@@ -52,10 +52,13 @@ export function getPropertyInfo(symbol: ts.Symbol, visitorContext: VisitorContex
         if (!ts.isPropertySignature(valueDeclaration) && !ts.isMethodSignature(valueDeclaration)) {
             throw new Error('Unsupported declaration kind: ' + valueDeclaration.kind);
         }
-        const isMethod = ts.isMethodSignature(valueDeclaration)
-            || valueDeclaration.type !== undefined && ts.isFunctionTypeNode(valueDeclaration.type);
+        const isMethod = ts.isMethodSignature(valueDeclaration);
+        const isFunction = valueDeclaration.type !== undefined && ts.isFunctionTypeNode(valueDeclaration.type);
         if (isMethod && !visitorContext.options.ignoreMethods) {
             throw new Error('Encountered a method declaration, but methods are not supported. Issue: https://github.com/woutervh-/typescript-is/issues/5');
+        }
+        if (isFunction && !visitorContext.options.ignoreFunctions) {
+            throw new Error('Encountered a function declaration, but functions are not supported. Issue: https://github.com/woutervh-/typescript-is/issues/50');
         }
         let propertyType: ts.Type | undefined = undefined;
         if (valueDeclaration.type === undefined) {

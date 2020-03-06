@@ -1,9 +1,9 @@
 import { is } from '../index';
 
 interface WithLambda {
-    testA: () => void;
+    testA(): void;
     nested: {
-        testB?: (value: string) => string
+        testB(value: string): string
     };
 }
 

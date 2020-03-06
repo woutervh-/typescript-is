@@ -33,6 +33,7 @@ describe('visitor', () => {
             options: {
                 ignoreClasses: false, // We want the test to fail on classes.
                 ignoreMethods: true, // Make sure it does not fail on the methods.
+                ignoreFunctions: false,
                 shortCircuit: false,
                 disallowSuperfluousObjectProperties: false
             },
@@ -61,6 +62,7 @@ describe('visitor', () => {
             options: {
                 ignoreClasses: true, // We want the test to succeed when the class is encountered, before the class is further inspected.
                 ignoreMethods: false, // It should never get to the methods of the class.
+                ignoreFunctions: false,
                 shortCircuit: false,
                 disallowSuperfluousObjectProperties: false
             },

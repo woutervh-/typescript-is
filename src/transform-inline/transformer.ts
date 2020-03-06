@@ -16,6 +16,7 @@ export default function transformer(program: ts.Program, options?: { [Key: strin
             shortCircuit: !!(options && options.shortCircuit),
             ignoreClasses: !!(options && options.ignoreClasses),
             ignoreMethods: !!(options && options.ignoreMethods),
+            ignoreFunctions: !!(options && options.ignoreFunctions),
             disallowSuperfluousObjectProperties: !!(options && options.disallowSuperfluousObjectProperties)
         },
         typeMapperStack: [],

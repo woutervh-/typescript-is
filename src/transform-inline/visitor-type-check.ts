@@ -387,6 +387,14 @@ function visitObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
     } else if (visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.Number)) {
         // Index type is number -> array type.
         return visitArrayObjectType(type, visitorContext);
+    } else if ('valueDeclaration' in type.symbol
+        && (type.symbol.valueDeclaration.kind === ts.SyntaxKind.MethodDeclaration || type.symbol.valueDeclaration.kind === ts.SyntaxKind.FunctionType)
+    ) {
+        if (visitorContext.options.ignoreFunctions) {
+            return VisitorUtils.getIgnoredTypeFunction(visitorContext);
+        } else {
+            throw new Error('Encountered a function declaration, but functions are not supported. Issue: https://github.com/woutervh-/typescript-is/issues/50');
+        }
     } else {
         // Index type is string -> regular object type.
         return visitRegularObjectType(type, visitorContext);

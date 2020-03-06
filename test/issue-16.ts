@@ -32,6 +32,7 @@ describe('visitor', () => {
             options: {
                 ignoreClasses: true,
                 ignoreMethods: false,
+                ignoreFunctions: false,
                 shortCircuit: false,
                 disallowSuperfluousObjectProperties: false
             },
@@ -59,6 +60,7 @@ describe('visitor', () => {
             options: {
                 ignoreClasses: false,
                 ignoreMethods: true,
+                ignoreFunctions: false,
                 shortCircuit: false,
                 disallowSuperfluousObjectProperties: false
             },
@@ -86,6 +88,7 @@ describe('visitor', () => {
             options: {
                 ignoreClasses: true,
                 ignoreMethods: true,
+                ignoreFunctions: false,
                 shortCircuit: false,
                 disallowSuperfluousObjectProperties: false
             },
@@ -113,6 +116,7 @@ describe('visitor', () => {
             options: {
                 ignoreClasses: true,
                 ignoreMethods: true,
+                ignoreFunctions: false,
                 shortCircuit: false,
                 disallowSuperfluousObjectProperties: false
             },

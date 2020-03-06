@@ -8,7 +8,7 @@ import { transformNode } from '../src/transform-inline/transform-node';
 import { PartialVisitorContext } from '../src/transform-inline/visitor-context';
 
 const configFilename = path.resolve('tsconfig.json');
-const inFile = path.resolve('test', 'issue-43.ts');
+const inFile = path.resolve('test-fixtures', 'issue-50.ts');
 const content = ts.sys.readFile(configFilename);
 if (content === undefined) {
     throw new Error('Could not read config file.');
@@ -25,10 +25,12 @@ const program = ts.createProgram([inFile], configParseResult.options);
 const visitorContext: PartialVisitorContext = {
     checker: program.getTypeChecker(),
     program,
+    compilerOptions: program.getCompilerOptions(),
     options: {
         shortCircuit: false,
         ignoreClasses: false,
         ignoreMethods: false,
+        ignoreFunctions: true,
         disallowSuperfluousObjectProperties: false
     },
     typeMapperStack: [],
