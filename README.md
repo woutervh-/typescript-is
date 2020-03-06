@@ -86,6 +86,35 @@ npx ttsc
 
 Please check the README of [ttypescript](https://github.com/cevek/ttypescript/blob/master/README.md) for information on how to use it in combination with `ts-node`, `webpack`, and `Rollup`.
 
+## Using with `webpack + ts-loader` without `ttypescript`
+
+If you are using `ts-loader` in a `webpack` project, you can use [getCustomTransformers](https://github.com/TypeStrong/ts-loader#getcustomtransformers) as suggested in #54.
+This means you don't need to use `ttypescript` or write a custom compilation script.
+
+Example:
+
+```javascript
+const typescriptIsTransformer = require('typescript-is/lib/transform-inline/transformer').default
+
+module.exports = {
+    // I am hiding the rest of the webpack config
+    module: {
+        rules: [
+            {
+                test: /\.ts$/,
+                exclude: /node_modules/,
+                loader: 'ts-loader',
+                options: {
+                    getCustomTransformers: program => ({
+                        before: [typescriptIsTransformer(program)]
+                    })
+                }
+            }
+        ]
+    }
+};
+```
+
 ## Options
 
 There are some options to configure the transformer.
