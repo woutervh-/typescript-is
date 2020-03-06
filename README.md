@@ -47,6 +47,12 @@ In these situations `typescript-is` can come to your rescue.
 *NOTE* this package aims to generate type predicates for any *serializable* JavaScript object.
 Please check [What it won't do](#-what-it-wont-do) for details.
 
+### Similar projects
+
+* [io-ts-transformer](https://github.com/awerlogus/io-ts-transformer)
+* [io-ts](https://github.com/gcanti/io-ts)
+* [ts-auto-guard](https://github.com/usabilityhub/ts-auto-guard)
+
 # 🎛️ Configuration
 
 This package exposes a TypeScript transformer factory at `typescript-is/lib/transformer-inline/transformer`
