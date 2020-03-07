@@ -5,7 +5,7 @@ import { visitType, visitUndefinedOrType, visitShortCircuit } from './visitor-ty
 import * as VisitorUtils from './visitor-utils';
 import { sliceMapValues } from './utils';
 
-function createArrowFunction(type: ts.Type, name: string, optional: boolean, partialVisitorContext: PartialVisitorContext) {
+function createArrowFunction(type: ts.Type, rootName: string, optional: boolean, partialVisitorContext: PartialVisitorContext) {
     const functionMap: VisitorContext['functionMap'] = new Map();
     const functionNames: VisitorContext['functionNames'] = new Set();
     const visitorContext = { ...partialVisitorContext, functionNames, functionMap };
@@ -37,7 +37,7 @@ function createArrowFunction(type: ts.Type, name: string, optional: boolean, par
         ts.createBlock([
             ts.createVariableStatement(
                 [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
-                [ts.createVariableDeclaration(VisitorUtils.pathIdentifier, undefined, ts.createArrayLiteral([ts.createStringLiteral(name)]))]
+                [ts.createVariableDeclaration(VisitorUtils.pathIdentifier, undefined, ts.createArrayLiteral([ts.createStringLiteral(rootName)]))]
             ),
             ...declarations,
             ts.createVariableStatement(
@@ -74,8 +74,9 @@ function transformDecorator(node: ts.Decorator, parameterType: ts.Type, paramete
     return node;
 }
 
-function extractVariableName(node: ts.Node) {
-    return ts.isIdentifier(node) ? node.escapedText.toString() : '$';
+/** Figures out an appropriate human-readable name for the variable designated by `node`. */
+function extractVariableName(node: ts.Node | undefined) {
+    return node != null && ts.isIdentifier(node) ? node.escapedText.toString() : '$';
 }
 
 export function transformNode(node: ts.Node, visitorContext: PartialVisitorContext): ts.Node {
@@ -109,7 +110,7 @@ export function transformNode(node: ts.Node, visitorContext: PartialVisitorConte
             const type = visitorContext.checker.getTypeFromTypeNode(typeArgument);
             const arrowFunction = createArrowFunction(
                 type,
-                node.arguments.length > 0 ? extractVariableName(node.arguments[0]) : '$',
+                extractVariableName(node.arguments[0]),
                 false,
                 {
                     ...visitorContext,

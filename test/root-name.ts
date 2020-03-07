@@ -1,8 +1,6 @@
 import * as assert from 'assert';
 import { AssertType, assertType, ValidateClass } from '../index';
 
-/* https://github.com/woutervh-/typescript-is/issues/43 */
-
 describe('is', () => {
     type Foo = {a: string};
 
