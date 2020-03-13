@@ -21,7 +21,7 @@ describe('assertType', () => {
             assert.throws(() => assertType<number>(true), expectedMessageRegExp);
             assert.throws(() => assertType<number>(false), expectedMessageRegExp);
             assert.throws(() => assertType<number>(null), expectedMessageRegExp);
-            assert.throws(() => assertType<number>(undefined), expectedMessageRegExp);
+            assert.throws(() => assertType<number>(undefined), /validation failed at undefined: expected a number$/);
         });
     });
 });

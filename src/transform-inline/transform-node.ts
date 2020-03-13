@@ -5,7 +5,7 @@ import { visitType, visitUndefinedOrType, visitShortCircuit } from './visitor-ty
 import * as VisitorUtils from './visitor-utils';
 import { sliceMapValues } from './utils';
 
-function createArrowFunction(type: ts.Type, optional: boolean, partialVisitorContext: PartialVisitorContext) {
+function createArrowFunction(type: ts.Type, rootName: string, optional: boolean, partialVisitorContext: PartialVisitorContext) {
     const functionMap: VisitorContext['functionMap'] = new Map();
     const functionNames: VisitorContext['functionNames'] = new Set();
     const visitorContext = { ...partialVisitorContext, functionNames, functionMap };
@@ -37,7 +37,7 @@ function createArrowFunction(type: ts.Type, optional: boolean, partialVisitorCon
         ts.createBlock([
             ts.createVariableStatement(
                 [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
-                [ts.createVariableDeclaration(VisitorUtils.pathIdentifier, undefined, ts.createArrayLiteral([ts.createStringLiteral('$')]))]
+                [ts.createVariableDeclaration(VisitorUtils.pathIdentifier, undefined, ts.createArrayLiteral([ts.createStringLiteral(rootName)]))]
             ),
             ...declarations,
             ts.createVariableStatement(
@@ -49,7 +49,7 @@ function createArrowFunction(type: ts.Type, optional: boolean, partialVisitorCon
     );
 }
 
-function transformDecorator(node: ts.Decorator, parameterType: ts.Type, optional: boolean, visitorContext: PartialVisitorContext): ts.Decorator {
+function transformDecorator(node: ts.Decorator, parameterType: ts.Type, parameterName: string, optional: boolean, visitorContext: PartialVisitorContext): ts.Decorator {
     if (ts.isCallExpression(node.expression)) {
         const signature = visitorContext.checker.getResolvedSignature(node.expression);
         if (
@@ -58,7 +58,7 @@ function transformDecorator(node: ts.Decorator, parameterType: ts.Type, optional
             && path.resolve(signature.declaration.getSourceFile().fileName) === path.resolve(path.join(__dirname, '..', '..', 'index.d.ts'))
             && node.expression.arguments.length <= 1
         ) {
-            const arrowFunction: ts.Expression = createArrowFunction(parameterType, optional, visitorContext);
+            const arrowFunction: ts.Expression = createArrowFunction(parameterType, parameterName, optional, visitorContext);
             const expression = ts.updateCall(
                 node.expression,
                 node.expression.expression,
@@ -74,11 +74,16 @@ function transformDecorator(node: ts.Decorator, parameterType: ts.Type, optional
     return node;
 }
 
+/** Figures out an appropriate human-readable name for the variable designated by `node`. */
+function extractVariableName(node: ts.Node | undefined) {
+    return node != null && ts.isIdentifier(node) ? node.escapedText.toString() : '$';
+}
+
 export function transformNode(node: ts.Node, visitorContext: PartialVisitorContext): ts.Node {
     if (ts.isParameter(node) && node.type !== undefined && node.decorators !== undefined) {
         const type = visitorContext.checker.getTypeFromTypeNode(node.type);
         const required = !node.initializer && !node.questionToken;
-        const mappedDecorators = node.decorators.map((decorator) => transformDecorator(decorator, type, !required, visitorContext));
+        const mappedDecorators = node.decorators.map((decorator) => transformDecorator(decorator, type, extractVariableName(node.name), !required, visitorContext));
         return ts.updateParameter(
             node,
             mappedDecorators,
@@ -105,6 +110,7 @@ export function transformNode(node: ts.Node, visitorContext: PartialVisitorConte
             const type = visitorContext.checker.getTypeFromTypeNode(typeArgument);
             const arrowFunction = createArrowFunction(
                 type,
+                extractVariableName(node.arguments[0]),
                 false,
                 {
                     ...visitorContext,
