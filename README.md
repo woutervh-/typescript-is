@@ -121,6 +121,8 @@ module.exports = {
 };
 ```
 
+Note: This will not work if `ts-loader` is configured with `transpileOnly: true`.
+
 ## Options
 
 There are some options to configure the transformer.
