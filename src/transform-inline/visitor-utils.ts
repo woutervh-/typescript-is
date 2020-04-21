@@ -24,13 +24,16 @@ export function checkIsClass(type: ts.ObjectType, visitorContext: VisitorContext
     }
 
     if (type.isClass() || hasConstructSignatures) {
-        if (visitorContext.options.ignoreClasses) {
-            return true;
-        } else {
-            throw new Error('Classes cannot be validated. https://github.com/woutervh-/typescript-is/issues/3');
-        }
+        return true
     } else {
         return false;
+    }
+}
+
+export function checkIsDateClass(type: ts.ObjectType, visitorContext: VisitorContext) {
+    if (type.symbol !== undefined && type.symbol.escapedName === 'Date') {
+        // TODO: do proper type check
+        return true;
     }
 }
 

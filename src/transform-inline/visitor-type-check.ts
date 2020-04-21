@@ -379,7 +379,17 @@ function visitTypeParameter(type: ts.Type, visitorContext: VisitorContext) {
 
 function visitObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
     if (VisitorUtils.checkIsClass(type, visitorContext)) {
-        return VisitorUtils.getIgnoredTypeFunction(visitorContext);
+        if (VisitorUtils.checkIsDateClass(type, visitorContext)) {
+            // TODO: change this to be a validator for Date or something along the lines of what happens to other types
+            console.log('yay, date object!')
+            return VisitorUtils.getIgnoredTypeFunction(visitorContext);
+        }
+
+        if (visitorContext.options.ignoreClasses) {
+            return VisitorUtils.getIgnoredTypeFunction(visitorContext);
+        } else {
+            throw new Error('Classes cannot be validated. https://github.com/woutervh-/typescript-is/issues/3');
+        }
     }
     if (tsutils.isTupleType(type)) {
         // Tuple with finite length.
