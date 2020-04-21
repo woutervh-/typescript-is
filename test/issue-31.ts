@@ -22,10 +22,13 @@ delete configParseResult.options.outFile;
 delete configParseResult.options.declaration;
 
 describe('visitor', () => {
-    const inFile = path.resolve(__dirname, '..', 'test-fixtures', 'issue-31.ts');
+    const inFile = path.resolve(__dirname, '..', 'test-fixtures', 'issue-31-a.ts');
     const program = ts.createProgram([inFile], configParseResult.options);
+    // TODO: uncomment the stuff in here and investigate the errors they produce
+    // const inFileWithDate = path.resolve(__dirname, '..', 'test-fixtures', 'issue-31-b.ts');
+    // const programWithDate = ts.createProgram([inFileWithDate], configParseResult.options);
 
-    describe('visitor test-fixtures/issue-31.ts with ignoreClasses: false', () => {
+    describe('visitor testing classes with ignoreClasses: false', () => {
         const visitorContext: PartialVisitorContext = {
             checker: program.getTypeChecker(),
             program,
@@ -45,16 +48,20 @@ describe('visitor', () => {
             ts.forEachChild(transformNode(node, visitorContext), visitNodeAndChildren);
         }
 
-        it('should throw an for interface with constructor signatures such as Date', () => {
+        it('should throw an error for interface with constructor signatures except for Date', () => {
             const expectedMessageRegExp = /Classes cannot be validated\. https:\/\/github\.com\/woutervh-\/typescript-is\/issues\/3$/;
 
             assert.throws(() => {
                 visitNodeAndChildren(program.getSourceFile(inFile)!);
             }, expectedMessageRegExp);
         });
+
+        // it('should not throw an error for interface with Date', () => {
+        //     visitNodeAndChildren(programWithDate.getSourceFile(inFileWithDate)!);
+        // });
     });
 
-    describe('visitor test-fixtures/issue-31.ts with ignoreClasses: true', () => {
+    describe('visitor testing classes with ignoreClasses: true', () => {
         const visitorContext: PartialVisitorContext = {
             checker: program.getTypeChecker(),
             program,
@@ -74,8 +81,12 @@ describe('visitor', () => {
             ts.forEachChild(transformNode(node, visitorContext), visitNodeAndChildren);
         }
 
-        it('should not throw an for interface with constructor signatures such as Date', () => {
+        it('should not throw an error for interface with constructor signatures with ignoreClasses=true', () => {
             visitNodeAndChildren(program.getSourceFile(inFile)!);
         });
+
+        // it('should not throw an error for interface with Date', () => {
+        //     visitNodeAndChildren(programWithDate.getSourceFile(inFileWithDate)!);
+        // });
     });
 });

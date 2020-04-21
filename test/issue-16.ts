@@ -86,8 +86,8 @@ describe('visitor', () => {
             program,
             compilerOptions: program.getCompilerOptions(),
             options: {
-                ignoreClasses: true,
-                ignoreMethods: true,
+                ignoreClasses: false,
+                ignoreMethods: false,
                 ignoreFunctions: false,
                 shortCircuit: false,
                 disallowSuperfluousObjectProperties: false
@@ -100,7 +100,7 @@ describe('visitor', () => {
             ts.forEachChild(transformNode(node, visitorContext), visitNodeAndChildren);
         }
 
-        it('should not throw an error for classes', () => {
+        it('should not throw an error for Date with ignoreClasses and ignoreMethods off', () => {
             visitNodeAndChildren(program.getSourceFile(inFile)!);
         });
     });
