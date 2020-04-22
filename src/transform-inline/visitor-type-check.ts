@@ -9,10 +9,78 @@ import * as VisitorTypeName from './visitor-type-name';
 import { sliceSet } from './utils';
 
 function visitDateType(type: ts.ObjectType, visitorContext: VisitorContext) {
-    console.log('yay, date object!')
-
-    // TODO: change this to return a validator for Date objects
-    return VisitorUtils.getIgnoredTypeFunction(visitorContext);
+    // TODO: fix name (currently something like "_1055", should be "_date"), expand VisitorTypeName.visitType to do so?
+    const name = VisitorTypeName.visitType(type, visitorContext, {type: 'type-check'});
+    return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
+        return ts.createFunctionDeclaration(
+            undefined,
+            undefined,
+            undefined,
+            name,
+            undefined,
+            [ts.createParameter(undefined, undefined, undefined, VisitorUtils.objectIdentifier, undefined, undefined, undefined)],
+            undefined,
+            ts.createBlock(
+                [ts.createIf(
+                    ts.createPrefix(
+                        ts.SyntaxKind.ExclamationToken,
+                        ts.createParen(ts.createBinary(
+                            ts.createIdentifier('object'),
+                            ts.createToken(ts.SyntaxKind.InstanceOfKeyword),
+                            ts.createIdentifier('Date')
+                        ))
+                    ),
+                    ts.createReturn(ts.createObjectLiteral(
+                        [
+                            ts.createPropertyAssignment(
+                                ts.createIdentifier('message'),
+                                ts.createBinary(
+                                    ts.createBinary(
+                                        ts.createStringLiteral('validation failed at '),
+                                        ts.createToken(ts.SyntaxKind.PlusToken),
+                                        ts.createCall(
+                                            ts.createPropertyAccess(
+                                                ts.createIdentifier('path'),
+                                                ts.createIdentifier('join')
+                                            ),
+                                            undefined,
+                                            [ts.createStringLiteral('.')]
+                                        )
+                                    ),
+                                    ts.createToken(ts.SyntaxKind.PlusToken),
+                                    ts.createStringLiteral(': expected a Date')
+                                )
+                            ),
+                            ts.createPropertyAssignment(
+                                ts.createIdentifier('path'),
+                                ts.createCall(
+                                    ts.createPropertyAccess(
+                                        ts.createIdentifier('path'),
+                                        ts.createIdentifier('slice')
+                                    ),
+                                    undefined,
+                                    []
+                                )
+                            ),
+                            ts.createPropertyAssignment(
+                                ts.createIdentifier('reason'),
+                                ts.createObjectLiteral(
+                                    [ts.createPropertyAssignment(
+                                        ts.createIdentifier('type'),
+                                        ts.createStringLiteral('Date')
+                                    )],
+                                    false
+                                )
+                            )
+                        ],
+                        true
+                    )),
+                    ts.createReturn(ts.createNull())
+                )],
+                true
+            )
+        )
+    });
 }
 
 function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext) {
@@ -386,10 +454,12 @@ function visitTypeParameter(type: ts.Type, visitorContext: VisitorContext) {
 
 function visitObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
     if (VisitorUtils.checkIsClass(type, visitorContext)) {
+        // Dates
         if (VisitorUtils.checkIsDateClass(type, visitorContext)) {
-            visitDateType(type, visitorContext);
+            return visitDateType(type, visitorContext);
         }
 
+        // all other classes
         if (visitorContext.options.ignoreClasses) {
             return VisitorUtils.getIgnoredTypeFunction(visitorContext);
         } else {
