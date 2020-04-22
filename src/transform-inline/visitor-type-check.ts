@@ -8,6 +8,13 @@ import * as VisitorIsStringKeyof from './visitor-is-string-keyof';
 import * as VisitorTypeName from './visitor-type-name';
 import { sliceSet } from './utils';
 
+function visitDateType(type: ts.ObjectType, visitorContext: VisitorContext) {
+    console.log('yay, date object!')
+
+    // TODO: change this to return a validator for Date objects
+    return VisitorUtils.getIgnoredTypeFunction(visitorContext);
+}
+
 function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext) {
     const name = VisitorTypeName.visitType(type, visitorContext, { type: 'type-check' });
     return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
@@ -380,9 +387,7 @@ function visitTypeParameter(type: ts.Type, visitorContext: VisitorContext) {
 function visitObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
     if (VisitorUtils.checkIsClass(type, visitorContext)) {
         if (VisitorUtils.checkIsDateClass(type, visitorContext)) {
-            // TODO: change this to be a validator for Date or something along the lines of what happens to other types
-            console.log('yay, date object!')
-            return VisitorUtils.getIgnoredTypeFunction(visitorContext);
+            visitDateType(type, visitorContext);
         }
 
         if (visitorContext.options.ignoreClasses) {
