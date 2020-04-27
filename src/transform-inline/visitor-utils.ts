@@ -1,7 +1,8 @@
 import * as ts from 'typescript';
+import {ModifierFlags} from 'typescript';
 import * as tsutils from 'tsutils/typeguard/3.0';
-import { VisitorContext } from './visitor-context';
-import { Reason } from '../../index';
+import {VisitorContext} from './visitor-context';
+import {Reason} from '../../index';
 
 export const objectIdentifier = ts.createIdentifier('object');
 export const pathIdentifier = ts.createIdentifier('path');
@@ -24,15 +25,18 @@ export function checkIsClass(type: ts.ObjectType, visitorContext: VisitorContext
     }
 
     if (type.isClass() || hasConstructSignatures) {
-        return true
+        return true;
     } else {
         return false;
     }
 }
 
-export function checkIsDateClass(type: ts.ObjectType, visitorContext: VisitorContext) {
-    if (type.symbol !== undefined && type.symbol.escapedName === 'Date') {
-        // TODO: do proper type check
+export function checkIsDateClass(type: ts.ObjectType) {
+    if (
+        type.symbol !== undefined
+        && type.symbol.escapedName === 'Date'
+        && (ts.getCombinedModifierFlags(type.symbol.valueDeclaration) & ModifierFlags.Ambient) !== 0
+    ) {
         return true;
     }
 }

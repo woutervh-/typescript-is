@@ -458,7 +458,7 @@ function visitTypeParameter(type: ts.Type, visitorContext: VisitorContext) {
 function visitObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
     if (VisitorUtils.checkIsClass(type, visitorContext)) {
         // Dates
-        if (VisitorUtils.checkIsDateClass(type, visitorContext)) {
+        if (VisitorUtils.checkIsDateClass(type)) {
             return visitDateType(type, visitorContext);
         }
 
