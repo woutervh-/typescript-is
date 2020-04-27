@@ -9,7 +9,6 @@ import * as VisitorTypeName from './visitor-type-name';
 import { sliceSet } from './utils';
 
 function visitDateType(type: ts.ObjectType, visitorContext: VisitorContext) {
-    // TODO: fix name (currently something like "_1055", should be "_date"), expand VisitorTypeName.visitType to do so?
     const name = VisitorTypeName.visitType(type, visitorContext, {type: 'type-check'});
     return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
         return ts.createFunctionDeclaration(
