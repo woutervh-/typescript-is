@@ -27,7 +27,10 @@ function visitDateType(type: ts.ObjectType, visitorContext: VisitorContext) {
                         ts.createParen(ts.createBinary(
                             ts.createIdentifier('object'),
                             ts.createToken(ts.SyntaxKind.InstanceOfKeyword),
-                            ts.createIdentifier('Date')
+                            ts.createPropertyAccess(
+                                ts.createIdentifier('global'),
+                                ts.createIdentifier('Date')
+                            )
                         ))
                     ),
                     ts.createReturn(ts.createObjectLiteral(
