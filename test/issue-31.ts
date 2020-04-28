@@ -24,9 +24,8 @@ delete configParseResult.options.declaration;
 describe('visitor', () => {
     const inFile = path.resolve(__dirname, '..', 'test-fixtures', 'issue-31-a.ts');
     const program = ts.createProgram([inFile], configParseResult.options);
-    // TODO: uncomment the stuff in here and investigate the errors they produce
-    // const inFileWithDate = path.resolve(__dirname, '..', 'test-fixtures', 'issue-31-b.ts');
-    // const programWithDate = ts.createProgram([inFileWithDate], configParseResult.options);
+    const inFileWithDate = path.resolve(__dirname, '..', 'test-fixtures', 'issue-31-b.ts');
+    const programWithDate = ts.createProgram([inFileWithDate], configParseResult.options);
 
     describe('visitor testing classes with ignoreClasses: false', () => {
         const visitorContext: PartialVisitorContext = {
@@ -56,9 +55,9 @@ describe('visitor', () => {
             }, expectedMessageRegExp);
         });
 
-        // it('should not throw an error for interface with Date', () => {
-        //     visitNodeAndChildren(programWithDate.getSourceFile(inFileWithDate)!);
-        // });
+        it('should not throw an error for interface with Date', () => {
+            visitNodeAndChildren(programWithDate.getSourceFile(inFileWithDate)!);
+        });
     });
 
     describe('visitor testing classes with ignoreClasses: true', () => {
@@ -85,8 +84,8 @@ describe('visitor', () => {
             visitNodeAndChildren(program.getSourceFile(inFile)!);
         });
 
-        // it('should not throw an error for interface with Date', () => {
-        //     visitNodeAndChildren(programWithDate.getSourceFile(inFileWithDate)!);
-        // });
+        it('should not throw an error for interface with Date', () => {
+            visitNodeAndChildren(programWithDate.getSourceFile(inFileWithDate)!);
+        });
     });
 });
