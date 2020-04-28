@@ -1,8 +1,9 @@
 import * as path from 'path';
 import * as assert from 'assert';
 import * as ts from 'typescript';
-import { transformNode } from '../lib/transform-inline/transform-node';
-import { PartialVisitorContext } from '../lib/transform-inline/visitor-context';
+import {transformNode} from '../lib/transform-inline/transform-node';
+import {PartialVisitorContext} from '../lib/transform-inline/visitor-context';
+import {Program} from 'typescript';
 
 /**
  * https://github.com/woutervh-/typescript-is/issues/31
@@ -21,6 +22,17 @@ delete configParseResult.options.outDir;
 delete configParseResult.options.outFile;
 delete configParseResult.options.declaration;
 
+function createVisitorContext(program: Program, optionsDict: PartialVisitorContext['options']): PartialVisitorContext {
+    return {
+        checker: program.getTypeChecker(),
+        program,
+        compilerOptions: program.getCompilerOptions(),
+        options: optionsDict,
+        typeMapperStack: [],
+        previousTypeReference: null
+    };
+}
+
 describe('visitor', () => {
     const inFile = path.resolve(__dirname, '..', 'test-fixtures', 'issue-31-a.ts');
     const program = ts.createProgram([inFile], configParseResult.options);
@@ -28,27 +40,22 @@ describe('visitor', () => {
     const programWithDate = ts.createProgram([inFileWithDate], configParseResult.options);
 
     describe('visitor testing classes with ignoreClasses: false', () => {
-        const visitorContext: PartialVisitorContext = {
-            checker: program.getTypeChecker(),
-            program,
-            compilerOptions: program.getCompilerOptions(),
-            options: {
-                ignoreClasses: false, // We want the test to fail on classes.
-                ignoreMethods: true, // Make sure it does not fail on the methods.
-                ignoreFunctions: false,
-                shortCircuit: false,
-                disallowSuperfluousObjectProperties: false
-            },
-            typeMapperStack: [],
-            previousTypeReference: null
+        const options = {
+            ignoreClasses: false, // We want the test to fail on classes.
+            ignoreMethods: true, // Make sure it does not fail on the methods.
+            ignoreFunctions: false,
+            shortCircuit: false,
+            disallowSuperfluousObjectProperties: false
         };
-
-        function visitNodeAndChildren(node: ts.Node) {
-            ts.forEachChild(transformNode(node, visitorContext), visitNodeAndChildren);
-        }
+        const visitorContext = createVisitorContext(program, options);
+        const visitorContextWithDate = createVisitorContext(programWithDate, options);
 
         it('should throw an error for interface with constructor signatures except for Date', () => {
             const expectedMessageRegExp = /Classes cannot be validated\. https:\/\/github\.com\/woutervh-\/typescript-is\/issues\/3$/;
+
+            function visitNodeAndChildren(node: ts.Node) {
+                ts.forEachChild(transformNode(node, visitorContext), visitNodeAndChildren);
+            }
 
             assert.throws(() => {
                 visitNodeAndChildren(program.getSourceFile(inFile)!);
@@ -56,35 +63,38 @@ describe('visitor', () => {
         });
 
         it('should not throw an error for interface with Date', () => {
+            function visitNodeAndChildren(node: ts.Node) {
+                ts.forEachChild(transformNode(node, visitorContextWithDate), visitNodeAndChildren);
+            }
+
             visitNodeAndChildren(programWithDate.getSourceFile(inFileWithDate)!);
         });
     });
 
     describe('visitor testing classes with ignoreClasses: true', () => {
-        const visitorContext: PartialVisitorContext = {
-            checker: program.getTypeChecker(),
-            program,
-            compilerOptions: program.getCompilerOptions(),
-            options: {
-                ignoreClasses: true, // We want the test to succeed when the class is encountered, before the class is further inspected.
-                ignoreMethods: false, // It should never get to the methods of the class.
-                ignoreFunctions: false,
-                shortCircuit: false,
-                disallowSuperfluousObjectProperties: false
-            },
-            typeMapperStack: [],
-            previousTypeReference: null
+        const options = {
+            ignoreClasses: true, // We want the test to succeed when the class is encountered, before the class is further inspected.
+            ignoreMethods: false, // It should never get to the methods of the class.
+            ignoreFunctions: false,
+            shortCircuit: false,
+            disallowSuperfluousObjectProperties: false
         };
-
-        function visitNodeAndChildren(node: ts.Node) {
-            ts.forEachChild(transformNode(node, visitorContext), visitNodeAndChildren);
-        }
+        const visitorContext = createVisitorContext(program, options);
+        const visitorContextWithDate = createVisitorContext(programWithDate, options);
 
         it('should not throw an error for interface with constructor signatures with ignoreClasses=true', () => {
+            function visitNodeAndChildren(node: ts.Node) {
+                ts.forEachChild(transformNode(node, visitorContext), visitNodeAndChildren);
+            }
+
             visitNodeAndChildren(program.getSourceFile(inFile)!);
         });
 
         it('should not throw an error for interface with Date', () => {
+            function visitNodeAndChildren(node: ts.Node) {
+                ts.forEachChild(transformNode(node, visitorContextWithDate), visitNodeAndChildren);
+            }
+
             visitNodeAndChildren(programWithDate.getSourceFile(inFileWithDate)!);
         });
     });
