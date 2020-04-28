@@ -130,7 +130,7 @@ There are some options to configure the transformer.
 | Property | Description |
 |--|--|
 | `shortCircuit` | Boolean (default `false`). If `true`, all type guards will return `true`, i.e. no validation takes place. Can be used for example in production deployments where doing a lot of validation can cost too much CPU. |
-| `ignoreClasses` | Boolean (default: `false`). If `true`, when the transformer encounters a class, it will ignore it and simply return `true`. If `false`, an error is generated at compile time. |
+| `ignoreClasses` | Boolean (default: `false`). If `true`, when the transformer encounters a class (except for `Date`), it will ignore it and simply return `true`. If `false`, an error is generated at compile time. |
 | `ignoreMethods` | Boolean (default: `false`). If `true`, when the transformer encounters a method, it will ignore it and simply return `true`. If `false`, an error is generated at compile time. |
 | `ignoreFunctions` | Boolean (default: `false`). If `true`, when the transformer encounters a function, it will ignore it and simply return `true`. If `false`, an error is generated at compile time. |
 | `disallowSuperfluousObjectProperties` | Boolean (default: `false`). If `true`, objects are checked for having superfluous properties and will cause the validation to fail if they do. If `false`, no check for superfluous properties is made. |
@@ -279,7 +279,7 @@ There you can find all the different types that are tested for.
 
 * This library aims to be able to check any serializable data.
 * This library will not check functions. Function signatures are impossible to check at run-time.
-* This library will not check classes. Instead, you are encouraged to use the native `instanceof` operator. For example:
+* This library will not check classes (except the global `Date`). Instead, you are encouraged to use the native `instanceof` operator. For example:
 
 ```typescript
 import { is } from 'typescript-is';
