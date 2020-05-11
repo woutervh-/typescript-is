@@ -24,11 +24,7 @@ export function checkIsClass(type: ts.ObjectType, visitorContext: VisitorContext
         hasConstructSignatures = constructSignatures.length >= 1;
     }
 
-    if (type.isClass() || hasConstructSignatures) {
-        return true;
-    } else {
-        return false;
-    }
+    return type.isClass() || hasConstructSignatures;
 }
 
 export function checkIsDateClass(type: ts.ObjectType) {
