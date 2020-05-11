@@ -20,65 +20,97 @@ function visitDateType(type: ts.ObjectType, visitorContext: VisitorContext) {
             [ts.createParameter(undefined, undefined, undefined, VisitorUtils.objectIdentifier, undefined, undefined, undefined)],
             undefined,
             ts.createBlock(
-                [ts.createIf(
-                    ts.createPrefix(
-                        ts.SyntaxKind.ExclamationToken,
-                        ts.createParen(ts.createBinary(
-                            ts.createIdentifier('object'),
-                            ts.createToken(ts.SyntaxKind.InstanceOfKeyword),
+                [
+                    ts.createVariableStatement(
+                        undefined,
+                        ts.createVariableDeclarationList(
+                            [ts.createVariableDeclaration(
+                                ts.createIdentifier('nativeDateObject'),
+                                undefined,
+                                undefined
+                            )],
+                            ts.NodeFlags.Let
+                        )
+                    ),
+                    ts.createIf(
+                        ts.createBinary(
+                            ts.createTypeOf(ts.createIdentifier('global')),
+                            ts.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+                            ts.createStringLiteral('undefined')
+                        ),
+                        ts.createExpressionStatement(ts.createBinary(
+                            ts.createIdentifier('nativeDateObject'),
+                            ts.createToken(ts.SyntaxKind.EqualsToken),
+                            ts.createPropertyAccess(
+                                ts.createIdentifier('window'),
+                                ts.createIdentifier('Date')
+                            )
+                        )),
+                        ts.createExpressionStatement(ts.createBinary(
+                            ts.createIdentifier('nativeDateObject'),
+                            ts.createToken(ts.SyntaxKind.EqualsToken),
                             ts.createPropertyAccess(
                                 ts.createIdentifier('global'),
                                 ts.createIdentifier('Date')
                             )
                         ))
                     ),
-                    ts.createReturn(ts.createObjectLiteral(
-                        [
-                            ts.createPropertyAssignment(
-                                ts.createIdentifier('message'),
-                                ts.createBinary(
+                    ts.createIf(
+                        ts.createPrefix(
+                            ts.SyntaxKind.ExclamationToken,
+                            ts.createParen(ts.createBinary(
+                                ts.createIdentifier('object'),
+                                ts.createToken(ts.SyntaxKind.InstanceOfKeyword),
+                                ts.createIdentifier('nativeDateObject')
+                            ))
+                        ),
+                        ts.createReturn(ts.createObjectLiteral(
+                            [
+                                ts.createPropertyAssignment(
+                                    ts.createIdentifier('message'),
                                     ts.createBinary(
-                                        ts.createStringLiteral('validation failed at '),
+                                        ts.createBinary(
+                                            ts.createStringLiteral('validation failed at '),
+                                            ts.createToken(ts.SyntaxKind.PlusToken),
+                                            ts.createCall(
+                                                ts.createPropertyAccess(
+                                                    ts.createIdentifier('path'),
+                                                    ts.createIdentifier('join')
+                                                ),
+                                                undefined,
+                                                [ts.createStringLiteral('.')]
+                                            )
+                                        ),
                                         ts.createToken(ts.SyntaxKind.PlusToken),
-                                        ts.createCall(
-                                            ts.createPropertyAccess(
-                                                ts.createIdentifier('path'),
-                                                ts.createIdentifier('join')
-                                            ),
-                                            undefined,
-                                            [ts.createStringLiteral('.')]
-                                        )
-                                    ),
-                                    ts.createToken(ts.SyntaxKind.PlusToken),
-                                    ts.createStringLiteral(': expected a Date')
+                                        ts.createStringLiteral(': expected a Date')
+                                    )
+                                ),
+                                ts.createPropertyAssignment(
+                                    ts.createIdentifier('path'),
+                                    ts.createCall(
+                                        ts.createPropertyAccess(
+                                            ts.createIdentifier('path'),
+                                            ts.createIdentifier('slice')
+                                        ),
+                                        undefined,
+                                        []
+                                    )
+                                ),
+                                ts.createPropertyAssignment(
+                                    ts.createIdentifier('reason'),
+                                    ts.createObjectLiteral(
+                                        [ts.createPropertyAssignment(
+                                            ts.createIdentifier('type'),
+                                            ts.createStringLiteral('Date')
+                                        )],
+                                        false
+                                    )
                                 )
-                            ),
-                            ts.createPropertyAssignment(
-                                ts.createIdentifier('path'),
-                                ts.createCall(
-                                    ts.createPropertyAccess(
-                                        ts.createIdentifier('path'),
-                                        ts.createIdentifier('slice')
-                                    ),
-                                    undefined,
-                                    []
-                                )
-                            ),
-                            ts.createPropertyAssignment(
-                                ts.createIdentifier('reason'),
-                                ts.createObjectLiteral(
-                                    [ts.createPropertyAssignment(
-                                        ts.createIdentifier('type'),
-                                        ts.createStringLiteral('Date')
-                                    )],
-                                    false
-                                )
-                            )
-                        ],
-                        true
-                    )),
-                    ts.createReturn(ts.createNull())
-                )],
+                            ],
+                            true
+                        )),
+                        ts.createReturn(ts.createNull())
+                    )],
                 true
             )
         )
