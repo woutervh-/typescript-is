@@ -4,6 +4,7 @@ import { VisitorContext } from './visitor-context';
 import * as VisitorUtils from './visitor-utils';
 import * as VisitorKeyof from './visitor-keyof';
 import * as VisitorIndexedAccess from './visitor-indexed-access';
+import { checkIsDateClass } from './visitor-utils';
 
 interface TypeCheckNameMode {
     type: 'type-check';
@@ -67,6 +68,8 @@ function visitObjectType(type: ts.ObjectType, visitorContext: VisitorContext, mo
         return visitTupleObjectType(type, visitorContext, mode);
     } else if (visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.Number)) {
         return visitArrayObjectType(type, visitorContext, mode);
+    } else if (checkIsDateClass(type)) {
+        return '_date';
     } else {
         return visitRegularObjectType(type);
     }

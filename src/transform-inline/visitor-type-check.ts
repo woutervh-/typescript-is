@@ -8,6 +8,70 @@ import * as VisitorIsStringKeyof from './visitor-is-string-keyof';
 import * as VisitorTypeName from './visitor-type-name';
 import { sliceSet } from './utils';
 
+function visitDateType(type: ts.ObjectType, visitorContext: VisitorContext) {
+    const name = VisitorTypeName.visitType(type, visitorContext, { type: 'type-check' });
+    return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
+        return ts.createFunctionDeclaration(
+            undefined,
+            undefined,
+            undefined,
+            name,
+            undefined,
+            [ts.createParameter(undefined, undefined, undefined, VisitorUtils.objectIdentifier, undefined, undefined, undefined)],
+            undefined,
+            ts.createBlock(
+                [
+                    ts.createVariableStatement(
+                        undefined,
+                        ts.createVariableDeclarationList(
+                            [ts.createVariableDeclaration(
+                                ts.createIdentifier('nativeDateObject'),
+                                undefined,
+                                undefined
+                            )],
+                            ts.NodeFlags.Let
+                        )
+                    ),
+                    ts.createIf(
+                        ts.createBinary(
+                            ts.createTypeOf(ts.createIdentifier('global')),
+                            ts.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+                            ts.createStringLiteral('undefined')
+                        ),
+                        ts.createExpressionStatement(ts.createBinary(
+                            ts.createIdentifier('nativeDateObject'),
+                            ts.createToken(ts.SyntaxKind.EqualsToken),
+                            ts.createPropertyAccess(
+                                ts.createIdentifier('window'),
+                                ts.createIdentifier('Date')
+                            )
+                        )),
+                        ts.createExpressionStatement(ts.createBinary(
+                            ts.createIdentifier('nativeDateObject'),
+                            ts.createToken(ts.SyntaxKind.EqualsToken),
+                            ts.createPropertyAccess(
+                                ts.createIdentifier('global'),
+                                ts.createIdentifier('Date')
+                            )
+                        ))
+                    ),
+                    ts.createIf(
+                        ts.createLogicalNot(
+                            ts.createBinary(
+                                ts.createIdentifier('object'),
+                                ts.createToken(ts.SyntaxKind.InstanceOfKeyword),
+                                ts.createIdentifier('nativeDateObject')
+                            )
+                        ),
+                        ts.createReturn(VisitorUtils.createErrorObject({ type: 'date' })),
+                        ts.createReturn(ts.createNull())
+                    )],
+                true
+            )
+        )
+    });
+}
+
 function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext) {
     const name = VisitorTypeName.visitType(type, visitorContext, { type: 'type-check' });
     return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
@@ -379,7 +443,17 @@ function visitTypeParameter(type: ts.Type, visitorContext: VisitorContext) {
 
 function visitObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
     if (VisitorUtils.checkIsClass(type, visitorContext)) {
-        return VisitorUtils.getIgnoredTypeFunction(visitorContext);
+        // Dates
+        if (VisitorUtils.checkIsDateClass(type)) {
+            return visitDateType(type, visitorContext);
+        }
+
+        // all other classes
+        if (visitorContext.options.ignoreClasses) {
+            return VisitorUtils.getIgnoredTypeFunction(visitorContext);
+        } else {
+            throw new Error('Classes cannot be validated. https://github.com/woutervh-/typescript-is/issues/3');
+        }
     }
     if (tsutils.isTupleType(type)) {
         // Tuple with finite length.

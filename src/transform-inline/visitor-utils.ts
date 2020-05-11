@@ -1,4 +1,5 @@
 import * as ts from 'typescript';
+import { ModifierFlags } from 'typescript';
 import * as tsutils from 'tsutils/typeguard/3.0';
 import { VisitorContext } from './visitor-context';
 import { Reason } from '../../index';
@@ -23,14 +24,16 @@ export function checkIsClass(type: ts.ObjectType, visitorContext: VisitorContext
         hasConstructSignatures = constructSignatures.length >= 1;
     }
 
-    if (type.isClass() || hasConstructSignatures) {
-        if (visitorContext.options.ignoreClasses) {
-            return true;
-        } else {
-            throw new Error('Classes cannot be validated. https://github.com/woutervh-/typescript-is/issues/3');
-        }
-    } else {
-        return false;
+    return type.isClass() || hasConstructSignatures;
+}
+
+export function checkIsDateClass(type: ts.ObjectType) {
+    if (
+        type.symbol !== undefined
+        && type.symbol.escapedName === 'Date'
+        && (ts.getCombinedModifierFlags(type.symbol.valueDeclaration) & ModifierFlags.Ambient) !== 0
+    ) {
+        return true;
     }
 }
 
@@ -589,5 +592,7 @@ function createErrorMessage(reason: Reason): ts.Expression {
             return createAssertionString(`expected ${reason.value ? 'true' : 'false'}`);
         case 'non-primitive':
             return createAssertionString('expected a non-primitive');
+        case 'date':
+            return createAssertionString('expected a Date');
     }
 }
