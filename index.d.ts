@@ -204,6 +204,10 @@ interface ExpectedObject {
     type: 'object';
 }
 
+interface ExpectedDate {
+    type: 'Date';
+}
+
 interface ExpectedNonPrimitive {
     type: 'non-primitive';
 }
@@ -253,6 +257,7 @@ type Reason = ExpectedString
     | ExpectedBigInt
     | ExpectedBoolean
     | ExpectedObject
+    | ExpectedDate
     | ExpectedNonPrimitive
     | MissingObjectProperty
     | SuperfluousObjectProperty
