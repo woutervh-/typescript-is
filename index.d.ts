@@ -205,7 +205,7 @@ interface ExpectedObject {
 }
 
 interface ExpectedDate {
-    type: 'Date';
+    type: 'date';
 }
 
 interface ExpectedNonPrimitive {

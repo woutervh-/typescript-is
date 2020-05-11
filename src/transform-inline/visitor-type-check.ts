@@ -9,7 +9,7 @@ import * as VisitorTypeName from './visitor-type-name';
 import { sliceSet } from './utils';
 
 function visitDateType(type: ts.ObjectType, visitorContext: VisitorContext) {
-    const name = VisitorTypeName.visitType(type, visitorContext, {type: 'type-check'});
+    const name = VisitorTypeName.visitType(type, visitorContext, { type: 'type-check' });
     return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
         return ts.createFunctionDeclaration(
             undefined,
@@ -56,59 +56,14 @@ function visitDateType(type: ts.ObjectType, visitorContext: VisitorContext) {
                         ))
                     ),
                     ts.createIf(
-                        ts.createPrefix(
-                            ts.SyntaxKind.ExclamationToken,
-                            ts.createParen(ts.createBinary(
+                        ts.createLogicalNot(
+                            ts.createBinary(
                                 ts.createIdentifier('object'),
                                 ts.createToken(ts.SyntaxKind.InstanceOfKeyword),
                                 ts.createIdentifier('nativeDateObject')
-                            ))
+                            )
                         ),
-                        ts.createReturn(ts.createObjectLiteral(
-                            [
-                                ts.createPropertyAssignment(
-                                    ts.createIdentifier('message'),
-                                    ts.createBinary(
-                                        ts.createBinary(
-                                            ts.createStringLiteral('validation failed at '),
-                                            ts.createToken(ts.SyntaxKind.PlusToken),
-                                            ts.createCall(
-                                                ts.createPropertyAccess(
-                                                    ts.createIdentifier('path'),
-                                                    ts.createIdentifier('join')
-                                                ),
-                                                undefined,
-                                                [ts.createStringLiteral('.')]
-                                            )
-                                        ),
-                                        ts.createToken(ts.SyntaxKind.PlusToken),
-                                        ts.createStringLiteral(': expected a Date')
-                                    )
-                                ),
-                                ts.createPropertyAssignment(
-                                    ts.createIdentifier('path'),
-                                    ts.createCall(
-                                        ts.createPropertyAccess(
-                                            ts.createIdentifier('path'),
-                                            ts.createIdentifier('slice')
-                                        ),
-                                        undefined,
-                                        []
-                                    )
-                                ),
-                                ts.createPropertyAssignment(
-                                    ts.createIdentifier('reason'),
-                                    ts.createObjectLiteral(
-                                        [ts.createPropertyAssignment(
-                                            ts.createIdentifier('type'),
-                                            ts.createStringLiteral('Date')
-                                        )],
-                                        false
-                                    )
-                                )
-                            ],
-                            true
-                        )),
+                        ts.createReturn(VisitorUtils.createErrorObject({ type: 'date' })),
                         ts.createReturn(ts.createNull())
                     )],
                 true

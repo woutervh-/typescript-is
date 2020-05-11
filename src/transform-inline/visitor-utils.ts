@@ -1,8 +1,8 @@
 import * as ts from 'typescript';
-import {ModifierFlags} from 'typescript';
+import { ModifierFlags } from 'typescript';
 import * as tsutils from 'tsutils/typeguard/3.0';
-import {VisitorContext} from './visitor-context';
-import {Reason} from '../../index';
+import { VisitorContext } from './visitor-context';
+import { Reason } from '../../index';
 
 export const objectIdentifier = ts.createIdentifier('object');
 export const pathIdentifier = ts.createIdentifier('path');
@@ -596,5 +596,7 @@ function createErrorMessage(reason: Reason): ts.Expression {
             return createAssertionString(`expected ${reason.value ? 'true' : 'false'}`);
         case 'non-primitive':
             return createAssertionString('expected a non-primitive');
+        case 'date':
+            return createAssertionString('expected a Date');
     }
 }
