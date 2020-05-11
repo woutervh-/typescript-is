@@ -1,9 +1,9 @@
 import * as path from 'path';
 import * as assert from 'assert';
 import * as ts from 'typescript';
-import {transformNode} from '../lib/transform-inline/transform-node';
-import {PartialVisitorContext} from '../lib/transform-inline/visitor-context';
-import {Program} from 'typescript';
+import { transformNode } from '../lib/transform-inline/transform-node';
+import { PartialVisitorContext } from '../lib/transform-inline/visitor-context';
+import { Program } from 'typescript';
 
 /**
  * https://github.com/woutervh-/typescript-is/issues/31

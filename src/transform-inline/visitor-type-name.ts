@@ -4,7 +4,7 @@ import { VisitorContext } from './visitor-context';
 import * as VisitorUtils from './visitor-utils';
 import * as VisitorKeyof from './visitor-keyof';
 import * as VisitorIndexedAccess from './visitor-indexed-access';
-import {checkIsDateClass} from './visitor-utils';
+import { checkIsDateClass } from './visitor-utils';
 
 interface TypeCheckNameMode {
     type: 'type-check';
