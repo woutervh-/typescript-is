@@ -13,7 +13,7 @@ describe('assertType', () => {
         });
 
         it('should throw an error if invalid objects are passed to it', () => {
-            const expectedMessageRegExp = /validation failed at \$: expected an object$/;
+            const expectedMessageRegExp = /validation failed at \$: expected an object, found: .*$/;
             assert.throws(() => assertType<{ foo: string }>(0), expectedMessageRegExp);
             assert.throws(() => assertType<{ foo: string }>([]), expectedMessageRegExp);
             assert.throws(() => assertType<{ foo: string }>(null), expectedMessageRegExp);
@@ -21,13 +21,13 @@ describe('assertType', () => {
         });
 
         it('should throw an error if objects without foo are passed to it', () => {
-            const expectedMessageRegExp = /validation failed at \$: expected 'foo' in object$/;
+            const expectedMessageRegExp = /validation failed at \$: expected 'foo' in object, found: .*$/;
             assert.throws(() => assertType<{ foo: string }>({}), expectedMessageRegExp);
             assert.throws(() => assertType<{ foo: string }>({ bar: 'baz' }), expectedMessageRegExp);
         });
 
         it('should throw an error if objects with foo not a string are passed to it', () => {
-            const expectedMessageRegExp = /validation failed at \$\.foo: expected a string$/;
+            const expectedMessageRegExp = /validation failed at \$\.foo: expected a string, found: .*$/;
             assert.throws(() => assertType<{ foo: string }>({ foo: 0 }), expectedMessageRegExp);
             assert.throws(() => assertType<{ foo: string }>({ foo: false }), expectedMessageRegExp);
         });
@@ -43,21 +43,21 @@ describe('assertType', () => {
         });
 
         it('should throw an error if objects without foo are passed to it', () => {
-            const expectedMessageRegExp = /validation failed at \$: expected 'foo' in object$/;
+            const expectedMessageRegExp = /validation failed at \$: expected 'foo' in object, found: .*$/;
             assert.throws(() => assertType<{ foo: string }>({}), expectedMessageRegExp);
             assert.throws(() => assertType<{ foo: string }>({ bar: 'baz' }), expectedMessageRegExp);
         });
 
         it('should throw an error if invalid objects are passed to it', () => {
-            const expectedMessageRegExp = /validation failed at \$: expected an object$/;
+            const expectedMessageRegExp = /validation failed at \$: expected an object, found: .*$/;
             assert.throws(() => assertType<{ foo: number[] }>(0), expectedMessageRegExp);
             assert.throws(() => assertType<{ foo: number[] }>(null), expectedMessageRegExp);
             assert.throws(() => assertType<{ foo: number[] }>(true), expectedMessageRegExp);
         });
 
         it('should throw an error if objects where foo is not an array of numbers are passed to it', () => {
-            const expectedMessageRegExp1 = /validation failed at \$\.foo\.\[1\]: expected a number$/;
-            const expectedMessageRegExp2 = /validation failed at \$\.foo\.\[0\]: expected a number$/;
+            const expectedMessageRegExp1 = /validation failed at \$\.foo\.\[1\]: expected a number, found: .*$/;
+            const expectedMessageRegExp2 = /validation failed at \$\.foo\.\[0\]: expected a number, found: .*$/;
             assert.throws(() => assertType<{ foo: number[] }>({ foo: [0, '0'] }), expectedMessageRegExp1);
             assert.throws(() => assertType<{ foo: number[] }>({ foo: ['1'] }), expectedMessageRegExp2);
             assert.throws(() => assertType<{ foo: number[] }>({ foo: [{}] }), expectedMessageRegExp2);
@@ -77,7 +77,7 @@ describe('assertType', () => {
         });
 
         it('should throw an error if nested objects with foo not \'bar\' or \'baz\' are passed to it', () => {
-            const expectedMessageRegExp = /validation failed at \$\.nested\.foo: there are no valid alternatives$/;
+            const expectedMessageRegExp = /validation failed at \$\.nested\.foo: there are no valid alternatives, found: .*$/;
             assert.throws(() => assertType<{ nested: Nested }>({ nested: { foo: 'qux' } }), expectedMessageRegExp);
             assert.throws(() => assertType<{ nested: Nested }>({ nested: { foo: 0 } }), expectedMessageRegExp);
             assert.throws(() => assertType<{ nested: Nested }>({ nested: { foo: [] } }), expectedMessageRegExp);
@@ -85,13 +85,13 @@ describe('assertType', () => {
         });
 
         it('should throw an error if nested objects without foo are passed to it', () => {
-            const expectedMessageRegExp = /validation failed at \$\.nested: expected 'foo' in object$/;
+            const expectedMessageRegExp = /validation failed at \$\.nested: expected 'foo' in object, found: .*$/;
             assert.throws(() => assertType<{ nested: Nested }>({ nested: {} }), expectedMessageRegExp);
             assert.throws(() => assertType<{ nested: Nested }>({ nested: { foh: 'bar' } }), expectedMessageRegExp);
         });
 
         it('should throw an error if nested properties that are not objects are passed to it', () => {
-            const expectedMessageRegExp = /validation failed at \$\.nested: expected an object$/;
+            const expectedMessageRegExp = /validation failed at \$\.nested: expected an object, found: .*$/;
             assert.throws(() => assertType<{ nested: Nested }>({ nested: 0 }), expectedMessageRegExp);
             assert.throws(() => assertType<{ nested: Nested }>({ nested: true }), expectedMessageRegExp);
             assert.throws(() => assertType<{ nested: Nested }>({ nested: null }), expectedMessageRegExp);
@@ -99,13 +99,13 @@ describe('assertType', () => {
         });
 
         it('should throw an error if objects without nested are passed to it', () => {
-            const expectedMessageRegExp = /validation failed at \$: expected 'nested' in object$/;
+            const expectedMessageRegExp = /validation failed at \$: expected 'nested' in object, found: .*$/;
             assert.throws(() => assertType<{ nested: Nested }>({ nisted: { foo: 'bar' } }), expectedMessageRegExp);
             assert.throws(() => assertType<{ nested: Nested }>({ nisted: { foh: 'baz' } }), expectedMessageRegExp);
         });
 
         it('should throw an error if other objects are passed to it', () => {
-            const expectedMessageRegExp = /validation failed at \$: expected an object$/;
+            const expectedMessageRegExp = /validation failed at \$: expected an object, found: .*$/;
             assert.throws(() => assertType<{ nested: Nested }>('0'), expectedMessageRegExp);
             assert.throws(() => assertType<{ nested: Nested }>(1), expectedMessageRegExp);
             assert.throws(() => assertType<{ nested: Nested }>([]), expectedMessageRegExp);
@@ -122,8 +122,8 @@ describe('assertType', () => {
         });
 
         it('should throw an error if objects with non-boolen values are passed to it', () => {
-            const expectedMessageRegExp1 = /validation failed at \$\.foo: expected a boolean$/;
-            const expectedMessageRegExp2 = /validation failed at \$\.bar: expected a boolean$/;
+            const expectedMessageRegExp1 = /validation failed at \$\.foo: expected a boolean, found: .*$/;
+            const expectedMessageRegExp2 = /validation failed at \$\.bar: expected a boolean, found: .*$/;
             assert.throws(() => assertType<{ [Key: string]: boolean }>({ foo: 0 }), expectedMessageRegExp1);
             assert.throws(() => assertType<{ [Key: string]: boolean }>({ bar: 'foo' }), expectedMessageRegExp2);
             assert.throws(() => assertType<{ [Key: string]: boolean }>({ bar: [] }), expectedMessageRegExp2);

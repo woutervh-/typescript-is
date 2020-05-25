@@ -8,12 +8,31 @@ function checkGetErrorObject(getErrorObject) {
 
 const assertionsMetadataKey = Symbol('assertions');
 
+function inputObjectAtPath(path, inputObject) {
+    let subField = inputObject;
+    for (const key of path) {
+      if (key === "$" || key === 'undefined') {
+        continue;
+      }
+      subField =
+        subField[
+          key.startsWith("[") ? key.replace("[", "").replace("]", "") : key
+        ];
+    }
+    return subField
+}
+
+function appendInputToErrorMessage(message, path, inputObject) {
+    return message + ', found: ' + JSON.stringify(inputObjectAtPath(path, inputObject))
+}
+
 class TypeGuardError extends Error {
-    constructor(errorObject) {
-        super(errorObject.message);
+    constructor(errorObject, inputObject) {
+        super(appendInputToErrorMessage(errorObject.message, errorObject.path, inputObject));
         this.name = 'TypeGuardError';
         this.path = errorObject.path;
         this.reason = errorObject.reason;
+        this.input = inputObject
     }
 }
 
@@ -37,7 +56,7 @@ function ValidateClass(errorConstructor = TypeGuardError) {
                     for (let i = 0; i < assertions.length; i++) {
                         const errorObject = assertions[i].assertion(args[i]);
                         if (errorObject !== null) {
-                            throw new errorConstructor(errorObject);
+                            throw new errorConstructor(errorObject, target);
                         }
                     }
                     return originalMethod.apply(this, args);
@@ -59,7 +78,7 @@ function assertType(obj, getErrorObject = defaultGetErrorObject) {
     if (errorObject === null) {
         return obj;
     } else {
-        throw new TypeGuardError(errorObject);
+        throw new TypeGuardError(errorObject, obj);
     }
 }
 

@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { is, assertType } from '../index';
+import { assertType, is } from '../index';
 
 /* https://github.com/woutervh-/typescript-is/issues/12 */
 
@@ -35,12 +35,12 @@ describe('is', () => {
 
     describe('assertType<ConfigInit>', () => {
         it('should throw an error when invalid objects are passed to it', () => {
-            const expectedMessageRegExp1 = /validation failed at \$: expected an object$/;
-            const expectedMessageRegExp2 = /validation failed at \$: expected 'folder' in object$/;
-            const expectedMessageRegExp3 = /validation failed at \$\.children: expected an array$/;
-            const expectedMessageRegExp4 = /validation failed at \$\.children\.\[0\]: expected an object$/;
-            const expectedMessageRegExp5 = /validation failed at \$\.children\.\[0\]: expected 'folder' in object$/;
-            const expectedMessageRegExp6 = /validation failed at \$\.children\.\[0\]\.children: expected an array$/;
+            const expectedMessageRegExp1 = /validation failed at \$: expected an object, found: .*$/;
+            const expectedMessageRegExp2 = /validation failed at \$: expected 'folder' in object, found: .*$/;
+            const expectedMessageRegExp3 = /validation failed at \$\.children: expected an array, found: .*$/;
+            const expectedMessageRegExp4 = /validation failed at \$\.children\.\[0\]: expected an object, found: .*$/;
+            const expectedMessageRegExp5 = /validation failed at \$\.children\.\[0\]: expected 'folder' in object, found: .*$/;
+            const expectedMessageRegExp6 = /validation failed at \$\.children\.\[0\]\.children: expected an array, found: .*$/;
             assert.throws(() => assertType<ConfigInit>(null), expectedMessageRegExp1);
             assert.throws(() => assertType<ConfigInit>({}), expectedMessageRegExp2);
             assert.throws(() => assertType<ConfigInit>({ folder: '.', children: 'foo' }), expectedMessageRegExp3);
