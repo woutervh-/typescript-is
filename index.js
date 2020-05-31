@@ -10,12 +10,9 @@ const assertionsMetadataKey = Symbol('assertions');
 
 function inputObjectAtPath(path, inputObject) {
     let subField = inputObject;
-    for (const key of path) {
-        if (key === "$" || key === 'undefined') {
-            continue;
-        }
+    for (const key of path.slice(1)) {
         subField = subField[
-            key.startsWith("[") ? key.replace("[", "").replace("]", "") : key
+            key.startsWith("[") ? parseInt(key.replace("[", "").replace("]", "")) : key
         ];
     }
     return subField;
