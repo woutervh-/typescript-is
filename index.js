@@ -11,19 +11,18 @@ const assertionsMetadataKey = Symbol('assertions');
 function inputObjectAtPath(path, inputObject) {
     let subField = inputObject;
     for (const key of path) {
-      if (key === "$" || key === 'undefined') {
-        continue;
-      }
-      subField =
-        subField[
-          key.startsWith("[") ? key.replace("[", "").replace("]", "") : key
+        if (key === "$" || key === 'undefined') {
+            continue;
+        }
+        subField = subField[
+            key.startsWith("[") ? key.replace("[", "").replace("]", "") : key
         ];
     }
-    return subField
+    return subField;
 }
 
 function appendInputToErrorMessage(message, path, inputObject) {
-    return message + ', found: ' + JSON.stringify(inputObjectAtPath(path, inputObject))
+    return message + ', found: ' + JSON.stringify(inputObjectAtPath(path, inputObject));
 }
 
 class TypeGuardError extends Error {
@@ -56,7 +55,7 @@ function ValidateClass(errorConstructor = TypeGuardError) {
                     for (let i = 0; i < assertions.length; i++) {
                         const errorObject = assertions[i].assertion(args[i]);
                         if (errorObject !== null) {
-                            throw new errorConstructor(errorObject, target);
+                            throw new errorConstructor(errorObject, args[i]);
                         }
                     }
                     return originalMethod.apply(this, args);
