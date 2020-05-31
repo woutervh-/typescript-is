@@ -28,7 +28,7 @@ class TypeGuardError extends Error {
         this.name = 'TypeGuardError';
         this.path = errorObject.path;
         this.reason = errorObject.reason;
-        this.input = inputObject
+        this.input = inputObject;
     }
 }
 

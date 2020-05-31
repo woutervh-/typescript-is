@@ -45,17 +45,32 @@ export function setFunctionIfNotExists(name: string, visitorContext: VisitorCont
     return name;
 }
 
-export function getPropertyInfo(symbol: ts.Symbol, visitorContext: VisitorContext) {
+interface PropertyInfo {
+    name: string;
+    type: ts.Type | undefined; // undefined iff isMethod===true
+    isMethod: boolean;
+    isSymbol: boolean;
+    optional: boolean;
+}
+
+export function getPropertyInfo(parentType: ts.Type, symbol: ts.Symbol, visitorContext: VisitorContext): PropertyInfo {
     const name: string | undefined = symbol.name;
     if (name === undefined) {
         throw new Error('Missing name in property symbol.');
     }
+
+    let propertyType: ts.Type | undefined = undefined;
+    let isMethod: boolean | undefined = undefined;
+    let optional: boolean | undefined = undefined;
+
     if ('valueDeclaration' in symbol) {
+        // Attempt to get it from 'valueDeclaration'
+
         const valueDeclaration = symbol.valueDeclaration;
         if (!ts.isPropertySignature(valueDeclaration) && !ts.isMethodSignature(valueDeclaration)) {
             throw new Error('Unsupported declaration kind: ' + valueDeclaration.kind);
         }
-        const isMethod = ts.isMethodSignature(valueDeclaration);
+        isMethod = ts.isMethodSignature(valueDeclaration);
         const isFunction = valueDeclaration.type !== undefined && ts.isFunctionTypeNode(valueDeclaration.type);
         if (isMethod && !visitorContext.options.ignoreMethods) {
             throw new Error('Encountered a method declaration, but methods are not supported. Issue: https://github.com/woutervh-/typescript-is/issues/5');
@@ -63,7 +78,6 @@ export function getPropertyInfo(symbol: ts.Symbol, visitorContext: VisitorContex
         if (isFunction && !visitorContext.options.ignoreFunctions) {
             throw new Error('Encountered a function declaration, but functions are not supported. Issue: https://github.com/woutervh-/typescript-is/issues/50');
         }
-        let propertyType: ts.Type | undefined = undefined;
         if (valueDeclaration.type === undefined) {
             if (!isMethod) {
                 throw new Error('Found property without type.');
@@ -71,28 +85,32 @@ export function getPropertyInfo(symbol: ts.Symbol, visitorContext: VisitorContex
         } else {
             propertyType = visitorContext.checker.getTypeFromTypeNode(valueDeclaration.type);
         }
+        optional = !!valueDeclaration.questionToken;
+    } else if ('type' in symbol) {
+        // Attempt to get it from 'type'
+
+        propertyType = (symbol as { type?: ts.Type }).type;
+        isMethod = false;
+        optional = ((symbol as ts.Symbol).flags & ts.SymbolFlags.Optional) !== 0;
+    } else if ('getTypeOfPropertyOfType' in visitorContext.checker) {
+        // Attempt to get it from 'visitorContext.checker.getTypeOfPropertyOfType'
+
+        propertyType = (visitorContext.checker as { getTypeOfPropertyOfType: (type: ts.Type, name: string) => ts.Type | undefined }).getTypeOfPropertyOfType(parentType, name);
+        isMethod = false;
+        optional = ((symbol as ts.Symbol).flags & ts.SymbolFlags.Optional) !== 0;
+    }
+
+    if (optional !== undefined && isMethod !== undefined) {
         return {
             name,
             type: propertyType,
             isMethod,
             isSymbol: name.startsWith('__@'),
-            optional: !!valueDeclaration.questionToken
+            optional
         };
-    } else {
-        const propertyType = (symbol as { type?: ts.Type }).type;
-        const optional = ((symbol as ts.Symbol).flags & ts.SymbolFlags.Optional) !== 0;
-        if (propertyType !== undefined) {
-            return {
-                name,
-                type: propertyType,
-                isMethod: false,
-                isSymbol: name.startsWith('__@'),
-                optional
-            };
-        } else {
-            throw new Error('Expected a valueDeclaration or a property type.');
-        }
     }
+
+    throw new Error('Expected a valueDeclaration or a property type.');
 }
 
 export function getTypeReferenceMapping(type: ts.TypeReference, visitorContext: VisitorContext) {

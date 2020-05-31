@@ -10,7 +10,7 @@ function visitRegularObjectType(type: ts.Type, visitorContext: VisitorContext) {
         return true;
     }
     const properties = visitorContext.checker.getPropertiesOfType(type);
-    const propertiesInfo = properties.map((property) => VisitorUtils.getPropertyInfo(property, visitorContext));
+    const propertiesInfo = properties.map((property) => VisitorUtils.getPropertyInfo(type, property, visitorContext));
     const propertiesName = propertiesInfo.map((propertyInfo) => propertyInfo.name);
     return new Set(propertiesName);
 }

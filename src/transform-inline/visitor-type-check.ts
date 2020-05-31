@@ -271,7 +271,7 @@ function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContex
 function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
     const name = VisitorTypeName.visitType(type, visitorContext, { type: 'type-check', superfluousPropertyCheck: visitorContext.options.disallowSuperfluousObjectProperties });
     return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
-        const propertyInfos = visitorContext.checker.getPropertiesOfType(type).map((property) => VisitorUtils.getPropertyInfo(property, visitorContext));
+        const propertyInfos = visitorContext.checker.getPropertiesOfType(type).map((property) => VisitorUtils.getPropertyInfo(type, property, visitorContext));
         const stringIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.String);
         const stringIndexFunctionName = stringIndexType ? visitType(stringIndexType, visitorContext) : undefined;
         const keyIdentifier = ts.createIdentifier('key');

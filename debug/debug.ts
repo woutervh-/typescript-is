@@ -8,7 +8,7 @@ import { transformNode } from '../src/transform-inline/transform-node';
 import { PartialVisitorContext } from '../src/transform-inline/visitor-context';
 
 const configFilename = path.resolve('tsconfig.json');
-const inFile = path.resolve('test-fixtures', 'issue-50.ts');
+const inFile = path.resolve('test-fixtures', 'issue-16-b.ts');
 const content = ts.sys.readFile(configFilename);
 if (content === undefined) {
     throw new Error('Could not read config file.');
@@ -29,8 +29,8 @@ const visitorContext: PartialVisitorContext = {
     options: {
         shortCircuit: false,
         ignoreClasses: false,
-        ignoreMethods: false,
-        ignoreFunctions: true,
+        ignoreMethods: true,
+        ignoreFunctions: false,
         disallowSuperfluousObjectProperties: false
     },
     typeMapperStack: [],

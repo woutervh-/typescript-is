@@ -15,7 +15,7 @@ function visitRegularObjectType(type: ts.ObjectType, indexType: ts.Type, visitor
         // const stringIndexType = visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.String);
 
         const properties = visitorContext.checker.getPropertiesOfType(type);
-        const propertiesInfo = properties.map((property) => VisitorUtils.getPropertyInfo(property, visitorContext));
+        const propertiesInfo = properties.map((property) => VisitorUtils.getPropertyInfo(type, property, visitorContext));
         const stringType = VisitorIsString.visitType(indexType, visitorContext);
         if (typeof stringType === 'boolean') {
             if (!stringType) {
