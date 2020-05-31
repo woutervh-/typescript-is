@@ -167,6 +167,7 @@ export function ValidateClass(errorConstructor?: { new(): Error }): <TFunction e
 export class TypeGuardError extends Error {
     public readonly path: string[];
     public readonly reason: Reason;
+    public readonly input: unknown;
 }
 
 interface ExpectedString {

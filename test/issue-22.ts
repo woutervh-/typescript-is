@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { equals, createEquals, assertEquals, createAssertEquals } from '../index';
+import { assertEquals, createAssertEquals, createEquals, equals } from '../index';
 
 /* https://github.com/woutervh-/typescript-is/issues/22 */
 
@@ -61,13 +61,13 @@ describe('assertEquals', () => {
         });
 
         it('should throw an error if objects without `foo` being a number are passed to it', () => {
-            const expectedMessageRegExp = /validation failed at \$: expected 'foo' in object$/;
+            const expectedMessageRegExp = /validation failed at \$: expected 'foo' in object, found: .*$/;
             assert.throws(() => assertEquals<{ foo: number }>({}), expectedMessageRegExp);
             assert.throws(() => assertEquals<{ foo: number }>({ bar: 0 }), expectedMessageRegExp);
         });
 
         it('should throw an error if objects with `foo` being a number and with other properties are passed to it', () => {
-            const expectedMessageRegExp = /validation failed at \$: superfluous property 'bar' in object$/;
+            const expectedMessageRegExp = /validation failed at \$: superfluous property 'bar' in object, found: .*$/;
             assert.throws(() => assertEquals<{ foo: number }>({ foo: 0, bar: 1 }), expectedMessageRegExp);
             assert.throws(() => assertEquals<{ foo: number }>({ foo: 0, bar: 'value' }), expectedMessageRegExp);
         });
@@ -88,13 +88,13 @@ describe('createAssertEquals', () => {
         });
 
         it('should throw an error if objects without `foo` being a number are passed to it', () => {
-            const expectedMessageRegExp = /validation failed at \$: expected 'foo' in object$/;
+            const expectedMessageRegExp = /validation failed at \$: expected 'foo' in object, found: .*$/;
             assert.throws(() => assertObject({}), expectedMessageRegExp);
             assert.throws(() => assertObject({ bar: 0 }), expectedMessageRegExp);
         });
 
         it('should throw an error if objects with `foo` being a number and with other properties are passed to it', () => {
-            const expectedMessageRegExp = /validation failed at \$: superfluous property 'bar' in object$/;
+            const expectedMessageRegExp = /validation failed at \$: superfluous property 'bar' in object, found: .*$/;
             assert.throws(() => assertObject({ foo: 0, bar: 1 }), expectedMessageRegExp);
             assert.throws(() => assertObject({ foo: 0, bar: 'value' }), expectedMessageRegExp);
         });

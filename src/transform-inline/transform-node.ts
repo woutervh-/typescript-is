@@ -76,7 +76,7 @@ function transformDecorator(node: ts.Decorator, parameterType: ts.Type, paramete
 
 /** Figures out an appropriate human-readable name for the variable designated by `node`. */
 function extractVariableName(node: ts.Node | undefined) {
-    return node != null && ts.isIdentifier(node) ? node.escapedText.toString() : '$';
+    return node !== undefined && ts.isIdentifier(node) ? node.escapedText.toString() : '$';
 }
 
 export function transformNode(node: ts.Node, visitorContext: PartialVisitorContext): ts.Node {

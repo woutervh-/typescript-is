@@ -24,7 +24,7 @@ describe('@ValidateClass, @AssertType', () => {
         });
 
         it('should throw an error for non-numbers', () => {
-            const expectedMessageRegExp = /validation failed at parameter: expected a number$/;
+            const expectedMessageRegExp = /validation failed at parameter: expected a number, found: .*$/;
             assert.throws(() => instance.testMethod('' as any), expectedMessageRegExp);
             assert.throws(() => instance.testMethod('0' as any), expectedMessageRegExp);
             assert.throws(() => instance.testMethod('1' as any), expectedMessageRegExp);
@@ -52,7 +52,7 @@ describe('@ValidateClass, @AssertType', () => {
         });
 
         it('should throw an error for non-strings', () => {
-            const expectedMessageRegExp = /validation failed at parameter: expected a string$/;
+            const expectedMessageRegExp = /validation failed at parameter: expected a string, found: .*$/;
             assert.throws(() => instance.testMethod(0 as any), expectedMessageRegExp);
             assert.throws(() => instance.testMethod(1 as any), expectedMessageRegExp);
             assert.throws(() => instance.testMethod(true as any), expectedMessageRegExp);

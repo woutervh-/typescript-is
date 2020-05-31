@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { createIs, createAssertType } from '../index';
+import { createAssertType, createIs } from '../index';
 
 describe('createIs', () => {
     describe('createIs<number>', () => {
@@ -34,7 +34,7 @@ describe('createIs', () => {
 
 describe('createAssertType', () => {
     describe('createAssertType<number>', () => {
-        const expectedMessageRegExp = /validation failed at \$: expected a number$/;
+        const expectedMessageRegExp = /validation failed at \$: expected a number, found: .*$/;
         const assertNumber = createAssertType<number>();
 
         it('should return a function', () => {

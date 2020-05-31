@@ -3,7 +3,7 @@ import { assertType } from '../index';
 
 describe('assertType', () => {
     describe('assertType<number>', () => {
-        const expectedMessageRegExp = /validation failed at \$: expected a number$/;
+        const expectedMessageRegExp = /validation failed at \$: expected a number, found: .*$/;
 
         it('should return the numbers passed to it', () => {
             assert.deepStrictEqual(assertType<number>(-1), -1);
@@ -21,7 +21,7 @@ describe('assertType', () => {
             assert.throws(() => assertType<number>(true), expectedMessageRegExp);
             assert.throws(() => assertType<number>(false), expectedMessageRegExp);
             assert.throws(() => assertType<number>(null), expectedMessageRegExp);
-            assert.throws(() => assertType<number>(undefined), /validation failed at undefined: expected a number$/);
+            assert.throws(() => assertType<number>(undefined), /validation failed at undefined: expected a number, found: .*$/);
         });
     });
 });
