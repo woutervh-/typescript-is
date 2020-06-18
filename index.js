@@ -19,7 +19,16 @@ function inputObjectAtPath(path, inputObject) {
 }
 
 function appendInputToErrorMessage(message, path, inputObject) {
-    return message + ', found: ' + JSON.stringify(inputObjectAtPath(path, inputObject));
+    const foundInputObject = inputObjectAtPath(path, inputObject);
+    try {
+        return message + ', found: ' + require('util').inspect(foundInputObject);
+    } catch (error) {
+    }
+    try {
+        return message + ', found: ' + JSON.stringify(foundInputObject);
+    } catch (error) {
+    }
+    return message;
 }
 
 class TypeGuardError extends Error {
