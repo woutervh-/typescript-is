@@ -18,7 +18,7 @@ npm install --save typescript-is
 # Ensure you have the required dependencies at compile time:
 npm install --save-dev typescript
 
-# If you want to use the decorators, ensure you have reflect-metadata in your depdendencies:
+# If you want to use the decorators, ensure you have reflect-metadata in your dependencies:
 npm install --save reflect-metadata
 ```
 
