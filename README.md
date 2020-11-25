@@ -149,7 +149,7 @@ If you are using `ttypescript`, you can include the options in your `tsconfig.js
                 "shortCircuit": true,
                 "ignoreClasses": true,
                 "ignoreMethods": true,
-                "ignoreFunctions": true,
+                "functionBehavior": "ignore",
                 "disallowSuperfluousObjectProperties": true
             }
         ]

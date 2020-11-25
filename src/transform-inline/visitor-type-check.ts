@@ -447,6 +447,16 @@ function visitTypeParameter(type: ts.Type, visitorContext: VisitorContext) {
     return visitType(mappedType, visitorContext);
 }
 
+function visitFunctionType(type: ts.Type, visitorContext: VisitorContext) {
+    if (visitorContext.options.functionBehavior === 'error') {
+        throw new Error('Encountered a function declaration, but functions are not supported. Issue: https://github.com/woutervh-/typescript-is/issues/50');
+    } else if (visitorContext.options.functionBehavior === 'basic') {
+        return VisitorUtils.getFunctionFunction(visitorContext);
+    } else {
+        return VisitorUtils.getIgnoredTypeFunction(visitorContext);
+    }
+}
+
 function visitObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
     if (VisitorUtils.checkIsClass(type, visitorContext)) {
         // Dates
@@ -477,6 +487,8 @@ function visitObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
         } else {
             throw new Error('Encountered a function declaration, but functions are not supported. Issue: https://github.com/woutervh-/typescript-is/issues/50');
         }
+    } else if (type.symbol && type.symbol.declarations && type.symbol.declarations.length >= 1 && ts.isFunctionTypeNode(type.symbol.declarations[0])) {
+        return visitFunctionType(type, visitorContext);
     } else {
         // Index type is string -> regular object type.
         return visitRegularObjectType(type, visitorContext);
