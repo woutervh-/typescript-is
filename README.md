@@ -92,6 +92,8 @@ npx ttsc
 
 Please check the README of [ttypescript](https://github.com/cevek/ttypescript/blob/master/README.md) for information on how to use it in combination with `ts-node`, `webpack`, and `Rollup`.
 
+Note: This will not work if `ts-loader` is configured with `transpileOnly: true`.
+
 ## Using with `webpack + ts-loader` without `ttypescript`
 
 If you are using `ts-loader` in a `webpack` project, you can use [getCustomTransformers](https://github.com/TypeStrong/ts-loader#getcustomtransformers) as suggested in #54.
