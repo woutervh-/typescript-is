@@ -59,6 +59,9 @@ function ValidateClass(errorConstructor = TypeGuardError) {
                 const originalMethod = target.prototype[propertyKey];
                 target.prototype[propertyKey] = function (...args) {
                     for (let i = 0; i < assertions.length; i++) {
+                        if (!assertions[i]) {
+                            continue;
+                        }
                         const errorObject = assertions[i].assertion(args[i]);
                         if (errorObject !== null) {
                             throw new errorConstructor(errorObject, args[i]);
