@@ -315,7 +315,13 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                     }
                     const functionName = propertyInfo.isMethod
                         ? VisitorUtils.getIgnoredTypeFunction(visitorContext)
-                        : visitType(propertyInfo.type!, visitorContext);
+                        : (propertyInfo.isFunction
+                            ? (visitorContext.options.functionBehavior === 'basic'
+                                ? VisitorUtils.getFunctionFunction(visitorContext)
+                                : VisitorUtils.getIgnoredTypeFunction(visitorContext)
+                            )
+                            : visitType(propertyInfo.type!, visitorContext)
+                        );
                     return ts.createBlock([
                         ts.createIf(
                             ts.createBinary(
@@ -464,8 +470,10 @@ function visitObjectType(type: ts.ObjectType, visitorContext: VisitorContext) {
     } else if ('valueDeclaration' in type.symbol
         && (type.symbol.valueDeclaration.kind === ts.SyntaxKind.MethodDeclaration || type.symbol.valueDeclaration.kind === ts.SyntaxKind.FunctionType)
     ) {
-        if (visitorContext.options.ignoreFunctions) {
+        if (visitorContext.options.functionBehavior === 'ignore') {
             return VisitorUtils.getIgnoredTypeFunction(visitorContext);
+        } else if (visitorContext.options.functionBehavior === 'basic') {
+            return VisitorUtils.getFunctionFunction(visitorContext);
         } else {
             throw new Error('Encountered a function declaration, but functions are not supported. Issue: https://github.com/woutervh-/typescript-is/issues/50');
         }

@@ -40,10 +40,10 @@ describe('visitor', () => {
     const programWithDate = ts.createProgram([inFileWithDate], configParseResult.options);
 
     describe('visitor testing classes with ignoreClasses: false', () => {
-        const options = {
+        const options: PartialVisitorContext['options'] = {
             ignoreClasses: false, // We want the test to fail on classes.
             ignoreMethods: true, // Make sure it does not fail on the methods.
-            ignoreFunctions: false,
+            functionBehavior: 'error',
             shortCircuit: false,
             disallowSuperfluousObjectProperties: false
         };
@@ -72,10 +72,10 @@ describe('visitor', () => {
     });
 
     describe('visitor testing classes with ignoreClasses: true', () => {
-        const options = {
+        const options: PartialVisitorContext['options'] = {
             ignoreClasses: true, // We want the test to succeed when the class is encountered, before the class is further inspected.
             ignoreMethods: false, // It should never get to the methods of the class.
-            ignoreFunctions: false,
+            functionBehavior: 'error',
             shortCircuit: false,
             disallowSuperfluousObjectProperties: false
         };

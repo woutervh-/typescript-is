@@ -4,7 +4,7 @@ interface Options {
     shortCircuit: boolean;
     ignoreClasses: boolean;
     ignoreMethods: boolean;
-    ignoreFunctions: boolean;
+    functionBehavior: 'error' | 'ignore' | 'basic';
     disallowSuperfluousObjectProperties: boolean;
 }
 

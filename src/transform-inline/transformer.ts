@@ -3,6 +3,21 @@ import NestedError = require('nested-error-stacks');
 import { PartialVisitorContext } from './visitor-context';
 import { transformNode } from './transform-node';
 
+function getFunctionBehavior(options?: { [Key: string]: unknown }): PartialVisitorContext['options']['functionBehavior'] {
+    if (options) {
+        if (options.functionBehavior) {
+            if (options.functionBehavior === 'ignore' || options.functionBehavior === 'basic') {
+                return options.functionBehavior;
+            }
+        } else {
+            if (!!options.ignoreFunctions) {
+                return 'ignore';
+            }
+        }
+    }
+    return 'error';
+}
+
 export default function transformer(program: ts.Program, options?: { [Key: string]: unknown }): ts.TransformerFactory<ts.SourceFile> {
     if (options && options.verbose) {
         console.log(`typescript-is: transforming program with ${program.getSourceFiles().length} source files; using TypeScript ${ts.version}.`);
@@ -16,7 +31,7 @@ export default function transformer(program: ts.Program, options?: { [Key: strin
             shortCircuit: !!(options && options.shortCircuit),
             ignoreClasses: !!(options && options.ignoreClasses),
             ignoreMethods: !!(options && options.ignoreMethods),
-            ignoreFunctions: !!(options && options.ignoreFunctions),
+            functionBehavior: getFunctionBehavior(options),
             disallowSuperfluousObjectProperties: !!(options && options.disallowSuperfluousObjectProperties)
         },
         typeMapperStack: [],

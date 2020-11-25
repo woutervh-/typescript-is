@@ -32,7 +32,7 @@ describe('visitor', () => {
             options: {
                 ignoreClasses: false,
                 ignoreMethods: true,
-                ignoreFunctions: false,
+                functionBehavior: 'error',
                 shortCircuit: false,
                 disallowSuperfluousObjectProperties: false
             },

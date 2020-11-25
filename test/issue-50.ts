@@ -33,7 +33,7 @@ describe('visitor', () => {
             options: {
                 ignoreClasses: false,
                 ignoreMethods: true, // Make sure that the function is not seen as a method.
-                ignoreFunctions: false,
+                functionBehavior: 'error',
                 shortCircuit: false,
                 disallowSuperfluousObjectProperties: false
             },
@@ -61,7 +61,7 @@ describe('visitor', () => {
             options: {
                 ignoreClasses: false,
                 ignoreMethods: false,
-                ignoreFunctions: true,
+                functionBehavior: 'ignore',
                 shortCircuit: false,
                 disallowSuperfluousObjectProperties: false
             },

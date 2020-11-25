@@ -170,6 +170,10 @@ export class TypeGuardError extends Error {
     public readonly input: unknown;
 }
 
+interface ExpectedFunction {
+    type: 'function';
+}
+
 interface ExpectedString {
     type: 'string';
 }
@@ -253,7 +257,8 @@ interface ExpectedNull {
     type: 'null';
 }
 
-type Reason = ExpectedString
+type Reason = ExpectedFunction
+    | ExpectedString
     | ExpectedNumber
     | ExpectedBigInt
     | ExpectedBoolean

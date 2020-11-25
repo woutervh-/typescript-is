@@ -132,7 +132,8 @@ There are some options to configure the transformer.
 | `shortCircuit` | Boolean (default `false`). If `true`, all type guards will return `true`, i.e. no validation takes place. Can be used for example in production deployments where doing a lot of validation can cost too much CPU. |
 | `ignoreClasses` | Boolean (default: `false`). If `true`, when the transformer encounters a class (except for `Date`), it will ignore it and simply return `true`. If `false`, an error is generated at compile time. |
 | `ignoreMethods` | Boolean (default: `false`). If `true`, when the transformer encounters a method, it will ignore it and simply return `true`. If `false`, an error is generated at compile time. |
-| `ignoreFunctions` | Boolean (default: `false`). If `true`, when the transformer encounters a function, it will ignore it and simply return `true`. If `false`, an error is generated at compile time. |
+| `ignoreFunctions` *(deprecated, use `functionBehavior` instead)* | Boolean (default: `false`). If `true`, when the transformer encounters a function, it will ignore it and simply return `true`. If `false`, an error is generated at compile time. |
+| `functionBehavior` | One of `error`, `ignore`, or `basic` (default: `error`). Determines the behavior of transformer when encountering a function. `error` will cause a compile-time error, `ignore` will cause the validation function to always return `true`, and `basic` will do a simple function-type-check. Overrides `ignoreFunctions`. |
 | `disallowSuperfluousObjectProperties` | Boolean (default: `false`). If `true`, objects are checked for having superfluous properties and will cause the validation to fail if they do. If `false`, no check for superfluous properties is made. |
 
 If you are using `ttypescript`, you can include the options in your `tsconfig.json`:

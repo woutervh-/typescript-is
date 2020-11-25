@@ -49,6 +49,7 @@ interface PropertyInfo {
     name: string;
     type: ts.Type | undefined; // undefined iff isMethod===true
     isMethod: boolean;
+    isFunction: boolean;
     isSymbol: boolean;
     optional: boolean;
 }
@@ -61,6 +62,7 @@ export function getPropertyInfo(parentType: ts.Type, symbol: ts.Symbol, visitorC
 
     let propertyType: ts.Type | undefined = undefined;
     let isMethod: boolean | undefined = undefined;
+    let isFunction: boolean | undefined = undefined;
     let optional: boolean | undefined = undefined;
 
     if ('valueDeclaration' in symbol) {
@@ -71,11 +73,11 @@ export function getPropertyInfo(parentType: ts.Type, symbol: ts.Symbol, visitorC
             throw new Error('Unsupported declaration kind: ' + valueDeclaration.kind);
         }
         isMethod = ts.isMethodSignature(valueDeclaration);
-        const isFunction = valueDeclaration.type !== undefined && ts.isFunctionTypeNode(valueDeclaration.type);
+        isFunction = valueDeclaration.type !== undefined && ts.isFunctionTypeNode(valueDeclaration.type);
         if (isMethod && !visitorContext.options.ignoreMethods) {
             throw new Error('Encountered a method declaration, but methods are not supported. Issue: https://github.com/woutervh-/typescript-is/issues/5');
         }
-        if (isFunction && !visitorContext.options.ignoreFunctions) {
+        if (isFunction && visitorContext.options.functionBehavior === 'error') {
             throw new Error('Encountered a function declaration, but functions are not supported. Issue: https://github.com/woutervh-/typescript-is/issues/50');
         }
         if (valueDeclaration.type === undefined) {
@@ -91,20 +93,23 @@ export function getPropertyInfo(parentType: ts.Type, symbol: ts.Symbol, visitorC
 
         propertyType = (symbol as { type?: ts.Type }).type;
         isMethod = false;
+        isFunction = false;
         optional = ((symbol as ts.Symbol).flags & ts.SymbolFlags.Optional) !== 0;
     } else if ('getTypeOfPropertyOfType' in visitorContext.checker) {
         // Attempt to get it from 'visitorContext.checker.getTypeOfPropertyOfType'
 
         propertyType = (visitorContext.checker as { getTypeOfPropertyOfType: (type: ts.Type, name: string) => ts.Type | undefined }).getTypeOfPropertyOfType(parentType, name);
         isMethod = false;
+        isFunction = false;
         optional = ((symbol as ts.Symbol).flags & ts.SymbolFlags.Optional) !== 0;
     }
 
-    if (optional !== undefined && isMethod !== undefined) {
+    if (optional !== undefined && isMethod !== undefined && isFunction !== undefined) {
         return {
             name,
             type: propertyType,
             isMethod,
+            isFunction,
             isSymbol: name.startsWith('__@'),
             optional
         };
@@ -153,6 +158,21 @@ export function getResolvedTypeParameter(type: ts.Type, visitorContext: VisitorC
         }
     }
     return mappedType || type.getDefault();
+}
+
+export function getFunctionFunction(visitorContext: VisitorContext) {
+    const name = '_function';
+    return setFunctionIfNotExists(name, visitorContext, () => {
+        return createAssertionFunction(
+            ts.createStrictInequality(
+                ts.createTypeOf(objectIdentifier),
+                ts.createStringLiteral('function')
+            ),
+            { type: 'function' },
+            name,
+            createStrictNullCheckStatement(objectIdentifier, visitorContext)
+        );
+    });
 }
 
 export function getStringFunction(visitorContext: VisitorContext) {
@@ -612,5 +632,7 @@ function createErrorMessage(reason: Reason): ts.Expression {
             return createAssertionString('expected a non-primitive');
         case 'date':
             return createAssertionString('expected a Date');
+        case 'function':
+            return createAssertionString('expected a function');
     }
 }
