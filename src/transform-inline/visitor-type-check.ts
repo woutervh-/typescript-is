@@ -428,6 +428,17 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
     });
 }
 
+function visitTypeAliasReference(type: ts.TypeReference, visitorContext: VisitorContext) {
+    const mapping: Map<ts.Type, ts.Type> = VisitorUtils.getTypeAliasMapping(type);
+    const previousTypeReference = visitorContext.previousTypeReference;
+    visitorContext.typeMapperStack.push(mapping);
+    visitorContext.previousTypeReference = type;
+    const result = visitType(type, visitorContext);
+    visitorContext.previousTypeReference = previousTypeReference;
+    visitorContext.typeMapperStack.pop();
+    return result;
+}
+
 function visitTypeReference(type: ts.TypeReference, visitorContext: VisitorContext) {
     const mapping: Map<ts.Type, ts.Type> = VisitorUtils.getTypeReferenceMapping(type, visitorContext);
     const previousTypeReference = visitorContext.previousTypeReference;
@@ -683,7 +694,9 @@ function visitIndexedAccessType(type: ts.IndexedAccessType, visitorContext: Visi
 }
 
 export function visitType(type: ts.Type, visitorContext: VisitorContext): string {
-    if ((ts.TypeFlags.Any & type.flags) !== 0) {
+    if (type.aliasTypeArguments && visitorContext.previousTypeReference !== type && (type as ts.TypeReference).target) {
+        return visitTypeAliasReference(type as ts.TypeReference, visitorContext);
+    } else if ((ts.TypeFlags.Any & type.flags) !== 0) {
         // Any
         return visitAny(visitorContext);
     } else if ((ts.TypeFlags.Unknown & type.flags) !== 0) {

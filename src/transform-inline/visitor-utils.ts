@@ -118,6 +118,20 @@ export function getPropertyInfo(parentType: ts.Type, symbol: ts.Symbol, visitorC
     throw new Error('Expected a valueDeclaration or a property type.');
 }
 
+export function getTypeAliasMapping(type: ts.TypeReference) {
+    const mapping: Map<ts.Type, ts.Type> = new Map();
+    if (type.aliasTypeArguments !== undefined && type.target.aliasTypeArguments !== undefined) {
+        const typeParameters = type.target.aliasTypeArguments;
+        const typeArguments = type.aliasTypeArguments;
+        for (let i = 0; i < typeParameters.length; i++) {
+            if (typeParameters[i] !== typeArguments[i]) {
+                mapping.set(typeParameters[i], typeArguments[i]);
+            }
+        }
+    }
+    return mapping;
+}
+
 export function getTypeReferenceMapping(type: ts.TypeReference, visitorContext: VisitorContext) {
     const mapping: Map<ts.Type, ts.Type> = new Map();
     (function checkBaseTypes(type: ts.TypeReference) {
