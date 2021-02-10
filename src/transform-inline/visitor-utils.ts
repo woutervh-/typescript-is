@@ -138,6 +138,19 @@ export function getTypeReferenceMapping(type: ts.TypeReference, visitorContext: 
         if (tsutils.isInterfaceType(type.target)) {
             const baseTypes = visitorContext.checker.getBaseTypes(type.target);
             for (const baseType of baseTypes) {
+                if (baseType.aliasTypeArguments && visitorContext.previousTypeReference !== baseType && (baseType as ts.TypeReference).target) {
+                    const typeReference = baseType as ts.TypeReference
+                    if (typeReference.aliasTypeArguments !== undefined && typeReference.target.aliasTypeArguments !== undefined) {
+                        const typeParameters = typeReference.target.aliasTypeArguments;
+                        const typeArguments = typeReference.aliasTypeArguments;
+                        for (let i = 0; i < typeParameters.length; i++) {
+                            if (typeParameters[i] !== typeArguments[i]) {
+                                mapping.set(typeParameters[i], typeArguments[i]);
+                            }
+                        }
+                    }
+                }
+
                 if (tsutils.isTypeReference(baseType) && baseType.target.typeParameters !== undefined && baseType.typeArguments !== undefined) {
                     const typeParameters = baseType.target.typeParameters;
                     const typeArguments = baseType.typeArguments;
