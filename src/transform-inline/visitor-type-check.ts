@@ -694,9 +694,7 @@ function visitIndexedAccessType(type: ts.IndexedAccessType, visitorContext: Visi
 }
 
 export function visitType(type: ts.Type, visitorContext: VisitorContext): string {
-    if (type.aliasTypeArguments && visitorContext.previousTypeReference !== type && (type as ts.TypeReference).target) {
-        return visitTypeAliasReference(type as ts.TypeReference, visitorContext);
-    } else if ((ts.TypeFlags.Any & type.flags) !== 0) {
+    if ((ts.TypeFlags.Any & type.flags) !== 0) {
         // Any
         return visitAny(visitorContext);
     } else if ((ts.TypeFlags.Unknown & type.flags) !== 0) {
@@ -729,6 +727,8 @@ export function visitType(type: ts.Type, visitorContext: VisitorContext): string
     } else if (tsutils.isTypeReference(type) && visitorContext.previousTypeReference !== type) {
         // Type references.
         return visitTypeReference(type, visitorContext);
+    } else if (type.aliasTypeArguments && visitorContext.previousTypeReference !== type && (type as ts.TypeReference).target) {
+        return visitTypeAliasReference(type as ts.TypeReference, visitorContext);
     } else if ((ts.TypeFlags.TypeParameter & type.flags) !== 0) {
         // Type parameter
         return visitTypeParameter(type, visitorContext);
