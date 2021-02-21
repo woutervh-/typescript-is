@@ -258,6 +258,10 @@ interface ExpectedNull {
     type: 'null';
 }
 
+interface ExpectedTemplateLiteral {
+    type: 'template-literal'
+}
+
 type Reason = ExpectedFunction
     | ExpectedString
     | ExpectedNumber
@@ -277,7 +281,8 @@ type Reason = ExpectedFunction
     | ExpectedNull
     | ExpectedStringLiteral
     | ExpectedNumberLiteral
-    | ExpectedBooleanLiteral;
+    | ExpectedBooleanLiteral
+    | ExpectedTemplateLiteral;
 
 /**
  * Set default getErrorObject function used for transpiled source.
