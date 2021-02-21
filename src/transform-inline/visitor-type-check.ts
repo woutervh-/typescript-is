@@ -693,6 +693,10 @@ function visitIndexedAccessType(type: ts.IndexedAccessType, visitorContext: Visi
     return VisitorIndexedAccess.visitType(type.objectType, type.indexType, visitorContext);
 }
 
+function visitTemplateLiteralType(type: ts.Type, visitorContext: VisitorContext) {
+    return visitString(visitorContext) // TODO: actually check the template literal type
+}
+
 export function visitType(type: ts.Type, visitorContext: VisitorContext): string {
     if (type.aliasTypeArguments && visitorContext.previousTypeReference !== type && (type as ts.TypeReference).target) {
         return visitTypeAliasReference(type as ts.TypeReference, visitorContext);
@@ -750,6 +754,9 @@ export function visitType(type: ts.Type, visitorContext: VisitorContext): string
     } else if (tsutils.isIndexedAccessType(type)) {
         // Indexed access type: T[U]
         return visitIndexedAccessType(type, visitorContext);
+    } else if ((ts.TypeFlags.TemplateLiteral & type.flags) !== 0) {
+        // template literal type: `foo${string}`
+        return visitTemplateLiteralType(type, visitorContext)
     } else {
         throw new Error('Could not generate type-check; unsupported type with flags: ' + type.flags);
     }
