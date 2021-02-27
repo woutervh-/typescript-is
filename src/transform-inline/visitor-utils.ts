@@ -5,9 +5,8 @@ import { VisitorContext } from './visitor-context';
 import { Reason } from '../../index';
 
 /**
- * a pair of template literal {@link ts.TemplateLiteralType.texts} and the `intrinsicName`s of the placeholders
- * ({@link ts.TemplateLiteralType.types}), which are the primitive types that can appear in a template literal type.
- * `undefined` means it's the last text meaning it's not followed by a type
+ * a pair of {@link ts.TemplateLiteralType.texts} and the `intrinsicName`s for {@link ts.TemplateLiteralType.types},
+ * @see https://github.com/microsoft/TypeScript/pull/40336
  */
 export type TemplateLiteralPair = [string, 'string' | 'number' | 'bigint' | 'any' | 'undefined' | 'null' | undefined]
 
