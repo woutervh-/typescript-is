@@ -1,7 +1,6 @@
 import {is} from '../index';
 import * as assert from 'assert';
 
-
 describe('template literal types', () => {
     describe('union types', () => {
         type Foo = `foo${'bar' | 'baz'}`
@@ -15,7 +14,7 @@ describe('template literal types', () => {
         it('false', () => assert(!is<Foo>('foobazbar123qux')))
     })
 
-    describe('buncha stuff', () =>
+    it('buncha stuff', () =>
         assert(is<`foo${string}${number}bar${1 | 2 | 3}baz${number}asdf`>('foobar'))
     )
 })
