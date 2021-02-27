@@ -11,7 +11,7 @@ describe('template literal types', () => {
     describe('primitives', () => {
         type Foo = `foo${string}bar${number}`
         it('true', () => assert(is<Foo>('foobazbar123')))
-        it('false', () => assert(!is<Foo>('foobazbar123qux')))
+        it('false', () => assert(!is<Foo>('foobazbar123qux'))) // TODO: figure out why this one causes a stack overflow when using assertType
     })
 
     it('buncha stuff', () =>
