@@ -1,3 +1,5 @@
+import {TemplateLiteralPair} from './src/transform-inline/visitor-utils';
+
 /**
  * Checks if the given argument is assignable to the given type-argument.
  *
@@ -260,6 +262,7 @@ interface ExpectedNull {
 
 interface ExpectedTemplateLiteral {
     type: 'template-literal'
+    value: TemplateLiteralPair[]
 }
 
 type Reason = ExpectedFunction
