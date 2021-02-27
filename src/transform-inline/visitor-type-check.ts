@@ -985,6 +985,28 @@ function visitTemplateLiteralType(type: ts.TemplateLiteralType, visitorContext: 
                                 undefined,
                                 ts.factory.createVariableDeclarationList(
                                     [ts.factory.createVariableDeclaration(
+                                        ts.factory.createIdentifier('nextTextOrType'),
+                                        undefined,
+                                        undefined,
+                                        ts.factory.createConditionalExpression(
+                                            ts.factory.createBinaryExpression(
+                                                ts.factory.createIdentifier('nextText'),
+                                                ts.factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+                                                ts.factory.createStringLiteral('')
+                                            ),
+                                            ts.factory.createToken(ts.SyntaxKind.QuestionToken),
+                                            ts.factory.createIdentifier('nextType'),
+                                            ts.factory.createToken(ts.SyntaxKind.ColonToken),
+                                            ts.factory.createIdentifier('nextText')
+                                        )
+                                    )],
+                                    ts.NodeFlags.Const
+                                )
+                            ),
+                            ts.factory.createVariableStatement(
+                                undefined,
+                                ts.factory.createVariableDeclarationList(
+                                    [ts.factory.createVariableDeclaration(
                                         ts.factory.createIdentifier('resolvedPlaceholder'),
                                         undefined,
                                         undefined,
@@ -996,16 +1018,33 @@ function visitTemplateLiteralType(type: ts.TemplateLiteralType, visitorContext: 
                                             undefined,
                                             [
                                                 ts.factory.createIdentifier('position'),
-                                                ts.factory.createCallExpression(
-                                                    ts.factory.createPropertyAccessExpression(
-                                                        VisitorUtils.objectIdentifier,
-                                                        ts.factory.createIdentifier('indexOf')
+                                                ts.factory.createConditionalExpression(
+                                                    ts.factory.createBinaryExpression(
+                                                        ts.factory.createTypeOfExpression(ts.factory.createIdentifier('nextTextOrType')),
+                                                        ts.factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+                                                        ts.factory.createStringLiteral('undefined')
                                                     ),
-                                                    undefined,
-                                                    [
-                                                        ts.factory.createIdentifier('nextText'),
-                                                        ts.factory.createIdentifier('position')
-                                                    ]
+                                                    ts.factory.createToken(ts.SyntaxKind.QuestionToken),
+                                                    ts.factory.createBinaryExpression(
+                                                        ts.factory.createPropertyAccessExpression(
+                                                            VisitorUtils.objectIdentifier,
+                                                            ts.factory.createIdentifier('length')
+                                                        ),
+                                                        ts.factory.createToken(ts.SyntaxKind.MinusToken),
+                                                        ts.factory.createNumericLiteral('1')
+                                                    ),
+                                                    ts.factory.createToken(ts.SyntaxKind.ColonToken),
+                                                    ts.factory.createCallExpression(
+                                                        ts.factory.createPropertyAccessExpression(
+                                                            VisitorUtils.objectIdentifier,
+                                                            ts.factory.createIdentifier('indexOf')
+                                                        ),
+                                                        undefined,
+                                                        [
+                                                            ts.factory.createIdentifier('nextTextOrType'),
+                                                            ts.factory.createIdentifier('position')
+                                                        ]
+                                                    )
                                                 )
                                             ]
                                         )
