@@ -679,7 +679,7 @@ function createErrorMessage(reason: Reason): ts.Expression {
         case 'template-literal':
             return createAssertionString(`expected \`${
                     reason.value.map(([text, type]) =>
-                        text + typeof type === 'undefined' ? '' : '${' + type + '}').join('')
+                        text + (typeof type === 'undefined' ? '' : '${' + type + '}')).join('')
                 }\``
             )
     }
