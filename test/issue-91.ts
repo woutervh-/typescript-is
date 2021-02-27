@@ -15,6 +15,6 @@ describe('template literal types', () => {
     })
 
     it('buncha stuff', () =>
-        assert(is<`foo${string}${number}bar${1 | 2 | 3}baz${number}asdf`>('foobar'))
+        assert(is<`foo${string}${number}bar${1 | 2 | 3}baz${number}asdf`>('foobar1bar2baz123asdf'))
     )
 })
