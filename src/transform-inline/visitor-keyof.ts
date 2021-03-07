@@ -3,6 +3,7 @@ import * as tsutils from 'tsutils/typeguard/3.0';
 import { VisitorContext } from './visitor-context';
 import * as VisitorUtils from './visitor-utils';
 import * as VisitorTypeName from './visitor-type-name';
+import {getIntrinsicName} from './visitor-utils';
 
 function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorContext: VisitorContext) {
     const name = VisitorTypeName.visitType(type, visitorContext, { type: 'keyof' });
@@ -24,8 +25,7 @@ function visitIndexType(visitorContext: VisitorContext) {
 }
 
 function visitNonPrimitiveType(type: ts.Type, visitorContext: VisitorContext) {
-    // Using internal TypeScript API, hacky.
-    const intrinsicName: string | undefined = (type as { intrinsicName?: string }).intrinsicName;
+    const intrinsicName = getIntrinsicName(type)
     if (intrinsicName === 'object') {
         // keyof object = never
         return VisitorUtils.getNeverFunction(visitorContext);

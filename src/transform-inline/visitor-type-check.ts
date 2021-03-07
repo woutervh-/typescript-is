@@ -569,8 +569,7 @@ function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorC
 }
 
 function visitBooleanLiteral(type: ts.Type, visitorContext: VisitorContext) {
-    // Using internal TypeScript API, hacky.
-    const intrinsicName: string | undefined = (type as { intrinsicName?: string }).intrinsicName;
+    const intrinsicName = VisitorUtils.getIntrinsicName(type)
     if (intrinsicName === 'true') {
         const name = '_true';
         return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
@@ -603,8 +602,7 @@ function visitBooleanLiteral(type: ts.Type, visitorContext: VisitorContext) {
 }
 
 function visitNonPrimitiveType(type: ts.Type, visitorContext: VisitorContext) {
-    // Using internal TypeScript API, hacky.
-    const intrinsicName: string | undefined = (type as { intrinsicName?: string }).intrinsicName;
+    const intrinsicName = VisitorUtils.getIntrinsicName(type)
     if (intrinsicName === 'object') {
         const name = '_object';
         return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
@@ -693,6 +691,470 @@ function visitIndexedAccessType(type: ts.IndexedAccessType, visitorContext: Visi
     return VisitorIndexedAccess.visitType(type.objectType, type.indexType, visitorContext);
 }
 
+function visitTemplateLiteralType(type: ts.TemplateLiteralType, visitorContext: VisitorContext) {
+    const name = VisitorTypeName.visitType(type, visitorContext, {type: 'type-check'});
+    const typePairs = type.texts.reduce((prev, curr, i: number) =>
+            [...prev, [curr, typeof type.types[i] === 'undefined' ? undefined : VisitorUtils.getIntrinsicName(type.types[i])]] as never,
+        [] as VisitorUtils.TemplateLiteralPair[]
+    )
+    const templateLiteralTypeError = VisitorUtils.createErrorObject({
+        type: 'template-literal',
+        value: typePairs
+    })
+    return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => ts.factory.createFunctionDeclaration(
+        undefined,
+        undefined,
+        undefined,
+        name,
+        undefined,
+        [
+            ts.factory.createParameterDeclaration(
+                undefined,
+                undefined,
+                undefined,
+                VisitorUtils.objectIdentifier,
+                undefined,
+                ts.factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword),
+                undefined
+            )
+        ],
+        undefined,
+        ts.factory.createBlock(
+            [
+                ts.factory.createVariableStatement(
+                    undefined,
+                    ts.factory.createVariableDeclarationList(
+                        [ts.factory.createVariableDeclaration(
+                            ts.factory.createIdentifier('typePairs'),
+                            undefined,
+                            undefined,
+                            ts.factory.createArrayLiteralExpression(
+                                typePairs.map(([text, type]) =>
+                                    ts.factory.createArrayLiteralExpression(
+                                        [
+                                            ts.factory.createStringLiteral(text),
+                                            typeof type === 'undefined'
+                                                ? ts.factory.createIdentifier('undefined')
+                                                : ts.factory.createStringLiteral(type)
+                                        ]
+                                    )
+                                ),
+                                false
+                            )
+                        )],
+                        ts.NodeFlags.Const
+                    )
+                ),
+                ts.factory.createVariableStatement(
+                    undefined,
+                    ts.factory.createVariableDeclarationList(
+                        [ts.factory.createVariableDeclaration(
+                            ts.factory.createIdentifier('position'),
+                            undefined,
+                            undefined,
+                            ts.factory.createNumericLiteral('0')
+                        )],
+                        ts.NodeFlags.Let
+                    )
+                ),
+                ts.factory.createForOfStatement(
+                    undefined,
+                    ts.factory.createVariableDeclarationList(
+                        [ts.factory.createVariableDeclaration(
+                            ts.factory.createArrayBindingPattern([
+                                ts.factory.createBindingElement(
+                                    undefined,
+                                    undefined,
+                                    ts.factory.createIdentifier('index'),
+                                    undefined
+                                ),
+                                ts.factory.createBindingElement(
+                                    undefined,
+                                    undefined,
+                                    ts.factory.createIdentifier('typePair'),
+                                    undefined
+                                )
+                            ]),
+                            undefined,
+                            undefined,
+                            undefined
+                        )],
+                        ts.NodeFlags.Const
+                    ),
+                    ts.factory.createCallExpression(
+                        ts.factory.createPropertyAccessExpression(
+                            ts.factory.createIdentifier('typePairs'),
+                            ts.factory.createIdentifier('entries')
+                        ),
+                        undefined,
+                        []
+                    ),
+                    ts.factory.createBlock(
+                        [
+                            ts.factory.createVariableStatement(
+                                undefined,
+                                ts.factory.createVariableDeclarationList(
+                                    [ts.factory.createVariableDeclaration(
+                                        ts.factory.createArrayBindingPattern([
+                                            ts.factory.createBindingElement(
+                                                undefined,
+                                                undefined,
+                                                ts.factory.createIdentifier('currentText'),
+                                                undefined
+                                            ),
+                                            ts.factory.createBindingElement(
+                                                undefined,
+                                                undefined,
+                                                ts.factory.createIdentifier('currentType'),
+                                                undefined
+                                            )
+                                        ]),
+                                        undefined,
+                                        undefined,
+                                        ts.factory.createIdentifier('typePair')
+                                    )],
+                                    ts.NodeFlags.Const
+                                )
+                            ),
+                            ts.factory.createVariableStatement(
+                                undefined,
+                                ts.factory.createVariableDeclarationList(
+                                    [ts.factory.createVariableDeclaration(
+                                        ts.factory.createArrayBindingPattern([
+                                            ts.factory.createBindingElement(
+                                                undefined,
+                                                undefined,
+                                                ts.factory.createIdentifier('nextText'),
+                                                undefined
+                                            ),
+                                            ts.factory.createBindingElement(
+                                                undefined,
+                                                undefined,
+                                                ts.factory.createIdentifier('nextType'),
+                                                undefined
+                                            )
+                                        ]),
+                                        undefined,
+                                        undefined,
+                                        ts.factory.createBinaryExpression(
+                                            ts.factory.createElementAccessExpression(
+                                                ts.factory.createIdentifier('typePairs'),
+                                                ts.factory.createBinaryExpression(
+                                                    ts.factory.createIdentifier('index'),
+                                                    ts.factory.createToken(ts.SyntaxKind.PlusToken),
+                                                    ts.factory.createNumericLiteral('1')
+                                                )
+                                            ),
+                                            ts.factory.createToken(ts.SyntaxKind.QuestionQuestionToken),
+                                            ts.factory.createArrayLiteralExpression(
+                                                [
+                                                    ts.factory.createIdentifier('undefined'),
+                                                    ts.factory.createIdentifier('undefined')
+                                                ],
+                                                false
+                                            )
+                                        )
+                                    )],
+                                    ts.NodeFlags.Const
+                                )
+                            ),
+                            ts.factory.createIfStatement(
+                                ts.factory.createBinaryExpression(
+                                    ts.factory.createCallExpression(
+                                        ts.factory.createPropertyAccessExpression(
+                                            VisitorUtils.objectIdentifier,
+                                            ts.factory.createIdentifier('substr')
+                                        ),
+                                        undefined,
+                                        [
+                                            ts.factory.createIdentifier('position'),
+                                            ts.factory.createPropertyAccessExpression(
+                                                ts.factory.createIdentifier('currentText'),
+                                                ts.factory.createIdentifier('length')
+                                            )
+                                        ]
+                                    ),
+                                    ts.factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
+                                    ts.factory.createIdentifier('currentText')
+                                ),
+                                ts.factory.createReturnStatement(templateLiteralTypeError),
+                                undefined
+                            ),
+                            ts.factory.createExpressionStatement(ts.factory.createBinaryExpression(
+                                ts.factory.createIdentifier('position'),
+                                ts.factory.createToken(ts.SyntaxKind.PlusEqualsToken),
+                                ts.factory.createPropertyAccessExpression(
+                                    ts.factory.createIdentifier('currentText'),
+                                    ts.factory.createIdentifier('length')
+                                )
+                            )),
+                            ts.factory.createIfStatement(
+                                ts.factory.createBinaryExpression(
+                                    ts.factory.createBinaryExpression(
+                                        ts.factory.createIdentifier('nextText'),
+                                        ts.factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+                                        ts.factory.createStringLiteral('')
+                                    ),
+                                    ts.factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
+                                    ts.factory.createBinaryExpression(
+                                        ts.factory.createIdentifier('nextType'),
+                                        ts.factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
+                                        ts.factory.createIdentifier('undefined')
+                                    )
+                                ),
+                                ts.factory.createBlock(
+                                    [
+                                        ts.factory.createVariableStatement(
+                                            undefined,
+                                            ts.factory.createVariableDeclarationList(
+                                                [ts.factory.createVariableDeclaration(
+                                                    ts.factory.createIdentifier('char'),
+                                                    undefined,
+                                                    undefined,
+                                                    ts.factory.createCallExpression(
+                                                        ts.factory.createPropertyAccessExpression(
+                                                            VisitorUtils.objectIdentifier,
+                                                            ts.factory.createIdentifier('charAt')
+                                                        ),
+                                                        undefined,
+                                                        [ts.factory.createIdentifier('position')]
+                                                    )
+                                                )],
+                                                ts.NodeFlags.Const
+                                            )
+                                        ),
+                                        ts.factory.createIfStatement(
+                                            ts.factory.createBinaryExpression(
+                                                ts.factory.createParenthesizedExpression(ts.factory.createBinaryExpression(
+                                                    ts.factory.createParenthesizedExpression(ts.factory.createBinaryExpression(
+                                                        ts.factory.createBinaryExpression(
+                                                            ts.factory.createIdentifier('currentType'),
+                                                            ts.factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+                                                            ts.factory.createStringLiteral('number')
+                                                        ),
+                                                        ts.factory.createToken(ts.SyntaxKind.BarBarToken),
+                                                        ts.factory.createBinaryExpression(
+                                                            ts.factory.createIdentifier('currentType'),
+                                                            ts.factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+                                                            ts.factory.createStringLiteral('bigint')
+                                                        )
+                                                    )),
+                                                    ts.factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
+                                                    ts.factory.createCallExpression(
+                                                        ts.factory.createIdentifier('isNaN'),
+                                                        undefined,
+                                                        [ts.factory.createCallExpression(
+                                                            ts.factory.createIdentifier('Number'),
+                                                            undefined,
+                                                            [ts.factory.createIdentifier('char')]
+                                                        )]
+                                                    )
+                                                )),
+                                                ts.factory.createToken(ts.SyntaxKind.BarBarToken),
+                                                ts.factory.createParenthesizedExpression(ts.factory.createBinaryExpression(
+                                                    ts.factory.createParenthesizedExpression(ts.factory.createBinaryExpression(
+                                                        ts.factory.createBinaryExpression(
+                                                            ts.factory.createIdentifier('currentType'),
+                                                            ts.factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+                                                            ts.factory.createStringLiteral('string')
+                                                        ),
+                                                        ts.factory.createToken(ts.SyntaxKind.BarBarToken),
+                                                        ts.factory.createBinaryExpression(
+                                                            ts.factory.createIdentifier('currentType'),
+                                                            ts.factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+                                                            ts.factory.createStringLiteral('any')
+                                                        )
+                                                    )),
+                                                    ts.factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
+                                                    ts.factory.createBinaryExpression(
+                                                        ts.factory.createIdentifier('char'),
+                                                        ts.factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+                                                        ts.factory.createStringLiteral('')
+                                                    )
+                                                ))
+                                            ),
+                                            ts.factory.createReturnStatement(templateLiteralTypeError),
+                                            undefined
+                                        )
+                                    ],
+                                    true
+                                ),
+                                undefined
+                            ),
+                            ts.factory.createVariableStatement(
+                                undefined,
+                                ts.factory.createVariableDeclarationList(
+                                    [ts.factory.createVariableDeclaration(
+                                        ts.factory.createIdentifier('nextTextOrType'),
+                                        undefined,
+                                        undefined,
+                                        ts.factory.createConditionalExpression(
+                                            ts.factory.createBinaryExpression(
+                                                ts.factory.createIdentifier('nextText'),
+                                                ts.factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+                                                ts.factory.createStringLiteral('')
+                                            ),
+                                            ts.factory.createToken(ts.SyntaxKind.QuestionToken),
+                                            ts.factory.createIdentifier('nextType'),
+                                            ts.factory.createToken(ts.SyntaxKind.ColonToken),
+                                            ts.factory.createIdentifier('nextText')
+                                        )
+                                    )],
+                                    ts.NodeFlags.Const
+                                )
+                            ),
+                            ts.factory.createVariableStatement(
+                                undefined,
+                                ts.factory.createVariableDeclarationList(
+                                    [ts.factory.createVariableDeclaration(
+                                        ts.factory.createIdentifier('resolvedPlaceholder'),
+                                        undefined,
+                                        undefined,
+                                        ts.factory.createCallExpression(
+                                            ts.factory.createPropertyAccessExpression(
+                                                VisitorUtils.objectIdentifier,
+                                                ts.factory.createIdentifier('substring')
+                                            ),
+                                            undefined,
+                                            [
+                                                ts.factory.createIdentifier('position'),
+                                                ts.factory.createConditionalExpression(
+                                                    ts.factory.createBinaryExpression(
+                                                        ts.factory.createTypeOfExpression(ts.factory.createIdentifier('nextTextOrType')),
+                                                        ts.factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+                                                        ts.factory.createStringLiteral('undefined')
+                                                    ),
+                                                    ts.factory.createToken(ts.SyntaxKind.QuestionToken),
+                                                    ts.factory.createBinaryExpression(
+                                                        ts.factory.createPropertyAccessExpression(
+                                                            VisitorUtils.objectIdentifier,
+                                                            ts.factory.createIdentifier('length')
+                                                        ),
+                                                        ts.factory.createToken(ts.SyntaxKind.MinusToken),
+                                                        ts.factory.createNumericLiteral('1')
+                                                    ),
+                                                    ts.factory.createToken(ts.SyntaxKind.ColonToken),
+                                                    ts.factory.createCallExpression(
+                                                        ts.factory.createPropertyAccessExpression(
+                                                            VisitorUtils.objectIdentifier,
+                                                            ts.factory.createIdentifier('indexOf')
+                                                        ),
+                                                        undefined,
+                                                        [
+                                                            ts.factory.createIdentifier('nextTextOrType'),
+                                                            ts.factory.createIdentifier('position')
+                                                        ]
+                                                    )
+                                                )
+                                            ]
+                                        )
+                                    )],
+                                    ts.NodeFlags.Const
+                                )
+                            ),
+                            ts.factory.createIfStatement(
+                                ts.factory.createBinaryExpression(
+                                    ts.factory.createBinaryExpression(
+                                        ts.factory.createBinaryExpression(
+                                            ts.factory.createParenthesizedExpression(ts.factory.createBinaryExpression(
+                                                ts.factory.createBinaryExpression(
+                                                    ts.factory.createIdentifier('currentType'),
+                                                    ts.factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+                                                    ts.factory.createStringLiteral('number')
+                                                ),
+                                                ts.factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
+                                                ts.factory.createCallExpression(
+                                                    ts.factory.createIdentifier('isNaN'),
+                                                    undefined,
+                                                    [ts.factory.createCallExpression(
+                                                        ts.factory.createIdentifier('Number'),
+                                                        undefined,
+                                                        [ts.factory.createIdentifier('resolvedPlaceholder')]
+                                                    )]
+                                                )
+                                            )),
+                                            ts.factory.createToken(ts.SyntaxKind.BarBarToken),
+                                            ts.factory.createParenthesizedExpression(ts.factory.createBinaryExpression(
+                                                ts.factory.createBinaryExpression(
+                                                    ts.factory.createIdentifier('currentType'),
+                                                    ts.factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+                                                    ts.factory.createStringLiteral('bigint')
+                                                ),
+                                                ts.factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
+                                                ts.factory.createParenthesizedExpression(ts.factory.createBinaryExpression(
+                                                    ts.factory.createCallExpression(
+                                                        ts.factory.createPropertyAccessExpression(
+                                                            ts.factory.createIdentifier('resolvedPlaceholder'),
+                                                            ts.factory.createIdentifier('includes')
+                                                        ),
+                                                        undefined,
+                                                        [ts.factory.createStringLiteral('.')]
+                                                    ),
+                                                    ts.factory.createToken(ts.SyntaxKind.BarBarToken),
+                                                    ts.factory.createCallExpression(
+                                                        ts.factory.createIdentifier('isNaN'),
+                                                        undefined,
+                                                        [ts.factory.createCallExpression(
+                                                            ts.factory.createIdentifier('Number'),
+                                                            undefined,
+                                                            [ts.factory.createIdentifier('resolvedPlaceholder')]
+                                                        )]
+                                                    )
+                                                ))
+                                            ))
+                                        ),
+                                        ts.factory.createToken(ts.SyntaxKind.BarBarToken),
+                                        ts.factory.createParenthesizedExpression(ts.factory.createBinaryExpression(
+                                            ts.factory.createBinaryExpression(
+                                                ts.factory.createIdentifier('currentType'),
+                                                ts.factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+                                                ts.factory.createStringLiteral('undefined')
+                                            ),
+                                            ts.factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
+                                            ts.factory.createBinaryExpression(
+                                                ts.factory.createIdentifier('resolvedPlaceholder'),
+                                                ts.factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
+                                                ts.factory.createStringLiteral('undefined')
+                                            )
+                                        ))
+                                    ),
+                                    ts.factory.createToken(ts.SyntaxKind.BarBarToken),
+                                    ts.factory.createParenthesizedExpression(ts.factory.createBinaryExpression(
+                                        ts.factory.createBinaryExpression(
+                                            ts.factory.createIdentifier('currentType'),
+                                            ts.factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+                                            ts.factory.createStringLiteral('null')
+                                        ),
+                                        ts.factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
+                                        ts.factory.createBinaryExpression(
+                                            ts.factory.createIdentifier('resolvedPlaceholder'),
+                                            ts.factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
+                                            ts.factory.createStringLiteral('null')
+                                        )
+                                    ))
+                                ),
+                                ts.factory.createReturnStatement(templateLiteralTypeError),
+                                undefined
+                            ),
+                            ts.factory.createExpressionStatement(ts.factory.createBinaryExpression(
+                                ts.factory.createIdentifier('position'),
+                                ts.factory.createToken(ts.SyntaxKind.PlusEqualsToken),
+                                ts.factory.createPropertyAccessExpression(
+                                    ts.factory.createIdentifier('resolvedPlaceholder'),
+                                    ts.factory.createIdentifier('length')
+                                )
+                            ))
+                        ],
+                        true
+                    )
+                ),
+                ts.factory.createReturnStatement(ts.factory.createNull())
+            ],
+            true
+        )
+    ))
+}
+
 export function visitType(type: ts.Type, visitorContext: VisitorContext): string {
     if (type.aliasTypeArguments && visitorContext.previousTypeReference !== type && (type as ts.TypeReference).target) {
         return visitTypeAliasReference(type as ts.TypeReference, visitorContext);
@@ -750,6 +1212,9 @@ export function visitType(type: ts.Type, visitorContext: VisitorContext): string
     } else if (tsutils.isIndexedAccessType(type)) {
         // Indexed access type: T[U]
         return visitIndexedAccessType(type, visitorContext);
+    } else if ((ts.TypeFlags.TemplateLiteral & type.flags) !== 0) {
+        // template literal type: `foo${string}`
+        return visitTemplateLiteralType(type as ts.TemplateLiteralType, visitorContext)
     } else {
         throw new Error('Could not generate type-check; unsupported type with flags: ' + type.flags);
     }

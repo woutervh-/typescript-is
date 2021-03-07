@@ -135,6 +135,8 @@ export function visitType(type: ts.Type, visitorContext: VisitorContext, mode: N
         name = visitIndexType(type, visitorContext);
     } else if (tsutils.isIndexedAccessType(type)) {
         name = visitIndexedAccessType(type, visitorContext);
+    } else if ((ts.TypeFlags.TemplateLiteral & type.flags) !== 0) {
+        name = `_${id}`;
     } else {
         throw new Error('Could not generate type-check; unsupported type with flags: ' + type.flags);
     }

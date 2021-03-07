@@ -1,3 +1,5 @@
+import {TemplateLiteralPair} from './src/transform-inline/visitor-utils';
+
 /**
  * Checks if the given argument is assignable to the given type-argument.
  *
@@ -258,6 +260,11 @@ interface ExpectedNull {
     type: 'null';
 }
 
+interface ExpectedTemplateLiteral {
+    type: 'template-literal'
+    value: TemplateLiteralPair[]
+}
+
 type Reason = ExpectedFunction
     | ExpectedString
     | ExpectedNumber
@@ -277,7 +284,8 @@ type Reason = ExpectedFunction
     | ExpectedNull
     | ExpectedStringLiteral
     | ExpectedNumberLiteral
-    | ExpectedBooleanLiteral;
+    | ExpectedBooleanLiteral
+    | ExpectedTemplateLiteral;
 
 /**
  * Set default getErrorObject function used for transpiled source.
