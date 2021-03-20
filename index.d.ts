@@ -1,5 +1,3 @@
-import {TemplateLiteralPair} from './src/transform-inline/visitor-utils';
-
 /**
  * Checks if the given argument is assignable to the given type-argument.
  *
@@ -259,6 +257,8 @@ interface ExpectedUndefined {
 interface ExpectedNull {
     type: 'null';
 }
+
+type TemplateLiteralPair = [string, 'string' | 'number' | 'bigint' | 'any' | 'undefined' | 'null' | undefined];
 
 interface ExpectedTemplateLiteral {
     type: 'template-literal'

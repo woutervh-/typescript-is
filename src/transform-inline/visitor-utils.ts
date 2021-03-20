@@ -8,7 +8,7 @@ import { Reason } from '../../index';
  * a pair of {@link ts.TemplateLiteralType.texts} and the `intrinsicName`s for {@link ts.TemplateLiteralType.types},
  * @see https://github.com/microsoft/TypeScript/pull/40336
  */
-export type TemplateLiteralPair = [string, 'string' | 'number' | 'bigint' | 'any' | 'undefined' | 'null' | undefined]
+export type TemplateLiteralPair = [string, 'string' | 'number' | 'bigint' | 'any' | 'undefined' | 'null' | undefined];
 
 export const objectIdentifier = ts.createIdentifier('object');
 export const pathIdentifier = ts.createIdentifier('path');
