@@ -14,7 +14,7 @@ function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorC
             return VisitorUtils.createConjunctionFunction(functionNames, name);
         } else {
             // keyof (T & U) = (keyof T) | (keyof U)
-            return VisitorUtils.createDisjunctionFunction(functionNames, name);
+            return VisitorUtils.createDisjunctionFunction(functionNames, name, visitorContext);
         }
     });
 }

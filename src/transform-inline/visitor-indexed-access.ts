@@ -26,7 +26,7 @@ function visitRegularObjectType(type: ts.ObjectType, indexType: ts.Type, visitor
                     ? VisitorUtils.getIgnoredTypeFunction(visitorContext)
                     : VisitorTypeCheck.visitType(propertyInfo.type!, visitorContext)
             );
-            return VisitorUtils.createDisjunctionFunction(functionNames, name);
+            return VisitorUtils.createDisjunctionFunction(functionNames, name, visitorContext);
         } else {
             const strings = sliceSet(stringType);
             if (strings.some((value) => propertiesInfo.every((propertyInfo) => propertyInfo.name !== value))) {
@@ -38,7 +38,7 @@ function visitRegularObjectType(type: ts.ObjectType, indexType: ts.Type, visitor
                     ? VisitorUtils.getIgnoredTypeFunction(visitorContext)
                     : VisitorTypeCheck.visitType(propertyInfo.type!, visitorContext)
             );
-            return VisitorUtils.createDisjunctionFunction(functionNames, name);
+            return VisitorUtils.createDisjunctionFunction(functionNames, name, visitorContext);
         }
     });
 }
@@ -55,14 +55,14 @@ function visitTupleObjectType(type: ts.TupleType, indexType: ts.Type, visitorCon
                 throw new Error('A non-number type was used to index a tuple type.');
             }
             const functionNames = type.typeArguments.map((type) => VisitorTypeCheck.visitType(type, visitorContext));
-            return VisitorUtils.createDisjunctionFunction(functionNames, name);
+            return VisitorUtils.createDisjunctionFunction(functionNames, name, visitorContext);
         } else {
             const numbers = sliceSet(numberType);
             if (numbers.some((value) => value >= type.typeArguments!.length)) {
                 throw new Error('Indexed access on tuple type exceeds length of tuple.');
             }
             const functionNames = numbers.map((value) => VisitorTypeCheck.visitType(type.typeArguments![value], visitorContext));
-            return VisitorUtils.createDisjunctionFunction(functionNames, name);
+            return VisitorUtils.createDisjunctionFunction(functionNames, name, visitorContext);
         }
     });
 }
@@ -102,7 +102,7 @@ function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, indexTyp
             return VisitorUtils.createConjunctionFunction(functionNames, name);
         } else {
             // (T & U)[I] = T[I] | U[I]
-            return VisitorUtils.createDisjunctionFunction(functionNames, name);
+            return VisitorUtils.createDisjunctionFunction(functionNames, name, visitorContext);
         }
     });
 }
