@@ -35,7 +35,8 @@ describe('visitor', () => {
                 ignoreMethods: false,
                 functionBehavior: 'error',
                 shortCircuit: false,
-                disallowSuperfluousObjectProperties: false
+                disallowSuperfluousObjectProperties: false,
+                transformNonNullExpressions: false
             },
             typeMapperStack: [],
             previousTypeReference: null

@@ -6,6 +6,7 @@ interface Options {
     ignoreMethods: boolean;
     functionBehavior: 'error' | 'ignore' | 'basic';
     disallowSuperfluousObjectProperties: boolean;
+    transformNonNullExpressions: boolean;
 }
 
 export interface VisitorContext extends PartialVisitorContext {
