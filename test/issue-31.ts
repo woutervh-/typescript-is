@@ -45,7 +45,8 @@ describe('visitor', () => {
             ignoreMethods: true, // Make sure it does not fail on the methods.
             functionBehavior: 'error',
             shortCircuit: false,
-            disallowSuperfluousObjectProperties: false
+            disallowSuperfluousObjectProperties: false,
+            transformNonNullExpressions: false
         };
         const visitorContext = createVisitorContext(program, options);
         const visitorContextWithDate = createVisitorContext(programWithDate, options);
@@ -77,7 +78,8 @@ describe('visitor', () => {
             ignoreMethods: false, // It should never get to the methods of the class.
             functionBehavior: 'error',
             shortCircuit: false,
-            disallowSuperfluousObjectProperties: false
+            disallowSuperfluousObjectProperties: false,
+            transformNonNullExpressions: false
         };
         const visitorContext = createVisitorContext(program, options);
         const visitorContextWithDate = createVisitorContext(programWithDate, options);
