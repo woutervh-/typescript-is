@@ -429,7 +429,15 @@ export function createConjunctionFunction(functionNames: string[], functionName:
     );
 }
 
-export function createDisjunctionFunction(functionNames: string[], functionName: string) {
+export function createDisjunctionFunction(functionNames: string[], functionName: string, visitorContext: VisitorContext) {
+    if (functionNames.length === 2) {
+        const nullTypeCheckFunction = getNullFunction(visitorContext);
+        const nullIndex = functionNames.indexOf(nullTypeCheckFunction);
+        if (nullIndex > -1) {
+            return createNullableTypeCheck(functionNames[1 - nullIndex], functionName);
+        }
+    }
+
     const conditionsIdentifier = ts.createIdentifier('conditions');
     const conditionIdentifier = ts.createIdentifier('condition');
     const errorIdentifier = ts.createIdentifier('error');
@@ -485,6 +493,31 @@ export function createDisjunctionFunction(functionNames: string[], functionName:
                 ])
             ),
             ts.createReturn(createErrorObject({ type: 'union' }))
+        ])
+    );
+}
+
+function createNullableTypeCheck(typeCheckFunction: string, functionName: string) {
+    return ts.createFunctionDeclaration(
+        undefined,
+        undefined,
+        undefined,
+        functionName,
+        undefined,
+        [
+            ts.createParameter(undefined, undefined, undefined, objectIdentifier, undefined, undefined, undefined)
+        ],
+        undefined,
+        ts.createBlock([
+            ts.createIf(
+                ts.createStrictEquality(objectIdentifier, ts.createNull()),
+                ts.createReturn(ts.createNull()),
+                ts.createReturn(ts.createCall(
+                    ts.createIdentifier(typeCheckFunction),
+                    undefined,
+                    [objectIdentifier]
+                ))
+            )
         ])
     );
 }

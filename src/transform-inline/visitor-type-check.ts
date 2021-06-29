@@ -546,7 +546,7 @@ function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorC
         const name = VisitorTypeName.visitType(type, visitorContext, { type: 'type-check' });
         const functionNames = typeUnion.types.map((type) => visitType(type, visitorContext));
         return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
-            return VisitorUtils.createDisjunctionFunction(functionNames, name);
+            return VisitorUtils.createDisjunctionFunction(functionNames, name, visitorContext);
         });
     }
     const intersectionType = type;
