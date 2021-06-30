@@ -5,6 +5,7 @@
         "lib": [
             "es6"
         ],
+        "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
         "noImplicitAny": true,
         "noUnusedLocals": true,
