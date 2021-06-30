@@ -257,6 +257,74 @@ new A().method(42) === 42; // true
 new A().method('42' as any); // will throw error
 ```
 
+### async and `Promise` returning methods 
+`AssertType` can also work correctly with `async` methods, returning promise rejected with `TypeGuardError`
+
+To enable this functionality, you need to emit decorators metadata for your TypeScript project.
+
+```json
+{
+    "compilerOptions": {
+      "emitDecoratorMetadata": true
+    }
+}
+```
+
+Then `AssertType` will work with async methods and `Promise` returning methods automatically.
+```typescript
+import { ValidateClass, AssertType } from 'typescript-is';
+
+@ValidateClass()
+class A {
+    async method(@AssertType({ async: true }) value: number) {
+        // You can safely use value as a number
+        return value;
+    }
+
+    methodPromise(@AssertType({ async: true }) value: number): Promise<number> {
+        // You can safely use value as a number
+        return Promise.resolve(value);
+    }
+}
+
+new A().method(42).then(value => value === 42 /* true */); 
+new A().method('42' as any).catch(error => {
+    // error will be of TypeGuardError type
+})
+new A().methodPromise('42' as any).catch(error => {
+    // error will be of TypeGuardError type
+})
+```
+
+If you want to throw synchronously for some reason, you can override the behaviour using with `@AssertType({ async: false })`:
+```typescript
+import { ValidateClass, AssertType } from 'typescript-is';
+
+@ValidateClass()
+class A {
+    async method(@AssertType({ async: false }) value: number) {
+        // You can safely use value as a number
+        return value;
+    }
+}
+
+new A().method(42).then(value => value === 42 /* true */);
+new A().method('42' as any); // will throw error
+```
+
+If you cannot or don't want to enable decorators metadata, you still make AssertType reject with promise using `@AssertType({ async: true })` 
+```typescript
+import { ValidateClass, AssertType } from 'typescript-is';
+
+@ValidateClass()
+class A {
+    async method(@AssertType({ async: true }) value: number) {
+        // You can safely use value as a number
+        return value;
+    }
+}
+```
+
 ## Strict equality (`equals`, `createEquals`, `assertEquals`, `createAssertEquals`)
 
 This family of functions check not only whether the passed object is assignable to the specified type, but also checks that the passed object does not contain any more than is necessary. In other words: the type is also "assignable" to the object. This functionality is equivalent to specifying `disallowSuperfluousObjectProperties` in the options, the difference is that this will apply only to the specific function call. For example:

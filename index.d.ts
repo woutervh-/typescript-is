@@ -125,7 +125,7 @@ export function createAssertEquals<T>(): (object: any) => T;
    new A().method('0' as any); // will throw an error
    ```
  */
-export function AssertType(): (target: object, propertyKey: string | symbol, parameterIndex: number) => void;
+export function AssertType(options?: { async: boolean }): (target: object, propertyKey: string | symbol, parameterIndex: number) => void;
 
 /**
  * Overrides methods in the target class with a proxy that will first validate the argument types.
