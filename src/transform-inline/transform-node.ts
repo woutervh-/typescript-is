@@ -9,6 +9,7 @@ function createArrowFunction(type: ts.Type, rootName: string, optional: boolean,
     const functionMap: VisitorContext['functionMap'] = new Map();
     const functionNames: VisitorContext['functionNames'] = new Set();
     const visitorContext = { ...partialVisitorContext, functionNames, functionMap };
+    const emitDetailedErrors = !!visitorContext.options.emitDetailedErrors;
     const functionName = partialVisitorContext.options.shortCircuit
         ? visitShortCircuit(visitorContext)
         : (optional
@@ -16,8 +17,16 @@ function createArrowFunction(type: ts.Type, rootName: string, optional: boolean,
             : visitType(type, visitorContext)
         );
 
-    const errorIdentifier = ts.createIdentifier('error');
-    const declarations = sliceMapValues(functionMap);
+    const variableDeclarations: ts.VariableStatement[] = [];
+    if (emitDetailedErrors) {
+        variableDeclarations.push(
+            ts.createVariableStatement(
+                [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
+                [ts.createVariableDeclaration(VisitorUtils.pathIdentifier, undefined, ts.createArrayLiteral([ts.createStringLiteral(rootName)]))]
+            )
+        );
+    }
+    const functionDeclarations = sliceMapValues(functionMap);
 
     return ts.createArrowFunction(
         undefined,
@@ -35,16 +44,9 @@ function createArrowFunction(type: ts.Type, rootName: string, optional: boolean,
         undefined,
         undefined,
         ts.createBlock([
-            ts.createVariableStatement(
-                [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
-                [ts.createVariableDeclaration(VisitorUtils.pathIdentifier, undefined, ts.createArrayLiteral([ts.createStringLiteral(rootName)]))]
-            ),
-            ...declarations,
-            ts.createVariableStatement(
-                [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
-                [ts.createVariableDeclaration(errorIdentifier, undefined, ts.createCall(ts.createIdentifier(functionName), undefined, [VisitorUtils.objectIdentifier]))]
-            ),
-            ts.createReturn(errorIdentifier)
+            ...variableDeclarations,
+            ...functionDeclarations,
+            ts.createReturn(ts.createCall(ts.createIdentifier(functionName), undefined, [VisitorUtils.objectIdentifier]))
         ])
     );
 }
