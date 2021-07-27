@@ -105,6 +105,8 @@ export function transformNode(node: ts.Node, visitorContext: PartialVisitorConte
         ) {
             const name = visitorContext.checker.getTypeAtLocation(signature.declaration).symbol.name;
             const isEquals = name === 'equals' || name === 'createEquals' || name === 'assertEquals' || name === 'createAssertEquals';
+            const isAssert = name === 'assertEquals' || name === 'assertType' || name === 'createAssertEquals' || name === 'createAssertType';
+            const emitDetailedErrors = visitorContext.options.emitDetailedErrors === 'auto' ? isAssert : visitorContext.options.emitDetailedErrors;
 
             const typeArgument = node.typeArguments[0];
             const type = visitorContext.checker.getTypeFromTypeNode(typeArgument);
@@ -116,7 +118,8 @@ export function transformNode(node: ts.Node, visitorContext: PartialVisitorConte
                     ...visitorContext,
                     options: {
                         ...visitorContext.options,
-                        disallowSuperfluousObjectProperties: isEquals || visitorContext.options.disallowSuperfluousObjectProperties
+                        disallowSuperfluousObjectProperties: isEquals || visitorContext.options.disallowSuperfluousObjectProperties,
+                        emitDetailedErrors
                     }
                 }
             );

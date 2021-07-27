@@ -18,6 +18,15 @@ function getFunctionBehavior(options?: { [Key: string]: unknown }): PartialVisit
     return 'error';
 }
 
+function getEmitDetailedErrors(options?: { [Key: string]: unknown }): PartialVisitorContext['options']['emitDetailedErrors'] {
+    if (options) {
+        if (options.emitDetailedErrors === 'auto' || typeof options.emitDetailedErrors === 'boolean') {
+            return options.emitDetailedErrors;
+        }
+    }
+    return 'auto';
+}
+
 export default function transformer(program: ts.Program, options?: { [Key: string]: unknown }): ts.TransformerFactory<ts.SourceFile> {
     if (options && options.verbose) {
         console.log(`typescript-is: transforming program with ${program.getSourceFiles().length} source files; using TypeScript ${ts.version}.`);
@@ -32,7 +41,8 @@ export default function transformer(program: ts.Program, options?: { [Key: strin
             ignoreClasses: !!(options && options.ignoreClasses),
             ignoreMethods: !!(options && options.ignoreMethods),
             functionBehavior: getFunctionBehavior(options),
-            disallowSuperfluousObjectProperties: !!(options && options.disallowSuperfluousObjectProperties)
+            disallowSuperfluousObjectProperties: !!(options && options.disallowSuperfluousObjectProperties),
+            emitDetailedErrors: getEmitDetailedErrors(options)
         },
         typeMapperStack: [],
         previousTypeReference: null
