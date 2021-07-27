@@ -19,6 +19,8 @@ function inputObjectAtPath(path, inputObject) {
 }
 
 function appendInputToErrorMessage(message, path, inputObject) {
+    if (message === undefined)
+        return 'validation error';
     const foundInputObject = inputObjectAtPath(path, inputObject);
     try {
         return message + ', found: ' + require('util').inspect(foundInputObject);

@@ -63,7 +63,7 @@ function visitDateType(type: ts.ObjectType, visitorContext: VisitorContext) {
                                 ts.createIdentifier('nativeDateObject')
                             )
                         ),
-                        ts.createReturn(VisitorUtils.createErrorObject({ type: 'date' })),
+                        ts.createReturn(VisitorUtils.createErrorObject({ type: 'date' }, visitorContext)),
                         ts.createReturn(ts.createNull())
                     )],
                 true
@@ -131,7 +131,7 @@ function visitTupleObjectType(type: ts.TupleType, visitorContext: VisitorContext
                         ],
                         ts.SyntaxKind.BarBarToken
                     ),
-                    ts.createReturn(VisitorUtils.createErrorObject({ type: 'tuple', minLength, maxLength }))
+                    ts.createReturn(VisitorUtils.createErrorObject({ type: 'tuple', minLength, maxLength }, visitorContext))
                 ),
                 ...functionNames.map((functionName, index) =>
                     ts.createBlock([
@@ -205,7 +205,7 @@ function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContex
                             [VisitorUtils.objectIdentifier]
                         )
                     ),
-                    ts.createReturn(VisitorUtils.createErrorObject({ type: 'array' }))
+                    ts.createReturn(VisitorUtils.createErrorObject({ type: 'array' }, visitorContext))
                 ),
                 ts.createFor(
                     ts.createVariableDeclarationList(
@@ -307,7 +307,7 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                         ],
                         ts.SyntaxKind.BarBarToken
                     ),
-                    ts.createReturn(VisitorUtils.createErrorObject({ type: 'object' }))
+                    ts.createReturn(VisitorUtils.createErrorObject({ type: 'object' }, visitorContext))
                 ),
                 ...propertyInfos.map((propertyInfo) => {
                     if (propertyInfo.isSymbol) {
@@ -365,13 +365,13 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
                             ]),
                             propertyInfo.optional
                                 ? undefined
-                                : ts.createReturn(VisitorUtils.createErrorObject({ type: 'missing-property', property: propertyInfo.name }))
+                                : ts.createReturn(VisitorUtils.createErrorObject({ type: 'missing-property', property: propertyInfo.name }, visitorContext))
                         )
                     ]);
                 }),
                 ...(
                     visitorContext.options.disallowSuperfluousObjectProperties && stringIndexFunctionName === undefined
-                        ? [VisitorUtils.createSuperfluousPropertiesLoop(propertyInfos.map((propertyInfo) => propertyInfo.name))]
+                        ? [VisitorUtils.createSuperfluousPropertiesLoop(propertyInfos.map((propertyInfo) => propertyInfo.name), visitorContext)]
                         : []
                 ),
                 ...(
@@ -518,6 +518,7 @@ function visitLiteralType(type: ts.LiteralType, visitorContext: VisitorContext) 
                 ),
                 { type: 'string-literal', value },
                 name,
+                visitorContext,
                 VisitorUtils.createStrictNullCheckStatement(VisitorUtils.objectIdentifier, visitorContext)
             );
         });
@@ -532,6 +533,7 @@ function visitLiteralType(type: ts.LiteralType, visitorContext: VisitorContext) 
                 ),
                 { type: 'number-literal', value },
                 name,
+                visitorContext,
                 VisitorUtils.createStrictNullCheckStatement(VisitorUtils.objectIdentifier, visitorContext)
             );
         });
@@ -558,7 +560,7 @@ function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorC
                 // Check object keys at intersection type level. https://github.com/woutervh-/typescript-is/issues/21
                 const keys = VisitorIsStringKeyof.visitType(type, visitorContext);
                 if (keys instanceof Set) {
-                    const loop = VisitorUtils.createSuperfluousPropertiesLoop(sliceSet(keys));
+                    const loop = VisitorUtils.createSuperfluousPropertiesLoop(sliceSet(keys), visitorContext);
                     return VisitorUtils.createConjunctionFunction(functionNames, name, [loop]);
                 }
             }
@@ -580,6 +582,7 @@ function visitBooleanLiteral(type: ts.Type, visitorContext: VisitorContext) {
                 ),
                 { type: 'boolean-literal', value: true },
                 name,
+                visitorContext,
                 VisitorUtils.createStrictNullCheckStatement(VisitorUtils.objectIdentifier, visitorContext)
             );
         });
@@ -593,6 +596,7 @@ function visitBooleanLiteral(type: ts.Type, visitorContext: VisitorContext) {
                 ),
                 { type: 'boolean-literal', value: false },
                 name,
+                visitorContext,
                 VisitorUtils.createStrictNullCheckStatement(VisitorUtils.objectIdentifier, visitorContext)
             );
         });
@@ -633,6 +637,7 @@ function visitNonPrimitiveType(type: ts.Type, visitorContext: VisitorContext) {
                 ts.createLogicalNot(condition),
                 { type: 'non-primitive' },
                 name,
+                visitorContext,
                 VisitorUtils.createStrictNullCheckStatement(VisitorUtils.objectIdentifier, visitorContext)
             );
         });
@@ -700,7 +705,7 @@ function visitTemplateLiteralType(type: ts.TemplateLiteralType, visitorContext: 
     const templateLiteralTypeError = VisitorUtils.createErrorObject({
         type: 'template-literal',
         value: typePairs
-    })
+    }, visitorContext)
     return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => ts.factory.createFunctionDeclaration(
         undefined,
         undefined,

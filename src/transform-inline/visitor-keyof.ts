@@ -60,7 +60,8 @@ function visitRegularObjectType(type: ts.ObjectType, visitorContext: VisitorCont
             return VisitorUtils.createAssertionFunction(
                 condition,
                 { type: 'object-keyof', properties: names },
-                name
+                name,
+                visitorContext
             );
         });
     }
