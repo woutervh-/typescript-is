@@ -484,6 +484,11 @@ function visitLiteralType(type: ts.LiteralType, visitorContext: VisitorContext) 
 }
 
 function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorContext: VisitorContext) {
+    let disallowSuperfluousPropertyCheck = visitorContext.options.disallowSuperfluousObjectProperties;
+    if (visitorContext.overrideDisallowSuperfluousObjectProperies) {
+        visitorContext.overrideDisallowSuperfluousObjectProperies = false;
+        disallowSuperfluousPropertyCheck = false;
+    }
     const typeUnion = type;
     if (tsutils.isUnionType(typeUnion)) {
         const name = VisitorTypeName.visitType(type, visitorContext, { type: 'type-check' });
@@ -496,8 +501,8 @@ function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorC
     if (tsutils.isIntersectionType(intersectionType)) {
         const name = VisitorTypeName.visitType(type, visitorContext, { type: 'type-check', superfluousPropertyCheck: visitorContext.options.disallowSuperfluousObjectProperties });
         return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
-            const functionNames = intersectionType.types.map((type) => visitType(type, { ...visitorContext, options: { ...visitorContext.options, disallowSuperfluousObjectProperties: false } }));
-            if (visitorContext.options.disallowSuperfluousObjectProperties) {
+            const functionNames = intersectionType.types.map((type) => visitType(type, { ...visitorContext, overrideDisallowSuperfluousObjectProperies: true }));
+            if (disallowSuperfluousPropertyCheck) {
                 // Check object keys at intersection type level. https://github.com/woutervh-/typescript-is/issues/21
                 const keys = VisitorIsStringKeyof.visitType(type, visitorContext);
                 if (keys instanceof Set) {

@@ -14,6 +14,7 @@ export interface VisitorContext extends PartialVisitorContext {
     functionNames: Set<string>;
     functionMap: Map<string, ts.FunctionDeclaration>;
     typeIdMap: Map<string, string>;
+    overrideDisallowSuperfluousObjectProperies?: boolean;
 }
 
 export interface PartialVisitorContext {
