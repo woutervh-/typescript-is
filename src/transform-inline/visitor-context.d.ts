@@ -7,6 +7,7 @@ interface Options {
     functionBehavior: 'error' | 'ignore' | 'basic';
     disallowSuperfluousObjectProperties: boolean;
     transformNonNullExpressions: boolean;
+    emitDetailedErrors: boolean | 'auto';
 }
 
 export interface VisitorContext extends PartialVisitorContext {

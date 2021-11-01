@@ -203,6 +203,7 @@ export function getFunctionFunction(visitorContext: VisitorContext) {
             ),
             { type: 'function' },
             name,
+            visitorContext,
             createStrictNullCheckStatement(objectIdentifier, visitorContext)
         );
     });
@@ -218,6 +219,7 @@ export function getStringFunction(visitorContext: VisitorContext) {
             ),
             { type: 'string' },
             name,
+            visitorContext,
             createStrictNullCheckStatement(objectIdentifier, visitorContext)
         );
     });
@@ -233,6 +235,7 @@ export function getBooleanFunction(visitorContext: VisitorContext) {
             ),
             { type: 'boolean' },
             name,
+            visitorContext,
             createStrictNullCheckStatement(objectIdentifier, visitorContext)
         );
     });
@@ -248,6 +251,7 @@ export function getBigIntFunction(visitorContext: VisitorContext) {
             ),
             { type: 'big-int' },
             name,
+            visitorContext,
             createStrictNullCheckStatement(objectIdentifier, visitorContext)
         );
     });
@@ -263,6 +267,7 @@ export function getNumberFunction(visitorContext: VisitorContext) {
             ),
             { type: 'number' },
             name,
+            visitorContext,
             createStrictNullCheckStatement(objectIdentifier, visitorContext)
         );
     });
@@ -278,6 +283,7 @@ export function getUndefinedFunction(visitorContext: VisitorContext) {
             ),
             { type: 'undefined' },
             name,
+            visitorContext,
             createStrictNullCheckStatement(objectIdentifier, visitorContext)
         );
     });
@@ -301,6 +307,7 @@ export function getNullFunction(visitorContext: VisitorContext) {
             ),
             { type: 'null' },
             name,
+            visitorContext,
             createStrictNullCheckStatement(objectIdentifier, visitorContext)
         );
     });
@@ -320,7 +327,7 @@ export function getNeverFunction(visitorContext: VisitorContext) {
             ],
             undefined,
             ts.createBlock([
-                ts.createReturn(createErrorObject({ type: 'never' }))
+                ts.createReturn(createErrorObject({ type: 'never' }, visitorContext))
             ])
         );
     });
@@ -492,7 +499,7 @@ export function createDisjunctionFunction(functionNames: string[], functionName:
                     )
                 ])
             ),
-            ts.createReturn(createErrorObject({ type: 'union' }))
+            ts.createReturn(createErrorObject({ type: 'union' }, visitorContext))
         ])
     );
 }
@@ -537,7 +544,7 @@ export function createStrictNullCheckStatement(identifier: ts.Identifier, visito
     }
 }
 
-export function createAssertionFunction(failureCondition: ts.Expression, expected: Reason, functionName: string, ...otherStatements: ts.Statement[]) {
+export function createAssertionFunction(failureCondition: ts.Expression, expected: Reason, functionName: string, visitorContext: VisitorContext, ...otherStatements: ts.Statement[]) {
     return ts.createFunctionDeclaration(
         undefined,
         undefined,
@@ -552,14 +559,14 @@ export function createAssertionFunction(failureCondition: ts.Expression, expecte
             ...otherStatements,
             ts.createIf(
                 failureCondition,
-                ts.createReturn(createErrorObject(expected)),
+                ts.createReturn(createErrorObject(expected, visitorContext)),
                 ts.createReturn(ts.createNull())
             )
         ])
     );
 }
 
-export function createSuperfluousPropertiesLoop(propertyNames: string[]) {
+export function createSuperfluousPropertiesLoop(propertyNames: string[], visitorContext: VisitorContext) {
     return ts.createForOf(
         undefined,
         ts.createVariableDeclarationList(
@@ -574,7 +581,7 @@ export function createSuperfluousPropertiesLoop(propertyNames: string[]) {
                     ts.SyntaxKind.AmpersandAmpersandToken,
                     ts.createTrue()
                 ),
-                ts.createReturn(createErrorObject({ type: 'superfluous-property' }))
+                ts.createReturn(createErrorObject({ type: 'superfluous-property' }, visitorContext))
             )
         ])
     );
@@ -625,7 +632,10 @@ function createAssertionString(reason: string | ts.Expression): ts.Expression {
     }
 }
 
-export function createErrorObject(reason: Reason): ts.Expression {
+export function createErrorObject(reason: Reason, visitorContext: VisitorContext): ts.Expression {
+    if (visitorContext.options.emitDetailedErrors === false) {
+        return ts.createObjectLiteral([]);
+    }
     return ts.createObjectLiteral([
         ts.createPropertyAssignment('message', createErrorMessage(reason)),
         ts.createPropertyAssignment('path', ts.createCall(ts.createPropertyAccess(pathIdentifier, 'slice'), undefined, undefined)),

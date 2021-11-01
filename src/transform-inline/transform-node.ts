@@ -9,7 +9,8 @@ function createArrowFunction(type: ts.Type, rootName: string, optional: boolean,
     const functionMap: VisitorContext['functionMap'] = new Map();
     const functionNames: VisitorContext['functionNames'] = new Set();
     const typeIdMap: VisitorContext['typeIdMap'] = new Map();
-    const visitorContext = { ...partialVisitorContext, functionNames, functionMap, typeIdMap };
+    const visitorContext: VisitorContext = { ...partialVisitorContext, functionNames, functionMap, typeIdMap };
+    const emitDetailedErrors = !!visitorContext.options.emitDetailedErrors;
     const functionName = partialVisitorContext.options.shortCircuit
         ? visitShortCircuit(visitorContext)
         : (optional
@@ -17,8 +18,16 @@ function createArrowFunction(type: ts.Type, rootName: string, optional: boolean,
             : visitType(type, visitorContext)
         );
 
-    const errorIdentifier = ts.createIdentifier('error');
-    const declarations = sliceMapValues(functionMap);
+    const variableDeclarations: ts.VariableStatement[] = [];
+    if (emitDetailedErrors) {
+        variableDeclarations.push(
+            ts.createVariableStatement(
+                [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
+                [ts.createVariableDeclaration(VisitorUtils.pathIdentifier, undefined, ts.createArrayLiteral([ts.createStringLiteral(rootName)]))]
+            )
+        );
+    }
+    const functionDeclarations = sliceMapValues(functionMap);
 
     return ts.createArrowFunction(
         undefined,
@@ -36,16 +45,9 @@ function createArrowFunction(type: ts.Type, rootName: string, optional: boolean,
         undefined,
         undefined,
         ts.createBlock([
-            ts.createVariableStatement(
-                [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
-                [ts.createVariableDeclaration(VisitorUtils.pathIdentifier, undefined, ts.createArrayLiteral([ts.createStringLiteral(rootName)]))]
-            ),
-            ...declarations,
-            ts.createVariableStatement(
-                [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
-                [ts.createVariableDeclaration(errorIdentifier, undefined, ts.createCall(ts.createIdentifier(functionName), undefined, [VisitorUtils.objectIdentifier]))]
-            ),
-            ts.createReturn(errorIdentifier)
+            ...variableDeclarations,
+            ...functionDeclarations,
+            ts.createReturn(ts.createCall(ts.createIdentifier(functionName), undefined, [VisitorUtils.objectIdentifier]))
         ])
     );
 }
@@ -106,6 +108,8 @@ export function transformNode(node: ts.Node, visitorContext: PartialVisitorConte
         ) {
             const name = visitorContext.checker.getTypeAtLocation(signature.declaration).symbol.name;
             const isEquals = name === 'equals' || name === 'createEquals' || name === 'assertEquals' || name === 'createAssertEquals';
+            const isAssert = name === 'assertEquals' || name === 'assertType' || name === 'createAssertEquals' || name === 'createAssertType';
+            const emitDetailedErrors = visitorContext.options.emitDetailedErrors === 'auto' ? isAssert : visitorContext.options.emitDetailedErrors;
 
             const typeArgument = node.typeArguments[0];
             const type = visitorContext.checker.getTypeFromTypeNode(typeArgument);
@@ -117,7 +121,8 @@ export function transformNode(node: ts.Node, visitorContext: PartialVisitorConte
                     ...visitorContext,
                     options: {
                         ...visitorContext.options,
-                        disallowSuperfluousObjectProperties: isEquals || visitorContext.options.disallowSuperfluousObjectProperties
+                        disallowSuperfluousObjectProperties: isEquals || visitorContext.options.disallowSuperfluousObjectProperties,
+                        emitDetailedErrors
                     }
                 }
             );
