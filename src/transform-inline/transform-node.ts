@@ -132,6 +132,55 @@ export function transformNode(node: ts.Node, visitorContext: PartialVisitorConte
                 ]
             );
         }
+    } else if (visitorContext.options.transformNonNullExpressions && ts.isNonNullExpression(node)) {
+        const expression = node.expression
+        return ts.factory.updateNonNullExpression(node, ts.factory.createParenthesizedExpression(ts.factory.createConditionalExpression(
+            ts.factory.createParenthesizedExpression(ts.factory.createBinaryExpression(
+                ts.factory.createBinaryExpression(
+                    ts.factory.createTypeOfExpression(expression),
+                    ts.factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+                    ts.factory.createStringLiteral('undefined')
+                ),
+                ts.factory.createToken(ts.SyntaxKind.BarBarToken),
+                ts.factory.createBinaryExpression(
+                    expression,
+                    ts.factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+                    ts.factory.createNull()
+                )
+            )),
+            ts.factory.createToken(ts.SyntaxKind.QuestionToken),
+            ts.factory.createCallExpression(
+                ts.factory.createParenthesizedExpression(ts.factory.createArrowFunction(
+                    undefined,
+                    undefined,
+                    [],
+                    undefined,
+                    ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+                    ts.factory.createBlock(
+                        [ts.factory.createThrowStatement(ts.factory.createNewExpression(
+                            ts.factory.createIdentifier('Error'),
+                            undefined,
+                            [ts.factory.createTemplateExpression(
+                                ts.factory.createTemplateHead(`${expression.getText()} was non-null asserted but is `),
+                                [ts.factory.createTemplateSpan(
+                                    expression,
+                                    ts.factory.createTemplateTail(
+                                        ''
+                                    )
+                                )]
+                            )]
+                        ))
+                        ],
+                        false
+                    )
+                )),
+                undefined,
+                []
+            ),
+            ts.factory.createToken(ts.SyntaxKind.ColonToken),
+            expression
+        )))
     }
     return node;
 }
+

@@ -32,7 +32,8 @@ export default function transformer(program: ts.Program, options?: { [Key: strin
             ignoreClasses: !!(options && options.ignoreClasses),
             ignoreMethods: !!(options && options.ignoreMethods),
             functionBehavior: getFunctionBehavior(options),
-            disallowSuperfluousObjectProperties: !!(options && options.disallowSuperfluousObjectProperties)
+            disallowSuperfluousObjectProperties: !!(options && options.disallowSuperfluousObjectProperties),
+            transformNonNullExpressions: !!(options && options.transformNonNullExpressions)
         },
         typeMapperStack: [],
         previousTypeReference: null
