@@ -35,7 +35,9 @@ describe('visitor', () => {
                 ignoreMethods: true, // Make sure that the function is not seen as a method.
                 functionBehavior: 'error',
                 shortCircuit: false,
-                disallowSuperfluousObjectProperties: false
+                disallowSuperfluousObjectProperties: false,
+                transformNonNullExpressions: false,
+                emitDetailedErrors: 'auto'
             },
             typeMapperStack: [],
             previousTypeReference: null
@@ -63,7 +65,9 @@ describe('visitor', () => {
                 ignoreMethods: false,
                 functionBehavior: 'ignore',
                 shortCircuit: false,
-                disallowSuperfluousObjectProperties: false
+                disallowSuperfluousObjectProperties: false,
+                transformNonNullExpressions: false,
+                emitDetailedErrors: 'auto'
             },
             typeMapperStack: [],
             previousTypeReference: null

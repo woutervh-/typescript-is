@@ -36,7 +36,9 @@ describe('visitor', () => {
                     ignoreMethods: false,
                     functionBehavior: 'error',
                     shortCircuit: false,
-                    disallowSuperfluousObjectProperties: false
+                    disallowSuperfluousObjectProperties: false,
+                    transformNonNullExpressions: false,
+                    emitDetailedErrors: 'auto'
                 },
                 typeMapperStack: [],
                 previousTypeReference: null
@@ -61,7 +63,9 @@ describe('visitor', () => {
                     ignoreMethods: false,
                     functionBehavior: 'error',
                     shortCircuit: false,
-                    disallowSuperfluousObjectProperties: false
+                    disallowSuperfluousObjectProperties: false,
+                    transformNonNullExpressions: false,
+                    emitDetailedErrors: 'auto'
                 },
                 typeMapperStack: [],
                 previousTypeReference: null
@@ -90,7 +94,9 @@ describe('visitor', () => {
                 ignoreMethods: true,
                 functionBehavior: 'error',
                 shortCircuit: false,
-                disallowSuperfluousObjectProperties: false
+                disallowSuperfluousObjectProperties: false,
+                transformNonNullExpressions: false,
+                emitDetailedErrors: 'auto'
             },
             typeMapperStack: [],
             previousTypeReference: null
@@ -118,7 +124,9 @@ describe('visitor', () => {
                 ignoreMethods: false,
                 functionBehavior: 'error',
                 shortCircuit: false,
-                disallowSuperfluousObjectProperties: false
+                disallowSuperfluousObjectProperties: false,
+                transformNonNullExpressions: false,
+                emitDetailedErrors: 'auto'
             },
             typeMapperStack: [],
             previousTypeReference: null
@@ -146,7 +154,9 @@ describe('visitor', () => {
                 ignoreMethods: true,
                 functionBehavior: 'error',
                 shortCircuit: false,
-                disallowSuperfluousObjectProperties: false
+                disallowSuperfluousObjectProperties: false,
+                transformNonNullExpressions: false,
+                emitDetailedErrors: 'auto'
             },
             typeMapperStack: [],
             previousTypeReference: null

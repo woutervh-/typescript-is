@@ -8,7 +8,9 @@ import { sliceMapValues } from './utils';
 function createArrowFunction(type: ts.Type, rootName: string, optional: boolean, partialVisitorContext: PartialVisitorContext) {
     const functionMap: VisitorContext['functionMap'] = new Map();
     const functionNames: VisitorContext['functionNames'] = new Set();
-    const visitorContext = { ...partialVisitorContext, functionNames, functionMap };
+    const typeIdMap: VisitorContext['typeIdMap'] = new Map();
+    const visitorContext: VisitorContext = { ...partialVisitorContext, functionNames, functionMap, typeIdMap };
+    const emitDetailedErrors = !!visitorContext.options.emitDetailedErrors;
     const functionName = partialVisitorContext.options.shortCircuit
         ? visitShortCircuit(visitorContext)
         : (optional
@@ -16,8 +18,16 @@ function createArrowFunction(type: ts.Type, rootName: string, optional: boolean,
             : visitType(type, visitorContext)
         );
 
-    const errorIdentifier = ts.createIdentifier('error');
-    const declarations = sliceMapValues(functionMap);
+    const variableDeclarations: ts.VariableStatement[] = [];
+    if (emitDetailedErrors) {
+        variableDeclarations.push(
+            ts.createVariableStatement(
+                [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
+                [ts.createVariableDeclaration(VisitorUtils.pathIdentifier, undefined, ts.createArrayLiteral([ts.createStringLiteral(rootName)]))]
+            )
+        );
+    }
+    const functionDeclarations = sliceMapValues(functionMap);
 
     return ts.createArrowFunction(
         undefined,
@@ -35,16 +45,9 @@ function createArrowFunction(type: ts.Type, rootName: string, optional: boolean,
         undefined,
         undefined,
         ts.createBlock([
-            ts.createVariableStatement(
-                [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
-                [ts.createVariableDeclaration(VisitorUtils.pathIdentifier, undefined, ts.createArrayLiteral([ts.createStringLiteral(rootName)]))]
-            ),
-            ...declarations,
-            ts.createVariableStatement(
-                [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
-                [ts.createVariableDeclaration(errorIdentifier, undefined, ts.createCall(ts.createIdentifier(functionName), undefined, [VisitorUtils.objectIdentifier]))]
-            ),
-            ts.createReturn(errorIdentifier)
+            ...variableDeclarations,
+            ...functionDeclarations,
+            ts.createReturn(ts.createCall(ts.createIdentifier(functionName), undefined, [VisitorUtils.objectIdentifier]))
         ])
     );
 }
@@ -105,6 +108,8 @@ export function transformNode(node: ts.Node, visitorContext: PartialVisitorConte
         ) {
             const name = visitorContext.checker.getTypeAtLocation(signature.declaration).symbol.name;
             const isEquals = name === 'equals' || name === 'createEquals' || name === 'assertEquals' || name === 'createAssertEquals';
+            const isAssert = name === 'assertEquals' || name === 'assertType' || name === 'createAssertEquals' || name === 'createAssertType';
+            const emitDetailedErrors = visitorContext.options.emitDetailedErrors === 'auto' ? isAssert : visitorContext.options.emitDetailedErrors;
 
             const typeArgument = node.typeArguments[0];
             const type = visitorContext.checker.getTypeFromTypeNode(typeArgument);
@@ -116,7 +121,8 @@ export function transformNode(node: ts.Node, visitorContext: PartialVisitorConte
                     ...visitorContext,
                     options: {
                         ...visitorContext.options,
-                        disallowSuperfluousObjectProperties: isEquals || visitorContext.options.disallowSuperfluousObjectProperties
+                        disallowSuperfluousObjectProperties: isEquals || visitorContext.options.disallowSuperfluousObjectProperties,
+                        emitDetailedErrors
                     }
                 }
             );
@@ -131,6 +137,55 @@ export function transformNode(node: ts.Node, visitorContext: PartialVisitorConte
                 ]
             );
         }
+    } else if (visitorContext.options.transformNonNullExpressions && ts.isNonNullExpression(node)) {
+        const expression = node.expression
+        return ts.factory.updateNonNullExpression(node, ts.factory.createParenthesizedExpression(ts.factory.createConditionalExpression(
+            ts.factory.createParenthesizedExpression(ts.factory.createBinaryExpression(
+                ts.factory.createBinaryExpression(
+                    ts.factory.createTypeOfExpression(expression),
+                    ts.factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+                    ts.factory.createStringLiteral('undefined')
+                ),
+                ts.factory.createToken(ts.SyntaxKind.BarBarToken),
+                ts.factory.createBinaryExpression(
+                    expression,
+                    ts.factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+                    ts.factory.createNull()
+                )
+            )),
+            ts.factory.createToken(ts.SyntaxKind.QuestionToken),
+            ts.factory.createCallExpression(
+                ts.factory.createParenthesizedExpression(ts.factory.createArrowFunction(
+                    undefined,
+                    undefined,
+                    [],
+                    undefined,
+                    ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+                    ts.factory.createBlock(
+                        [ts.factory.createThrowStatement(ts.factory.createNewExpression(
+                            ts.factory.createIdentifier('Error'),
+                            undefined,
+                            [ts.factory.createTemplateExpression(
+                                ts.factory.createTemplateHead(`${expression.getText()} was non-null asserted but is `),
+                                [ts.factory.createTemplateSpan(
+                                    expression,
+                                    ts.factory.createTemplateTail(
+                                        ''
+                                    )
+                                )]
+                            )]
+                        ))
+                        ],
+                        false
+                    )
+                )),
+                undefined,
+                []
+            ),
+            ts.factory.createToken(ts.SyntaxKind.ColonToken),
+            expression
+        )))
     }
     return node;
 }
+

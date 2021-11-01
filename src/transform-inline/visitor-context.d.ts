@@ -6,11 +6,14 @@ interface Options {
     ignoreMethods: boolean;
     functionBehavior: 'error' | 'ignore' | 'basic';
     disallowSuperfluousObjectProperties: boolean;
+    transformNonNullExpressions: boolean;
+    emitDetailedErrors: boolean | 'auto';
 }
 
 export interface VisitorContext extends PartialVisitorContext {
     functionNames: Set<string>;
     functionMap: Map<string, ts.FunctionDeclaration>;
+    typeIdMap: Map<string, string>;
     overrideDisallowSuperfluousObjectProperies?: boolean;
 }
 

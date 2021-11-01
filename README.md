@@ -137,6 +137,8 @@ There are some options to configure the transformer.
 | `ignoreFunctions` *(deprecated, use `functionBehavior` instead)* | Boolean (default: `false`). If `true`, when the transformer encounters a function, it will ignore it and simply return `true`. If `false`, an error is generated at compile time. |
 | `functionBehavior` | One of `error`, `ignore`, or `basic` (default: `error`). Determines the behavior of transformer when encountering a function. `error` will cause a compile-time error, `ignore` will cause the validation function to always return `true`, and `basic` will do a simple function-type-check. Overrides `ignoreFunctions`. |
 | `disallowSuperfluousObjectProperties` | Boolean (default: `false`). If `true`, objects are checked for having superfluous properties and will cause the validation to fail if they do. If `false`, no check for superfluous properties is made. |
+| `transformNonNullExpressions` | Boolean (default: `false`). If `true`, non-null expressions (eg. `foo!.bar`) are checked to not be `null` or `undefined` |
+| `emitDetailedErrors` | Boolean or `auto` (default: `auto`). The generated validation functions can return detailed error messages, pointing out where and why validation failed. These messages are used by `assertType<T>()`, but are ignored by `is<T>()`. If `false`, validation functions return empty error messages, decreasing code size. `auto` will generate detailed error messages for assertions, but not for type checks. `true` will always generate detailed error messages, matching the behaviour of version 0.18.3 and older. |
 
 If you are using `ttypescript`, you can include the options in your `tsconfig.json`:
 
@@ -150,7 +152,9 @@ If you are using `ttypescript`, you can include the options in your `tsconfig.js
                 "ignoreClasses": true,
                 "ignoreMethods": true,
                 "functionBehavior": "ignore",
-                "disallowSuperfluousObjectProperties": true
+                "disallowSuperfluousObjectProperties": true,
+                "transformNonNullExpressions": true,
+                "emitDetailedErrors": "auto"
             }
         ]
     }
@@ -255,6 +259,74 @@ class A {
 
 new A().method(42) === 42; // true
 new A().method('42' as any); // will throw error
+```
+
+### async and `Promise` returning methods 
+`AssertType` can also work correctly with `async` methods, returning promise rejected with `TypeGuardError`
+
+To enable this functionality, you need to emit decorators metadata for your TypeScript project.
+
+```json
+{
+    "compilerOptions": {
+      "emitDecoratorMetadata": true
+    }
+}
+```
+
+Then `AssertType` will work with async methods and `Promise` returning methods automatically.
+```typescript
+import { ValidateClass, AssertType } from 'typescript-is';
+
+@ValidateClass()
+class A {
+    async method(@AssertType({ async: true }) value: number) {
+        // You can safely use value as a number
+        return value;
+    }
+
+    methodPromise(@AssertType({ async: true }) value: number): Promise<number> {
+        // You can safely use value as a number
+        return Promise.resolve(value);
+    }
+}
+
+new A().method(42).then(value => value === 42 /* true */); 
+new A().method('42' as any).catch(error => {
+    // error will be of TypeGuardError type
+})
+new A().methodPromise('42' as any).catch(error => {
+    // error will be of TypeGuardError type
+})
+```
+
+If you want to throw synchronously for some reason, you can override the behaviour using with `@AssertType({ async: false })`:
+```typescript
+import { ValidateClass, AssertType } from 'typescript-is';
+
+@ValidateClass()
+class A {
+    async method(@AssertType({ async: false }) value: number) {
+        // You can safely use value as a number
+        return value;
+    }
+}
+
+new A().method(42).then(value => value === 42 /* true */);
+new A().method('42' as any); // will throw error
+```
+
+If you cannot or don't want to enable decorators metadata, you still make AssertType reject with promise using `@AssertType({ async: true })` 
+```typescript
+import { ValidateClass, AssertType } from 'typescript-is';
+
+@ValidateClass()
+class A {
+    async method(@AssertType({ async: true }) value: number) {
+        // You can safely use value as a number
+        return value;
+    }
+}
 ```
 
 ## Strict equality (`equals`, `createEquals`, `assertEquals`, `createAssertEquals`)
