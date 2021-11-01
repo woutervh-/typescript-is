@@ -37,6 +37,7 @@ describe('visitor', () => {
                     functionBehavior: 'error',
                     shortCircuit: false,
                     disallowSuperfluousObjectProperties: false,
+                    transformNonNullExpressions: false,
                     emitDetailedErrors: 'auto'
                 },
                 typeMapperStack: [],
@@ -63,6 +64,7 @@ describe('visitor', () => {
                     functionBehavior: 'error',
                     shortCircuit: false,
                     disallowSuperfluousObjectProperties: false,
+                    transformNonNullExpressions: false,
                     emitDetailedErrors: 'auto'
                 },
                 typeMapperStack: [],
@@ -93,6 +95,7 @@ describe('visitor', () => {
                 functionBehavior: 'error',
                 shortCircuit: false,
                 disallowSuperfluousObjectProperties: false,
+                transformNonNullExpressions: false,
                 emitDetailedErrors: 'auto'
             },
             typeMapperStack: [],
@@ -122,6 +125,7 @@ describe('visitor', () => {
                 functionBehavior: 'error',
                 shortCircuit: false,
                 disallowSuperfluousObjectProperties: false,
+                transformNonNullExpressions: false,
                 emitDetailedErrors: 'auto'
             },
             typeMapperStack: [],
@@ -151,6 +155,7 @@ describe('visitor', () => {
                 functionBehavior: 'error',
                 shortCircuit: false,
                 disallowSuperfluousObjectProperties: false,
+                transformNonNullExpressions: false,
                 emitDetailedErrors: 'auto'
             },
             typeMapperStack: [],

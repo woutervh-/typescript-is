@@ -47,7 +47,11 @@ function AssertType(assertion, options = {}) {
     require('reflect-metadata');
     return function (target, propertyKey, parameterIndex) {
         const assertions = Reflect.getOwnMetadata(assertionsMetadataKey, target, propertyKey) || [];
-        assertions[parameterIndex] = { assertion, options };
+        if(Reflect.getOwnMetadata('design:returntype', target, propertyKey) === Promise) {
+            assertions[parameterIndex] = { assertion, options: Object.assign({ async: true }, options) };
+        } else {
+            assertions[parameterIndex] = { assertion, options };
+        }
         Reflect.defineMetadata(assertionsMetadataKey, assertions, target, propertyKey);
     };
 }
@@ -66,7 +70,12 @@ function ValidateClass(errorConstructor = TypeGuardError) {
                         }
                         const errorObject = assertions[i].assertion(args[i]);
                         if (errorObject !== null) {
-                            throw new errorConstructor(errorObject, args[i]);
+                            const errorInstance = new errorConstructor(errorObject, args[i]);
+                            if(assertions[i].options.async) {
+                                return Promise.reject(errorInstance);
+                            } else {
+                                throw errorInstance;
+                            }
                         }
                     }
                     return originalMethod.apply(this, args);

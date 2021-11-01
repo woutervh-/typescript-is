@@ -39,9 +39,19 @@ function visitArrayObjectType(type: ts.ObjectType, visitorContext: VisitorContex
     return `sa_${numberIndexName}_ea`;
 }
 
-function visitRegularObjectType(type: ts.ObjectType) {
-    const id: string = (type as unknown as { id: string }).id;
-    return `_${id}`;
+function getTypeIndexById(type: ts.Type, { typeIdMap }: VisitorContext) {
+    const id = (type as unknown as { id: string | number }).id.toString();
+    let index = typeIdMap.get(id);
+    if (index === undefined) {
+        index = typeIdMap.size.toString();
+        typeIdMap.set(id, index);
+    }
+    return index;
+}
+
+function visitRegularObjectType(type: ts.Type, visitorContext: VisitorContext) {
+    const index = getTypeIndexById(type, visitorContext);
+    return `_${index}`;
 }
 
 function visitTypeReference(type: ts.TypeReference, visitorContext: VisitorContext, mode: NameMode) {
@@ -71,7 +81,7 @@ function visitObjectType(type: ts.ObjectType, visitorContext: VisitorContext, mo
     } else if (checkIsDateClass(type)) {
         return '_date';
     } else {
-        return visitRegularObjectType(type);
+        return visitRegularObjectType(type, visitorContext);
     }
 }
 
@@ -98,7 +108,7 @@ function visitIndexedAccessType(type: ts.IndexedAccessType, visitorContext: Visi
 
 export function visitType(type: ts.Type, visitorContext: VisitorContext, mode: NameMode): string {
     let name: string;
-    const id: string = (type as unknown as { id: string }).id;
+    const index = getTypeIndexById(type, visitorContext);
     if ((ts.TypeFlags.Any & type.flags) !== 0) {
         name = VisitorUtils.getAnyFunction(visitorContext);
     } else if ((ts.TypeFlags.Unknown & type.flags) !== 0) {
@@ -118,7 +128,7 @@ export function visitType(type: ts.Type, visitorContext: VisitorContext, mode: N
     } else if ((ts.TypeFlags.String & type.flags) !== 0) {
         name = VisitorUtils.getStringFunction(visitorContext);
     } else if ((ts.TypeFlags.BooleanLiteral & type.flags) !== 0) {
-        name = `_${id}`;
+        name = `_${index}`;
     } else if (tsutils.isTypeReference(type) && visitorContext.previousTypeReference !== type) {
         name = visitTypeReference(type, visitorContext, mode);
     } else if ((ts.TypeFlags.TypeParameter & type.flags) !== 0) {
@@ -126,17 +136,17 @@ export function visitType(type: ts.Type, visitorContext: VisitorContext, mode: N
     } else if (tsutils.isObjectType(type)) {
         name = visitObjectType(type, visitorContext, mode);
     } else if (tsutils.isLiteralType(type)) {
-        name = `_${id}`;
+        name = `_${index}`;
     } else if (tsutils.isUnionOrIntersectionType(type)) {
         name = visitUnionOrIntersectionType(type, visitorContext, mode);
     } else if ((ts.TypeFlags.NonPrimitive & type.flags) !== 0) {
-        name = `_${id}`;
+        name = `_${index}`;
     } else if ((ts.TypeFlags.Index & type.flags) !== 0) {
         name = visitIndexType(type, visitorContext);
     } else if (tsutils.isIndexedAccessType(type)) {
         name = visitIndexedAccessType(type, visitorContext);
     } else if ((ts.TypeFlags.TemplateLiteral & type.flags) !== 0) {
-        name = `_${id}`;
+        name = `_${index}`;
     } else {
         throw new Error('Could not generate type-check; unsupported type with flags: ' + type.flags);
     }
@@ -153,7 +163,8 @@ export function visitType(type: ts.Type, visitorContext: VisitorContext, mode: N
     if (tsutils.isTypeReference(type) && type.typeArguments !== undefined) {
         for (const typeArgument of type.typeArguments) {
             const resolvedType = VisitorUtils.getResolvedTypeParameter(typeArgument, visitorContext) || typeArgument;
-            name += `_${(resolvedType as unknown as { id: string }).id}`;
+            const resolvedTypeIndex = getTypeIndexById(resolvedType, visitorContext);
+            name += `_${resolvedTypeIndex}`;
         }
     }
     return name;

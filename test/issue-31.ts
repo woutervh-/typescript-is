@@ -46,6 +46,7 @@ describe('visitor', () => {
             functionBehavior: 'error',
             shortCircuit: false,
             disallowSuperfluousObjectProperties: false,
+            transformNonNullExpressions: false,
             emitDetailedErrors: 'auto'
         };
         const visitorContext = createVisitorContext(program, options);
@@ -79,6 +80,7 @@ describe('visitor', () => {
             functionBehavior: 'error',
             shortCircuit: false,
             disallowSuperfluousObjectProperties: false,
+            transformNonNullExpressions: false,
             emitDetailedErrors: 'auto'
         };
         const visitorContext = createVisitorContext(program, options);
