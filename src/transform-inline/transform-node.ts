@@ -8,7 +8,8 @@ import { sliceMapValues } from './utils';
 function createArrowFunction(type: ts.Type, rootName: string, optional: boolean, partialVisitorContext: PartialVisitorContext) {
     const functionMap: VisitorContext['functionMap'] = new Map();
     const functionNames: VisitorContext['functionNames'] = new Set();
-    const visitorContext = { ...partialVisitorContext, functionNames, functionMap };
+    const typeIdMap: VisitorContext['typeIdMap'] = new Map();
+    const visitorContext = { ...partialVisitorContext, functionNames, functionMap, typeIdMap };
     const functionName = partialVisitorContext.options.shortCircuit
         ? visitShortCircuit(visitorContext)
         : (optional
