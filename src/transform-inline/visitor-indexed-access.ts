@@ -87,9 +87,6 @@ function visitObjectType(type: ts.ObjectType, indexType: ts.Type, visitorContext
     } else if (visitorContext.checker.getIndexTypeOfType(type, ts.IndexKind.Number)) {
         // Index type is number -> array type.
         return visitArrayObjectType(type, indexType, visitorContext);
-    } else if ((ts.TypeFlags.TypeParameter & indexType.symbol?.flags) !== 0) {
-       // Index type is type -> type
-        return VisitorTypeCheck.visitType(indexType, visitorContext);
     } else {
         // Index type is string -> regular object type.
         return visitRegularObjectType(type, indexType, visitorContext);

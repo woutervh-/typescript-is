@@ -71,7 +71,14 @@ export function getPropertyInfo(parentType: ts.Type, symbol: ts.Symbol, visitorC
     let isFunction: boolean | undefined = undefined;
     let optional: boolean | undefined = undefined;
 
-    if ('valueDeclaration' in symbol) {
+    if ('type' in symbol) {
+        // Attempt to get it from 'type'
+
+        propertyType = (symbol as { type?: ts.Type }).type;
+        isMethod = false;
+        isFunction = false;
+        optional = ((symbol as ts.Symbol).flags & ts.SymbolFlags.Optional) !== 0;
+    } else if ('valueDeclaration' in symbol) {
         // Attempt to get it from 'valueDeclaration'
 
         const valueDeclaration = symbol.valueDeclaration;
@@ -94,13 +101,6 @@ export function getPropertyInfo(parentType: ts.Type, symbol: ts.Symbol, visitorC
             propertyType = visitorContext.checker.getTypeFromTypeNode(valueDeclaration.type);
         }
         optional = !!valueDeclaration.questionToken;
-    } else if ('type' in symbol) {
-        // Attempt to get it from 'type'
-
-        propertyType = (symbol as { type?: ts.Type }).type;
-        isMethod = false;
-        isFunction = false;
-        optional = ((symbol as ts.Symbol).flags & ts.SymbolFlags.Optional) !== 0;
     } else if ('getTypeOfPropertyOfType' in visitorContext.checker) {
         // Attempt to get it from 'visitorContext.checker.getTypeOfPropertyOfType'
 
