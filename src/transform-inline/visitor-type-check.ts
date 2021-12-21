@@ -6,7 +6,7 @@ import * as VisitorKeyof from './visitor-keyof';
 import * as VisitorIndexedAccess from './visitor-indexed-access';
 import * as VisitorIsStringKeyof from './visitor-is-string-keyof';
 import * as VisitorTypeName from './visitor-type-name';
-import { sliceSet } from './utils';
+import { sliceSet,isPrimitive } from './utils';
 
 function visitDateType(type: ts.ObjectType, visitorContext: VisitorContext) {
     const name = VisitorTypeName.visitType(type, visitorContext, { type: 'type-check' });
@@ -501,8 +501,36 @@ function visitUnionOrIntersectionType(type: ts.UnionOrIntersectionType, visitorC
     if (tsutils.isIntersectionType(intersectionType)) {
         const name = VisitorTypeName.visitType(type, visitorContext, { type: 'type-check', superfluousPropertyCheck: visitorContext.options.disallowSuperfluousObjectProperties });
         return VisitorUtils.setFunctionIfNotExists(name, visitorContext, () => {
-            const functionNames = intersectionType.types.map((type) => visitType(type, { ...visitorContext, overrideDisallowSuperfluousObjectProperies: true }));
-            if (disallowSuperfluousPropertyCheck) {
+            let functionNames: string[] = [];
+            if (
+              intersectionType.types.length === 2 &&
+              ((intersectionType.types[0].flags & ts.TypeFlags.Object &&
+                isPrimitive(intersectionType.types[1].flags)) ||
+                (isPrimitive(intersectionType.types[0].flags) &&
+                  intersectionType.types[1].flags & ts.TypeFlags.Object))
+            ) {
+              intersectionType.types.forEach((type) => {
+                if (isPrimitive(type.flags)) {
+                  functionNames.push(
+                    visitType(
+                      type,
+                      Object.assign(Object.assign({}, visitorContext), {
+                        overrideDisallowSuperfluousObjectProperies: true
+                      })
+                    )
+                  );
+                }
+              });
+            } else {
+              functionNames = intersectionType.types.map((type) =>
+                visitType(
+                  type,
+                  Object.assign(Object.assign({}, visitorContext), {
+                    overrideDisallowSuperfluousObjectProperies: true
+                  })
+                )
+              );
+            }            if (disallowSuperfluousPropertyCheck) {
                 // Check object keys at intersection type level. https://github.com/woutervh-/typescript-is/issues/21
                 const keys = VisitorIsStringKeyof.visitType(type, visitorContext);
                 if (keys instanceof Set) {
