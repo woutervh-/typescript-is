@@ -58,7 +58,7 @@ function transformDecorator(node: ts.Decorator, parameterType: ts.Type, paramete
         if (
             signature !== undefined
             && signature.declaration !== undefined
-            && path.resolve(signature.declaration.getSourceFile().fileName) === path.resolve(path.join(__dirname, '..', '..', 'index.d.ts'))
+            && VisitorUtils.getCanonicalPath(path.resolve(signature.declaration.getSourceFile().fileName), visitorContext) === path.resolve(path.join(__dirname, '..', '..', 'index.d.ts'))
             && node.expression.arguments.length <= 1
         ) {
             const arrowFunction: ts.Expression = createArrowFunction(parameterType, parameterName, optional, visitorContext);
@@ -102,7 +102,7 @@ export function transformNode(node: ts.Node, visitorContext: PartialVisitorConte
         if (
             signature !== undefined
             && signature.declaration !== undefined
-            && path.resolve(signature.declaration.getSourceFile().fileName) === path.resolve(path.join(__dirname, '..', '..', 'index.d.ts'))
+            && VisitorUtils.getCanonicalPath(path.resolve(signature.declaration.getSourceFile().fileName), visitorContext) === path.resolve(path.join(__dirname, '..', '..', 'index.d.ts'))
             && node.typeArguments !== undefined
             && node.typeArguments.length === 1
         ) {

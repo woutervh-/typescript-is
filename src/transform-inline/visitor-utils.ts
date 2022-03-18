@@ -1,7 +1,8 @@
 import * as ts from 'typescript';
+import * as fs from 'fs';
 import { ModifierFlags } from 'typescript';
 import * as tsutils from 'tsutils/typeguard/3.0';
-import { VisitorContext } from './visitor-context';
+import { PartialVisitorContext, VisitorContext } from './visitor-context';
 import { Reason } from '../../index';
 
 /**
@@ -730,4 +731,11 @@ function createErrorMessage(reason: Reason): ts.Expression {
 export function getIntrinsicName(type: ts.Type): string | undefined {
     // Using internal TypeScript API, hacky.
     return (type as { intrinsicName?: string }).intrinsicName;
+}
+
+export function getCanonicalPath(path: string, context: PartialVisitorContext): string {
+    if (!context.canonicalPaths.has(path)) {
+        context.canonicalPaths.set(path, fs.realpathSync(path));
+    }
+    return context.canonicalPaths.get(path)!;
 }

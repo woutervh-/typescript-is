@@ -40,8 +40,9 @@ describe('visitor', () => {
                 emitDetailedErrors: 'auto'
             },
             typeMapperStack: [],
-            previousTypeReference: null
-        };
+        previousTypeReference: null,
+        canonicalPaths: new Map()
+    };
 
         function visitNodeAndChildren(node: ts.Node) {
             ts.forEachChild(transformNode(node, visitorContext), visitNodeAndChildren);
@@ -70,8 +71,9 @@ describe('visitor', () => {
                 emitDetailedErrors: 'auto'
             },
             typeMapperStack: [],
-            previousTypeReference: null
-        };
+        previousTypeReference: null,
+        canonicalPaths: new Map()
+    };
 
         function visitNodeAndChildren(node: ts.Node) {
             ts.forEachChild(transformNode(node, visitorContext), visitNodeAndChildren);
