@@ -70,8 +70,8 @@ function ValidateClass(errorConstructor = TypeGuardError) {
                         }
                         const errorObject = assertions[i].assertion(args[i]);
                         if (errorObject !== null) {
-                            if (assertions[i].errorConstructor) {
-                                errorConstructor = assertions[i].errorConstructor;
+                            if (assertions[i].options.errorConstructor) {
+                                errorConstructor = assertions[i].options.errorConstructor;
                             }
                             const errorInstance = new errorConstructor(errorObject, args[i]);
                             if(assertions[i].options.async) {
