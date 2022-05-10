@@ -1,3 +1,5 @@
+/* tslint:disable:max-classes-per-file */
+
 import * as assert from 'assert';
 import { assertEquals } from '../index';
 
