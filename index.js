@@ -43,7 +43,7 @@ class TypeGuardError extends Error {
     }
 }
 
-function AssertType(assertion, options = {}) {
+function AssertType(assertion, options = { errorConstructor: null }) {
     require('reflect-metadata');
     return function (target, propertyKey, parameterIndex) {
         const assertions = Reflect.getOwnMetadata(assertionsMetadataKey, target, propertyKey) || [];
@@ -70,6 +70,9 @@ function ValidateClass(errorConstructor = TypeGuardError) {
                         }
                         const errorObject = assertions[i].assertion(args[i]);
                         if (errorObject !== null) {
+                            if (assertions[i].errorConstructor) {
+                                errorConstructor = assertions[i].errorConstructor;
+                            }
                             const errorInstance = new errorConstructor(errorObject, args[i]);
                             if(assertions[i].options.async) {
                                 return Promise.reject(errorInstance);

@@ -261,6 +261,25 @@ new A().method(42) === 42; // true
 new A().method('42' as any); // will throw error
 ```
 
+You can pass a custom error class both on `ValidateClass` and on `AssertType`
+
+```typescript
+import { ValidateClass, AssertType } from 'typescript-is';
+
+class E1 extends Error { }
+class E2 extends Error { }
+
+@ValidateClass(E1)
+class C {
+    method1(@AssertType() value: number) { }
+    method1(@AssertType({errorConstructor:E2}) value: number) { }
+}
+
+new C().method1('42' as any) // will throw E1
+new C().method2('42' as any) // will throw E2
+```
+
+
 ### async and `Promise` returning methods 
 `AssertType` can also work correctly with `async` methods, returning promise rejected with `TypeGuardError`
 
