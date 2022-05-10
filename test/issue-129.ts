@@ -1,7 +1,7 @@
 /* tslint:disable:max-classes-per-file */
 
 import * as assert from 'assert';
-import { assertEquals } from '../index';
+import { AssertType, ValidateClass } from '../index';
 
 /* https://github.com/woutervh-/typescript-is/issues/129 */
 
@@ -20,6 +20,7 @@ describe('AssertType', () => {
             return parameter;
         }
     }
+    const instance = new TestClass();
 
     it('should allow custom error class', () => {
         assert.throws(() => instance.testMethod(0 as any), expectedMessageRegExp);
