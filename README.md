@@ -1,3 +1,8 @@
+# Deprecation Notice
+> `typescript-is` **is deprecated**. It still works with TS 4.8 below, but it will not be updated.
+>
+> For TypeScript v4.8+, please use [typia](https://github.com/samchon/typia) instead.
+
 # typescript-is
 
 TypeScript transformer that generates run-time type-checks.
