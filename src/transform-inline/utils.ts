@@ -1,3 +1,5 @@
+import ts = require('typescript');
+
 export function sliceSet<T>(set: Set<T>): T[] {
     const items: T[] = [];
     set.forEach((value) => items.push(value));
@@ -16,4 +18,16 @@ export function sliceMapValues<T, U>(map: Map<T, U>): U[] {
     const items: U[] = [];
     map.forEach((value) => items.push(value));
     return items;
+}
+export function isPrimitive(flag: number) {
+  return (
+    ((ts.TypeFlags.Number |
+      ts.TypeFlags.String |
+      ts.TypeFlags.Boolean |
+      ts.TypeFlags.BooleanLiteral |
+      ts.TypeFlags.StringLiteral |
+      ts.TypeFlags.NumberLiteral) &
+      flag) !==
+    0
+  );
 }
