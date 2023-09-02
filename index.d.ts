@@ -258,6 +258,10 @@ interface ExpectedNull {
     type: 'null';
 }
 
+/**
+ * a pair of `ts.TemplateLiteralType.texts` and the `intrinsicName`s for `ts.TemplateLiteralType.types`,
+ * @see https://github.com/microsoft/TypeScript/pull/40336
+ */
 type TemplateLiteralPair = [string, 'string' | 'number' | 'bigint' | 'any' | 'undefined' | 'null' | undefined];
 
 interface ExpectedTemplateLiteral {

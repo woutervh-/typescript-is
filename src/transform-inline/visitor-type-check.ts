@@ -7,6 +7,7 @@ import * as VisitorIndexedAccess from './visitor-indexed-access';
 import * as VisitorIsStringKeyof from './visitor-is-string-keyof';
 import * as VisitorTypeName from './visitor-type-name';
 import { sliceSet } from './utils';
+import {TemplateLiteralPair} from '../../index';
 
 function visitDateType(type: ts.ObjectType, visitorContext: VisitorContext) {
     const name = VisitorTypeName.visitType(type, visitorContext, { type: 'type-check' });
@@ -646,7 +647,7 @@ function visitTemplateLiteralType(type: ts.TemplateLiteralType, visitorContext: 
     const name = VisitorTypeName.visitType(type, visitorContext, {type: 'type-check'});
     const typePairs = type.texts.reduce((prev, curr, i: number) =>
             [...prev, [curr, typeof type.types[i] === 'undefined' ? undefined : VisitorUtils.getIntrinsicName(type.types[i])]] as never,
-        [] as VisitorUtils.TemplateLiteralPair[]
+        [] as TemplateLiteralPair[]
     )
     const templateLiteralTypeError = VisitorUtils.createErrorObject({
         type: 'template-literal',
