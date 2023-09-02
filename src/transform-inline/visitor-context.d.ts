@@ -24,4 +24,5 @@ export interface PartialVisitorContext {
     options: Options;
     typeMapperStack: Map<ts.Type, ts.Type>[];
     previousTypeReference: ts.Type | null;
+    canonicalPaths: Map<string, string>;
 }

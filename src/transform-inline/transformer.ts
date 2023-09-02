@@ -46,7 +46,8 @@ export default function transformer(program: ts.Program, options?: { [Key: strin
             emitDetailedErrors: getEmitDetailedErrors(options)
         },
         typeMapperStack: [],
-        previousTypeReference: null
+        previousTypeReference: null,
+        canonicalPaths: new Map()
     };
     return (context: ts.TransformationContext) => (file: ts.SourceFile) => transformNodeAndChildren(file, program, context, visitorContext);
 }

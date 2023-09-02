@@ -29,7 +29,8 @@ function createVisitorContext(program: Program, optionsDict: PartialVisitorConte
         compilerOptions: program.getCompilerOptions(),
         options: optionsDict,
         typeMapperStack: [],
-        previousTypeReference: null
+        previousTypeReference: null,
+        canonicalPaths: new Map()
     };
 }
 
